@@ -30,8 +30,12 @@
 		caps: ServerCaps;
 		typeGroups: TypeGroup[];
 		collationGroups: CollationGroup[];
-		/** Hide the index / A_I controls (e.g. for a future "change column" flow). */
+		/** Hide the index select (e.g. when changing existing columns). */
 		showIndex?: boolean;
+		/** Hide the A_I checkbox; defaults to `showIndex`. */
+		showAutoIncrement?: boolean;
+		/** Existing column being changed: no move / remove buttons. */
+		fixed?: boolean;
 		onmoveup: () => void;
 		onmovedown: () => void;
 		onremove: () => void;
@@ -46,6 +50,8 @@
 		typeGroups,
 		collationGroups,
 		showIndex = true,
+		showAutoIncrement = showIndex,
+		fixed = false,
 		onmoveup,
 		onmovedown,
 		onremove,
@@ -260,7 +266,7 @@
 				/>
 				Null
 			</label>
-			{#if showIndex}
+			{#if showAutoIncrement}
 				<label class="flex items-center gap-1.5 text-sm" title="AUTO_INCREMENT">
 					<Checkbox
 						checked={col.autoIncrement}
@@ -308,36 +314,38 @@
 		{@render field('Virtuality', 'col-span-2 md:col-span-4 xl:col-span-4', virtualityField)}
 	{/if}
 
-	<div class="col-span-2 flex items-end justify-end gap-1 md:col-span-2 xl:col-span-2">
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon"
-			aria-label="Move column {n} up"
-			disabled={index === 0}
-			onclick={onmoveup}
-		>
-			<ArrowUp />
-		</Button>
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon"
-			aria-label="Move column {n} down"
-			disabled={index === count - 1}
-			onclick={onmovedown}
-		>
-			<ArrowDown />
-		</Button>
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon"
-			aria-label="Remove column {n}"
-			disabled={count <= 1}
-			onclick={onremove}
-		>
-			<Trash2 />
-		</Button>
-	</div>
+	{#if !fixed}
+		<div class="col-span-2 flex items-end justify-end gap-1 md:col-span-2 xl:col-span-2">
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				aria-label="Move column {n} up"
+				disabled={index === 0}
+				onclick={onmoveup}
+			>
+				<ArrowUp />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				aria-label="Move column {n} down"
+				disabled={index === count - 1}
+				onclick={onmovedown}
+			>
+				<ArrowDown />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				aria-label="Remove column {n}"
+				disabled={count <= 1}
+				onclick={onremove}
+			>
+				<Trash2 />
+			</Button>
+		</div>
+	{/if}
 </div>

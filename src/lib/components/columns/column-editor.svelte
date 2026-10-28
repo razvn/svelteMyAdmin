@@ -17,11 +17,27 @@
 		columns: ColumnDef[];
 		caps: ServerCaps;
 		collations: { name: string; charset: string }[];
-		/** Hide index / A_I controls. */
+		/** Hide the index select. */
 		showIndex?: boolean;
+		/** Hide the A_I checkbox; defaults to `showIndex`. */
+		showAutoIncrement?: boolean;
+		/**
+		 * Edit existing columns (ALTER ... CHANGE): fixed list, no add / remove / reorder controls.
+		 */
+		fixed?: boolean;
+		/** Allow removing the last remaining row (never for CREATE TABLE). */
+		minColumns?: number;
 	}
 
-	let { columns = $bindable(), caps, collations, showIndex = true }: Props = $props();
+	let {
+		columns = $bindable(),
+		caps,
+		collations,
+		showIndex = true,
+		showAutoIncrement = showIndex,
+		fixed = false,
+		minColumns = 1
+	}: Props = $props();
 
 	const typeGroups = $derived(getTypeGroups(caps));
 	const collationGroups = $derived.by(() => {
@@ -47,7 +63,7 @@
 	}
 
 	function remove(i: number) {
-		if (columns.length <= 1) return;
+		if (columns.length <= minColumns) return;
 		columns = columns.filter((_, k) => k !== i);
 	}
 
@@ -78,25 +94,29 @@
 			{typeGroups}
 			{collationGroups}
 			{showIndex}
+			{showAutoIncrement}
+			{fixed}
 			onmoveup={() => move(i, -1)}
 			onmovedown={() => move(i, 1)}
 			onremove={() => remove(i)}
 			oneditvalues={() => editValues(i)}
 		/>
 	{/each}
-	<div class="flex flex-wrap items-center gap-2">
-		<Input
-			type="number"
-			min={1}
-			max={4096}
-			bind:value={toAdd}
-			aria-label="Number of columns to add"
-			class="w-20"
-		/>
-		<Button type="button" variant="outline" onclick={add}>
-			<Plus /> Add {addCount} column(s)
-		</Button>
-	</div>
+	{#if !fixed}
+		<div class="flex flex-wrap items-center gap-2">
+			<Input
+				type="number"
+				min={1}
+				max={4096}
+				bind:value={toAdd}
+				aria-label="Number of columns to add"
+				class="w-20"
+			/>
+			<Button type="button" variant="outline" onclick={add}>
+				<Plus /> Add {addCount} column(s)
+			</Button>
+		</div>
+	{/if}
 </div>
 
 {#if enumIndex !== null && columns[enumIndex]}

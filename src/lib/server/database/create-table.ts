@@ -14,6 +14,9 @@ import {
 	getAttributes,
 	getVirtualities,
 	namedColumns,
+	type ColumnDef,
+	type DefaultType,
+	type IndexChoice,
 	type ServerCaps
 } from '#lib/sql/column-definition.ts';
 
@@ -40,6 +43,17 @@ export interface CreateTableContext {
 	defaultEngine: string;
 }
 
+/** What the shared column editor needs: server capabilities and collations. */
+export async function getColumnEditorContext(
+	dbi: DatabaseInterface
+): Promise<Pick<CreateTableContext, 'caps' | 'collations'>> {
+	const [info, collations] = await Promise.all([dbi.getServerInfo(), dbi.listCollations()]);
+	return {
+		caps: { serverType: info.serverType, version: info.versionInt },
+		collations: collations.map((c) => ({ name: c.name, charset: c.charset }))
+	};
+}
+
 export async function getCreateTableContext(dbi: DatabaseInterface): Promise<CreateTableContext> {
 	const info = await dbi.getServerInfo();
 	const [collations, engines] = await Promise.all([dbi.listCollations(), listEngines(dbi.conn)]);
@@ -56,7 +70,7 @@ export async function getCreateTableContext(dbi: DatabaseInterface): Promise<Cre
 
 const identifier = /^[A-Za-z0-9_]+$/;
 
-const columnSchema = z.object({
+export const columnSchema = z.object({
 	id: z.number().optional().default(0),
 	name: z.string().max(64),
 	type: z.string().min(1),
@@ -81,6 +95,37 @@ export const createTableSchema = z.object({
 	columns: z.array(columnSchema).max(MAX_FIELDS)
 });
 
+export type ColumnInput = z.infer<typeof columnSchema>;
+
+/** Upper-case the types and check type / attribute / virtuality against the server's catalog. */
+export function normalizeColumns(
+	input: ColumnInput[],
+	caps: ServerCaps
+): { ok: true; columns: ColumnDef[] } | { ok: false; error: string } {
+	const types = new Set(getAllTypes(caps));
+	const attributes = new Set(['', ...getAttributes(caps)]);
+	const virtualities = new Set(['', ...getVirtualities(caps)]);
+	const columns: ColumnDef[] = input.map((c) => ({
+		...c,
+		type: c.type.toUpperCase(),
+		defaultType: c.defaultType as DefaultType,
+		index: c.index as IndexChoice
+	}));
+	for (const c of namedColumns(columns)) {
+		if (!types.has(c.type)) return { ok: false, error: `Unsupported column type ${c.type}.` };
+		if (!attributes.has(c.attribute)) {
+			return { ok: false, error: `Unsupported attribute ${c.attribute}.` };
+		}
+		if (!virtualities.has(c.virtuality)) {
+			return { ok: false, error: `Unsupported virtuality ${c.virtuality}.` };
+		}
+		if (c.virtuality !== '' && c.expression.trim() === '') {
+			return { ok: false, error: `Column ${c.name} needs an expression.` };
+		}
+	}
+	return { ok: true, columns };
+}
+
 export type CreateTableResult =
 	{ ok: true; table: string; sql: string } | { ok: false; error: string };
 
@@ -95,27 +140,9 @@ export async function createTable(
 	const ctx = await getCreateTableContext(dbi);
 	const { caps } = ctx;
 
-	const types = new Set(getAllTypes(caps));
-	const attributes = new Set(['', ...getAttributes(caps)]);
-	const virtualities = new Set(['', ...getVirtualities(caps)]);
-	const columns = input.columns.map((c) => ({
-		...c,
-		type: c.type.toUpperCase(),
-		defaultType: c.defaultType as (typeof DEFAULT_TYPES)[number],
-		index: c.index as (typeof INDEX_CHOICES)[number]
-	}));
-	for (const c of namedColumns(columns)) {
-		if (!types.has(c.type)) return { ok: false, error: `Unsupported column type ${c.type}.` };
-		if (!attributes.has(c.attribute)) {
-			return { ok: false, error: `Unsupported attribute ${c.attribute}.` };
-		}
-		if (!virtualities.has(c.virtuality)) {
-			return { ok: false, error: `Unsupported virtuality ${c.virtuality}.` };
-		}
-		if (c.virtuality !== '' && c.expression.trim() === '') {
-			return { ok: false, error: `Column ${c.name} needs an expression.` };
-		}
-	}
+	const checked = normalizeColumns(input.columns, caps);
+	if (!checked.ok) return checked;
+	const columns = checked.columns;
 	if (namedColumns(columns).length === 0) {
 		return { ok: false, error: 'The table needs at least one named column.' };
 	}
