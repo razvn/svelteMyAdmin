@@ -9,7 +9,7 @@
 	import * as Dialog from '#lib/components/ui/dialog/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
-	import { Textarea } from '#lib/components/ui/textarea/index.ts';
+	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
 	import SelectField from './select-field.svelte';
 
 	interface Props {
@@ -105,11 +105,11 @@
 				{/if}
 			</div>
 			<div class="grid gap-1.5">
-				<Label for="event-definition">Definition</Label>
-				<Textarea
+				<Label>Definition</Label>
+				<SqlEditor
 					id="event-definition"
-					class="min-h-32 font-mono text-[13px]"
-					spellcheck={false}
+					aria-label="Definition"
+					minLines={6}
 					bind:value={def.definition}
 				/>
 			</div>
