@@ -59,7 +59,12 @@ test('search a known author across all tables and see the match counts', async (
 	await expect(page.getByRole('checkbox', { name: 'books', exact: true })).toBeChecked();
 
 	await page.getByLabel(/Words or values to search for/).fill('Ursula K. Le Guin');
-	await page.getByRole('radio', { name: 'the exact phrase as whole field' }).click();
+	// retry the click until it sticks: on a cold load the radio may not be hydrated yet
+	const wholeField = page.getByRole('radio', { name: 'the exact phrase as whole field' });
+	await expect(async () => {
+		await wholeField.click();
+		await expect(wholeField).toBeChecked({ timeout: 500 });
+	}).toPass();
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
 
 	await expect(page).toHaveURL(/criteriaSearchType=4/);
@@ -103,9 +108,12 @@ test('delete the matching rows after confirming the SQL, only in a sma_t3e_* scr
 	const row = page.getByTestId('search-row-items');
 	await expect(row).toContainText('2 matches in items');
 
-	await row.getByRole('button', { name: 'Delete' }).click();
 	const dialog = page.getByRole('alertdialog');
-	await expect(dialog).toBeVisible();
+	// retry the click until the dialog opens: on a cold load the handler may not be hydrated yet
+	await expect(async () => {
+		await row.getByRole('button', { name: 'Delete' }).click();
+		await expect(dialog).toBeVisible({ timeout: 500 });
+	}).toPass();
 	await expect(page.getByTestId('delete-sql')).toHaveText(
 		"DELETE FROM `sma_t3e_e2e`.`items` WHERE (CONVERT(`id` USING utf8mb4) LIKE '%apple%' OR CONVERT(`name` USING utf8mb4) LIKE '%apple%')"
 	);
