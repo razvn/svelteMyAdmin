@@ -45,3 +45,13 @@ Seeded with the fixture database `sma_test` and the phpMyAdmin configuration sto
 pnpm build
 SMA_CONFIG=/path/to/config.json node build
 ```
+
+### Import: upload size and limits
+
+The import page streams the uploaded file (it is never buffered for SQL and CSV), but `adapter-node`
+rejects request bodies larger than `BODY_SIZE_LIMIT` (default **512K**). Raise it when you run the
+server, e.g. `BODY_SIZE_LIMIT=2G SMA_CONFIG=... node build` (`Infinity` disables the limit). The page
+shows the limit and `Import.max_upload_size` in `config.json` can lower it. `ExecTimeLimit` is the time
+budget of interruptible imports (resume with the skip count) and `MemoryLimit` caps the formats that are
+read into memory (ODS, XML, MediaWiki, CSV at database/server level; default 512M). `LOAD DATA` imports
+need `local_infile=ON` on the MySQL server. bzip2 files are not supported.
