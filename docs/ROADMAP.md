@@ -155,7 +155,7 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 - [x] Phase 3 — Database level
 - [x] Phase 4 — Table level (chart, privileges, tracking come later)
 - [x] Phase 5 — SQL engine & editor
-- [ ] Phase 6 — Import / Export
+- [x] Phase 6 — Import / Export
 - [ ] Phase 7 — Users & privileges
 - [ ] Phase 8 — Configuration storage
 - [ ] Phase 9 — Advanced

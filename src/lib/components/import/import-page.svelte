@@ -225,8 +225,8 @@
 					<Checkbox id="allow_interrupt" name="allow_interrupt" bind:checked={allowInterrupt} />
 					<div class="grid gap-1">
 						<Label for="allow_interrupt" class="leading-snug font-normal">
-							Allow the interruption of an import in case the script detects it is close to the PHP
-							timeout limit.
+							Allow the interruption of an import in case it gets close to the execution time
+							limit.
 						</Label>
 						<p class="text-xs text-muted-foreground">
 							This might be a good way to import large files, however it can break transactions.
