@@ -4,8 +4,9 @@
  */
 import type { ExportPlugin, ExportScope } from './types.ts';
 import sql from './plugins/sql.ts';
+import { binaryPlugins } from './plugins/binary-plugins.ts';
 
-export const exportPlugins: ExportPlugin[] = [sql];
+export const exportPlugins: ExportPlugin[] = [sql, ...binaryPlugins];
 
 export function getExportPlugin(id: string): ExportPlugin | undefined {
 	return exportPlugins.find((p) => p.id === id);

@@ -23,7 +23,10 @@ const p2 = (n: number) => String(n).padStart(2, '0');
 
 function dayOfYear(d: Date): number {
 	const start = new Date(d.getFullYear(), 0, 0);
-	return Math.floor((d.getTime() - start.getTime() - (d.getTimezoneOffset() - start.getTimezoneOffset()) * 60_000) / 86_400_000);
+	return Math.floor(
+		(d.getTime() - start.getTime() - (d.getTimezoneOffset() - start.getTimezoneOffset()) * 60_000) /
+			86_400_000
+	);
 }
 
 /** PHP `strftime` subset (local time), the conversions used in export file name templates. */

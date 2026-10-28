@@ -26,7 +26,16 @@ import {
 	splitCreateTable
 } from './sql-ddl.ts';
 
-const COMPATIBILITIES = ['NONE', 'ANSI', 'DB2', 'MAXDB', 'MYSQL323', 'MYSQL40', 'ORACLE', 'TRADITIONAL'];
+const COMPATIBILITIES = [
+	'NONE',
+	'ANSI',
+	'DB2',
+	'MAXDB',
+	'MYSQL323',
+	'MYSQL40',
+	'ORACLE',
+	'TRADITIONAL'
+];
 
 const GENERAL = 'general';
 const STRUCTURE = 'structure';
@@ -118,15 +127,18 @@ export const sqlOptions: ExportOption[] = [
 		choices: [
 			{
 				value: 'complete',
-				label: 'include column names in every INSERT statement: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3)'
+				label:
+					'include column names in every INSERT statement: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3)'
 			},
 			{
 				value: 'extended',
-				label: 'insert multiple rows in every INSERT statement: INSERT INTO tbl_name VALUES (1,2,3), (4,5,6), (7,8,9)'
+				label:
+					'insert multiple rows in every INSERT statement: INSERT INTO tbl_name VALUES (1,2,3), (4,5,6), (7,8,9)'
 			},
 			{
 				value: 'both',
-				label: 'both of the above: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3), (4,5,6), (7,8,9)'
+				label:
+					'both of the above: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3), (4,5,6), (7,8,9)'
 			},
 			{
 				value: 'none',
@@ -344,9 +356,7 @@ async function footer(ctx: ExportContext): Promise<void> {
 
 async function dbHeader(ctx: ExportContext, db: string, alias?: string): Promise<void> {
 	const name = alias || db;
-	await ctx.write(
-		comment(ctx) + comment(ctx, 'Database: ' + bq(ctx, name)) + comment(ctx)
-	);
+	await ctx.write(comment(ctx) + comment(ctx, 'Database: ' + bq(ctx, name)) + comment(ctx));
 }
 
 async function dbCreate(ctx: ExportContext, db: string, alias?: string): Promise<void> {
@@ -365,7 +375,8 @@ async function dbCreate(ctx: ExportContext, db: string, alias?: string): Promise
 		`SELECT DEFAULT_CHARACTER_SET_NAME AS cs, DEFAULT_COLLATION_NAME AS coll FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '${db.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
 	);
 	const coll = String(r[0]?.coll ?? '');
-	if (coll.includes('_')) q += ` DEFAULT CHARACTER SET ${coll.slice(0, coll.indexOf('_'))} COLLATE ${coll}`;
+	if (coll.includes('_'))
+		q += ` DEFAULT CHARACTER SET ${coll.slice(0, coll.indexOf('_'))} COLLATE ${coll}`;
 	else if (coll) q += ` DEFAULT CHARACTER SET ${coll}`;
 	await ctx.write(q + ';' + crlf);
 	const compat = str(ctx, 'compatibility', 'NONE');
@@ -378,7 +389,9 @@ async function showCreate(
 	db: string,
 	name: string
 ): Promise<string | null> {
-	const [r] = await ctx.conn.query(`SHOW CREATE ${kind} \`${db.replaceAll('`', '``')}\`.\`${name.replaceAll('`', '``')}\``);
+	const [r] = await ctx.conn.query(
+		`SHOW CREATE ${kind} \`${db.replaceAll('`', '``')}\`.\`${name.replaceAll('`', '``')}\``
+	);
 	const row = (r as Row[])[0];
 	if (!row) return null;
 	const key = Object.keys(row).find((k) => /^Create /i.test(k));
@@ -394,7 +407,11 @@ function fixEol(create: string, crlf: string): string {
 	return create;
 }
 
-async function tableDates(ctx: ExportContext, db: string, table: string): Promise<{ text: string; crlf: string }> {
+async function tableDates(
+	ctx: ExportContext,
+	db: string,
+	table: string
+): Promise<{ text: string; crlf: string }> {
 	const { crlf } = ctx;
 	if (!on(ctx, 'dates')) return { text: '', crlf };
 	let text = '';
@@ -423,11 +440,7 @@ async function tableDates(ctx: ExportContext, db: string, table: string): Promis
 }
 
 /** getTableDef(): CREATE TABLE / CREATE VIEW text, collecting indexes/auto-increment/constraints. */
-async function tableDef(
-	ctx: ExportContext,
-	ref: ExportTableRef,
-	isView: boolean
-): Promise<string> {
+async function tableDef(ctx: ExportContext, ref: ExportTableRef, isView: boolean): Promise<string> {
 	const { crlf } = ctx;
 	const s = state(ctx);
 	const table = ref.alias || ref.table;
@@ -443,7 +456,10 @@ async function tableDef(
 	try {
 		create = await showCreate(ctx, 'TABLE', ref.db, ref.table);
 	} catch (e) {
-		return comment(ctx, `Error reading structure for table ${ref.db}.${ref.table}: ${(e as Error).message}`);
+		return comment(
+			ctx,
+			`Error reading structure for table ${ref.db}.${ref.table}: ${(e as Error).message}`
+		);
 	}
 	if (create === null) return out;
 	create = fixEol(create, crlf);
@@ -477,8 +493,7 @@ async function tableDef(
 	}
 	if (parts.autoIncrement.length) {
 		const withValue =
-			on(ctx, 'auto_increment') &&
-			(ctx.dataTables === undefined || ctx.dataTables.has(ref.table));
+			on(ctx, 'auto_increment') && (ctx.dataTables === undefined || ctx.dataTables.has(ref.table));
 		s.autoIncrements =
 			section(
 				ctx,
@@ -500,8 +515,16 @@ async function standInDef(ctx: ExportContext, ref: ExportTableRef): Promise<stri
 	const name = ref.alias || ref.table;
 	let q = '';
 	if (on(ctx, 'drop_table')) q += `DROP VIEW IF EXISTS ${backquote(name)};${crlf}`;
-	q += 'CREATE TABLE ' + (on(ctx, 'if_not_exists') ? 'IF NOT EXISTS ' : '') + backquote(name) + ' (' + crlf;
-	const cols = await rows(ctx, `SHOW FULL COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`);
+	q +=
+		'CREATE TABLE ' +
+		(on(ctx, 'if_not_exists') ? 'IF NOT EXISTS ' : '') +
+		backquote(name) +
+		' (' +
+		crlf;
+	const cols = await rows(
+		ctx,
+		`SHOW FULL COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`
+	);
 	const tmp = cols.map((c) => backquote(String(c.Field)) + ' ' + String(c.Type) + crlf);
 	return q + tmp.join(',') + ');' + crlf;
 }
@@ -510,8 +533,16 @@ async function standInDef(ctx: ExportContext, ref: ExportTableRef): Promise<stri
 async function viewAsTableDef(ctx: ExportContext, ref: ExportTableRef): Promise<string> {
 	const { crlf } = ctx;
 	const name = ref.alias || ref.table;
-	let q = 'CREATE TABLE' + (on(ctx, 'if_not_exists') ? ' IF NOT EXISTS ' : '') + backquote(name) + '(' + crlf;
-	const cols = await rows(ctx, `SHOW FULL COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`);
+	let q =
+		'CREATE TABLE' +
+		(on(ctx, 'if_not_exists') ? ' IF NOT EXISTS ' : '') +
+		backquote(name) +
+		'(' +
+		crlf;
+	const cols = await rows(
+		ctx,
+		`SHOW FULL COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`
+	);
 	const parts = cols.map((c) => {
 		let l = '    ' + backquote(String(c.Field)) + ' ' + String(c.Type);
 		if (c.Collation && /char|text|enum|set/i.test(String(c.Type))) l += ' COLLATE ' + c.Collation;
@@ -519,7 +550,8 @@ async function viewAsTableDef(ctx: ExportContext, ref: ExportTableRef): Promise<
 		if (c.Default !== null && c.Default !== undefined) {
 			l += ` DEFAULT '${String(c.Default).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 		} else if (c.Null === 'YES') l += ' DEFAULT NULL';
-		if (c.Comment) l += ` COMMENT '${String(c.Comment).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
+		if (c.Comment)
+			l += ` COMMENT '${String(c.Comment).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 		return l;
 	});
 	return q + parts.join(',' + crlf) + crlf + ');' + crlf;
@@ -529,7 +561,8 @@ async function structure(ctx: ExportContext, ref: ExportTableRef): Promise<void>
 	const { crlf } = ctx;
 	const name = ref.alias || ref.table;
 	const formatted = bq(ctx, name);
-	const sep = () => possibleCrlf(ctx) + comment(ctx, '-'.repeat(56)) + possibleCrlf(ctx) + comment(ctx);
+	const sep = () =>
+		possibleCrlf(ctx) + comment(ctx, '-'.repeat(56)) + possibleCrlf(ctx) + comment(ctx);
 
 	if (ref.kind === 'view') {
 		if (!on(ctx, 'create_view')) return;
@@ -562,8 +595,7 @@ async function createView(ctx: ExportContext, ref: ExportTableRef): Promise<void
 	const s = state(ctx);
 	const name = ref.alias || ref.table;
 	const formatted = bq(ctx, name);
-	let dump =
-		possibleCrlf(ctx) + comment(ctx, '-'.repeat(56)) + possibleCrlf(ctx) + comment(ctx);
+	let dump = possibleCrlf(ctx) + comment(ctx, '-'.repeat(56)) + possibleCrlf(ctx) + comment(ctx);
 	if (!on(ctx, 'views_as_tables')) {
 		dump += comment(ctx, 'Structure for view ' + formatted) + comment(ctx);
 		if (ctx.scope !== 'table') dump += `DROP TABLE IF EXISTS ${backquote(name)};${crlf}`;
@@ -571,8 +603,7 @@ async function createView(ctx: ExportContext, ref: ExportTableRef): Promise<void
 		s.views += dump;
 		return;
 	}
-	dump +=
-		comment(ctx, `Structure for view ${formatted} exported as a table`) + comment(ctx);
+	dump += comment(ctx, `Structure for view ${formatted} exported as a table`) + comment(ctx);
 	if (ctx.scope !== 'table') dump += `DROP TABLE IF EXISTS ${backquote(name)};${crlf}`;
 	dump += await viewAsTableDef(ctx, ref);
 	await ctx.write(dump);
@@ -608,9 +639,13 @@ async function uniqueCondition(
 	let keyCols: string[] = [];
 	if (ref.table) {
 		try {
-			const cols = await rows(ctx, `SHOW COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`);
+			const cols = await rows(
+				ctx,
+				`SHOW COLUMNS FROM ${backquote(ref.db)}.${backquote(ref.table)}`
+			);
 			keyCols = cols.filter((c) => c.Key === 'PRI').map((c) => String(c.Field));
-			if (!keyCols.length) keyCols = cols.filter((c) => c.Key === 'UNI').map((c) => String(c.Field));
+			if (!keyCols.length)
+				keyCols = cols.filter((c) => c.Key === 'UNI').map((c) => String(c.Field));
 		} catch {
 			// all columns
 		}
@@ -687,7 +722,12 @@ async function data(ctx: ExportContext, d: ExportData): Promise<void> {
 				' ' +
 				columns.map((c, i) => `${c} = ${values[i]}`).join(',') +
 				' WHERE ' +
-				(await uniqueCondition(ctx, ref, fields.map((f) => f.name), values));
+				(await uniqueCondition(
+					ctx,
+					ref,
+					fields.map((f) => f.name),
+					values
+				));
 		}
 		chunk += batcher.next(values, update);
 		if (chunk.length > 32 * 1024) {
@@ -714,7 +754,8 @@ async function routines(ctx: ExportContext, db: string): Promise<void> {
 	const block = async (kind: 'PROCEDURE' | 'FUNCTION', title: string, names: string[]) => {
 		let text = comment(ctx) + comment(ctx, title) + comment(ctx);
 		for (const n of names) {
-			if (on(ctx, 'drop_table')) text += `DROP ${kind} IF EXISTS ${backquote(n)}${delimiter}${crlf}`;
+			if (on(ctx, 'drop_table'))
+				text += `DROP ${kind} IF EXISTS ${backquote(n)}${delimiter}${crlf}`;
 			const create = (await showCreate(ctx, kind, db, n)) ?? '';
 			text += create + delimiter + crlf + crlf;
 		}

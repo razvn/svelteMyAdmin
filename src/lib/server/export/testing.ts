@@ -61,9 +61,13 @@ export async function exportString(
 	const id = req.format ?? 'sql';
 	const plugin = getExportPlugin(id)!;
 	let out = '';
-	await driveExport(env, { ...req, plugin, options: { ...defaultOptions(id), ...req.options } }, async (c) => {
-		out += typeof c === 'string' ? c : Buffer.from(c).toString('utf8');
-	});
+	await driveExport(
+		env,
+		{ ...req, plugin, options: { ...defaultOptions(id), ...req.options } },
+		async (c) => {
+			out += typeof c === 'string' ? c : Buffer.from(c).toString('utf8');
+		}
+	);
 	return out;
 }
 

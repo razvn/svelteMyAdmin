@@ -80,19 +80,26 @@ describe('splitCreateTable', () => {
 
 describe('views', () => {
 	const view =
-		'CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `db`.`v` AS select `a`.`x` AS `x` from `db`.`a` where (`a`.`s` = \'from where\') group by `a`.`x`';
+		"CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `db`.`v` AS select `a`.`x` AS `x` from `db`.`a` where (`a`.`s` = 'from where') group by `a`.`x`";
 	it('strips the db, upper-cases clause keywords outside strings, adds the double space', () => {
-		expect(formatViewDefinition(view, { db: 'db', removeDefiner: false, simple: false, orReplace: false })).toBe(
+		expect(
+			formatViewDefinition(view, {
+				db: 'db',
+				removeDefiner: false,
+				simple: false,
+				orReplace: false
+			})
+		).toBe(
 			"CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v`  AS SELECT `a`.`x` AS `x` FROM `a` WHERE (`a`.`s` = 'from where') GROUP BY `a`.`x`"
 		);
 	});
 	it('supports the view options', () => {
-		expect(formatViewDefinition(view, { db: 'db', removeDefiner: true, simple: false, orReplace: true })).toMatch(
-			/^CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `v`  AS SELECT/
-		);
-		expect(formatViewDefinition(view, { db: 'db', removeDefiner: false, simple: true, orReplace: false })).toMatch(
-			/^CREATE VIEW `v`  AS SELECT/
-		);
+		expect(
+			formatViewDefinition(view, { db: 'db', removeDefiner: true, simple: false, orReplace: true })
+		).toMatch(/^CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `v`  AS SELECT/);
+		expect(
+			formatViewDefinition(view, { db: 'db', removeDefiner: false, simple: true, orReplace: false })
+		).toMatch(/^CREATE VIEW `v`  AS SELECT/);
 	});
 	it('upper-cases only keywords', () => {
 		expect(upperClauseKeywords("select 'select' as `from`, onx from t")).toBe(
@@ -102,13 +109,18 @@ describe('views', () => {
 });
 
 describe('value quoting', () => {
-	const f = (type: string, extra: object = {}) => ({ type, isBinary: false, isNumeric: false, ...extra });
+	const f = (type: string, extra: object = {}) => ({
+		type,
+		isBinary: false,
+		isNumeric: false,
+		...extra
+	});
 	const opts = { hexForBinary: true };
 	it('NULL, numbers, strings', () => {
 		expect(formatValue(null, f('int'), opts)).toBe('NULL');
 		expect(formatValue('12.50', f('decimal', { isNumeric: true }), opts)).toBe('12.50');
 		expect(formatValue('', f('varchar'), opts)).toBe("''");
-		expect(formatValue("O'Brien \"q\" \\ \n\r\0\x1a", f('varchar'), opts)).toBe(
+		expect(formatValue('O\'Brien "q" \\ \n\r\0\x1a', f('varchar'), opts)).toBe(
 			"'O\\'Brien \\\"q\\\" \\\\ \\n\\r\\0\\Z'"
 		);
 		expect(formatValue('2024', f('year'), opts)).toBe("'2024'");
@@ -120,8 +132,10 @@ describe('value quoting', () => {
 	});
 	it('binary without hex falls back to text when valid UTF-8, hex otherwise', () => {
 		const off = { hexForBinary: false };
-		expect(formatValue(Buffer.from('a\'b'), f('blob', { isBinary: true }), off)).toBe("'a\\'b'");
-		expect(formatValue(Buffer.from([0xff, 0xfe]), f('blob', { isBinary: true }), off)).toBe('0xfffe');
+		expect(formatValue(Buffer.from("a'b"), f('blob', { isBinary: true }), off)).toBe("'a\\'b'");
+		expect(formatValue(Buffer.from([0xff, 0xfe]), f('blob', { isBinary: true }), off)).toBe(
+			'0xfffe'
+		);
 	});
 	it('bit and geometry', () => {
 		expect(formatValue(Buffer.from([0xaa]), f('bit', { length: 8 }), opts)).toBe("b'10101010'");
@@ -141,46 +155,75 @@ describe('backquote', () => {
 });
 
 describe('insert batching', () => {
-	const base = { command: 'INSERT' as const, table: '`t`', columns: ['`a`', '`b`'], delayed: false, ignore: false, maxQuerySize: 50000, crlf: '\n' };
+	const base = {
+		command: 'INSERT' as const,
+		table: '`t`',
+		columns: ['`a`', '`b`'],
+		delayed: false,
+		ignore: false,
+		maxQuerySize: 50000,
+		crlf: '\n'
+	};
 	const run = (o: Partial<Parameters<typeof createInsertBatcher>[0]>, rows: string[][]) => {
 		const b = createInsertBatcher({ ...base, syntax: 'both', ...o });
 		return rows.map((r) => b.next(r)).join('') + b.finish();
 	};
 	it('both: extended with column names', () => {
-		expect(run({}, [['1', "'x'"], ['2', 'NULL']])).toBe(
-			"INSERT INTO `t` (`a`, `b`) VALUES\n(1, 'x'),\n(2, NULL);\n"
-		);
+		expect(
+			run({}, [
+				['1', "'x'"],
+				['2', 'NULL']
+			])
+		).toBe("INSERT INTO `t` (`a`, `b`) VALUES\n(1, 'x'),\n(2, NULL);\n");
 	});
 	it('extended without names, complete, none', () => {
 		expect(run({ syntax: 'extended' }, [['1', '2']])).toBe('INSERT INTO `t` VALUES\n(1, 2);\n');
-		expect(run({ syntax: 'complete' }, [['1', '2'], ['3', '4']])).toBe(
-			'INSERT INTO `t` (`a`, `b`) VALUES(1, 2);\nINSERT INTO `t` (`a`, `b`) VALUES(3, 4);\n'
-		);
+		expect(
+			run({ syntax: 'complete' }, [
+				['1', '2'],
+				['3', '4']
+			])
+		).toBe('INSERT INTO `t` (`a`, `b`) VALUES(1, 2);\nINSERT INTO `t` (`a`, `b`) VALUES(3, 4);\n');
 		expect(run({ syntax: 'none' }, [['1', '2']])).toBe('INSERT INTO `t` VALUES(1, 2);\n');
 	});
 	it('INSERT IGNORE, DELAYED and REPLACE', () => {
-		expect(run({ ignore: true, syntax: 'none' }, [['1', '2']])).toBe('INSERT IGNORE INTO `t` VALUES(1, 2);\n');
+		expect(run({ ignore: true, syntax: 'none' }, [['1', '2']])).toBe(
+			'INSERT IGNORE INTO `t` VALUES(1, 2);\n'
+		);
 		expect(run({ delayed: true, ignore: true, syntax: 'none' }, [['1', '2']])).toBe(
 			'INSERT DELAYED IGNORE INTO `t` VALUES(1, 2);\n'
 		);
-		expect(run({ command: 'REPLACE', ignore: true, syntax: 'none' }, [['1', '2']])).toBe('REPLACE INTO `t` VALUES(1, 2);\n');
+		expect(run({ command: 'REPLACE', ignore: true, syntax: 'none' }, [['1', '2']])).toBe(
+			'REPLACE INTO `t` VALUES(1, 2);\n'
+		);
 	});
 	it('UPDATE statements', () => {
 		const b = createInsertBatcher({ ...base, command: 'UPDATE', syntax: 'both', ignore: true });
-		expect(b.next([], ' `a` = 1 WHERE `a` = 1') + b.next([], ' `a` = 2 WHERE `a` = 2') + b.finish()).toBe(
+		expect(
+			b.next([], ' `a` = 1 WHERE `a` = 1') + b.next([], ' `a` = 2 WHERE `a` = 2') + b.finish()
+		).toBe(
 			'UPDATE IGNORE `t` SET `a` = 1 WHERE `a` = 1;\nUPDATE IGNORE `t` SET `a` = 2 WHERE `a` = 2;\n'
 		);
 	});
 	it('splits extended inserts at max_query_size and repeats the header', () => {
-		const out = run({ maxQuerySize: 60 }, [['1', "'aaaaaaaaaa'"], ['2', "'bbbbbbbbbb'"], ['3', "'cccccccccc'"], ['4', "'dddddddddd'"]]);
+		const out = run({ maxQuerySize: 60 }, [
+			['1', "'aaaaaaaaaa'"],
+			['2', "'bbbbbbbbbb'"],
+			['3', "'cccccccccc'"],
+			['4', "'dddddddddd'"]
+		]);
 		const statements = out.split(';\n').filter(Boolean);
 		expect(statements.length).toBeGreaterThan(1);
-		for (const s of statements) expect(s.startsWith('INSERT INTO `t` (`a`, `b`) VALUES\n(')).toBe(true);
+		for (const s of statements)
+			expect(s.startsWith('INSERT INTO `t` (`a`, `b`) VALUES\n(')).toBe(true);
 		expect(out.match(/\(\d,/g)).toHaveLength(4);
 		expect(out.endsWith(';\n')).toBe(true);
 	});
 	it('max_query_size 0 never splits', () => {
-		const out = run({ maxQuerySize: 0 }, Array.from({ length: 500 }, (_, i) => [String(i), "'x'"]));
+		const out = run(
+			{ maxQuerySize: 0 },
+			Array.from({ length: 500 }, (_, i) => [String(i), "'x'"])
+		);
 		expect(out.match(/INSERT INTO/g)).toHaveLength(1);
 	});
 	it('emits nothing for no rows', () => {

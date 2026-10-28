@@ -50,7 +50,9 @@ export function buildDefaults(
 	};
 	for (const p of plugins) {
 		const sod = asString(cfg[`${p.id}_structure_or_data`], '');
-		defaults[`${p.id}_structure_or_data`] = ['structure', 'data', 'structure_and_data'].includes(sod)
+		defaults[`${p.id}_structure_or_data`] = ['structure', 'data', 'structure_and_data'].includes(
+			sod
+		)
 			? sod
 			: p.supports.structure && p.supports.data
 				? 'structure_and_data'
@@ -60,7 +62,8 @@ export function buildDefaults(
 		for (const o of p.options) {
 			const key = `${p.id}_${o.name}`;
 			const configured = cfg[key];
-			if (o.kind === 'bool') defaults[key] = typeof configured === 'boolean' ? configured : o.default;
+			if (o.kind === 'bool')
+				defaults[key] = typeof configured === 'boolean' ? configured : o.default;
 			else if (o.kind === 'number')
 				defaults[key] = asString(
 					typeof configured === 'number' || typeof configured === 'string' ? configured : undefined,

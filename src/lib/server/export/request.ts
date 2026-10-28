@@ -52,7 +52,8 @@ export function checkExportQuery(sql: string): string {
 	const statements = splitStatements(sql).filter((s) => s.sql.trim() !== '');
 	if (statements.length !== 1) throw new ExportInputError('Exactly one SQL statement is required.');
 	const only = statements[0].sql.trim();
-	if (!READ_ONLY.test(only)) throw new ExportInputError('Only queries returning rows can be exported.');
+	if (!READ_ONLY.test(only))
+		throw new ExportInputError('Only queries returning rows can be exported.');
 	return only;
 }
 
@@ -84,7 +85,9 @@ export function pluginOptionValues(plugin: ExportPlugin, form: FormData): Export
 }
 
 export function parseExportForm(form: FormData, ctx: ParseContext): ParsedExport {
-	const s = scalar.safeParse(Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === 'string')));
+	const s = scalar.safeParse(
+		Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === 'string'))
+	);
 	if (!s.success) throw new ExportInputError('Invalid export parameters.');
 	const f = s.data;
 
@@ -93,12 +96,17 @@ export function parseExportForm(form: FormData, ctx: ParseContext): ParsedExport
 	if (sqlQuery && ctx.level !== 'table') scope = 'raw';
 
 	const plugin = getExportPlugin(f.what);
-	if (!plugin || !plugin.scopes.includes(scope)) throw new ExportInputError('Unknown export format.');
+	if (!plugin || !plugin.scopes.includes(scope))
+		throw new ExportInputError('Unknown export format.');
 
 	const sodRaw = String(form.get(`${plugin.id}_structure_or_data`) ?? '');
-	let structureOrData: StructureOrData = (['structure', 'data', 'structure_and_data'] as const).find(
-		(v) => v === sodRaw
-	) ?? (plugin.supports.structure && plugin.supports.data ? 'structure_and_data' : plugin.supports.structure ? 'structure' : 'data');
+	let structureOrData: StructureOrData =
+		(['structure', 'data', 'structure_and_data'] as const).find((v) => v === sodRaw) ??
+		(plugin.supports.structure && plugin.supports.data
+			? 'structure_and_data'
+			: plugin.supports.structure
+				? 'structure'
+				: 'data');
 	if (!plugin.supports.structure) structureOrData = 'data';
 	if (!plugin.supports.data) structureOrData = 'structure';
 	if (scope === 'raw') structureOrData = 'data';
@@ -125,9 +133,11 @@ export function parseExportForm(form: FormData, ctx: ParseContext): ParsedExport
 		const data = new Set(form.getAll('table_data[]').map(String));
 		const names = [...new Set([...structure, ...data])];
 		if (!names.length) throw new ExportInputError('Select at least one table.');
-		request.tables = names.map(
-			(name): ExportTableSelection => ({ name, structure: structure.has(name), data: data.has(name) })
-		);
+		request.tables = names.map((name): ExportTableSelection => ({
+			name,
+			structure: structure.has(name),
+			data: data.has(name)
+		}));
 	}
 
 	if (scope === 'table') {

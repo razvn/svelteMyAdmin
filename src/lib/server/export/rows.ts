@@ -57,8 +57,7 @@ export function toExportField(f: RawField): ExportField {
 	const isBinary = BLOBLIKE.has(f.columnType) && f.characterSet === BINARY_CHARSET;
 	let type = TYPE_NAMES[f.columnType] ?? 'unknown';
 	if (isBinary) {
-		type =
-			f.columnType === 253 ? 'varbinary' : f.columnType === 254 ? 'binary' : type;
+		type = f.columnType === 253 ? 'varbinary' : f.columnType === 254 ? 'binary' : type;
 	} else if (BLOBLIKE.has(f.columnType) && f.columnType <= 252) {
 		type = type.replace('blob', 'text');
 	}

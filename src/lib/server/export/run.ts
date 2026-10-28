@@ -125,7 +125,12 @@ export async function driveExport(
 	const streamRows = async (db: string, table: string, sql: string, ref: ExportTableRef) => {
 		const opened: OpenedRows = await openRowStream(env.conn, sql);
 		try {
-			await p.data!(ctx, { ref: { ...ref, db, table }, fields: opened.fields, rows: opened.rows, sql });
+			await p.data!(ctx, {
+				ref: { ...ref, db, table },
+				fields: opened.fields,
+				rows: opened.rows,
+				sql
+			});
 		} finally {
 			opened.destroy();
 		}
@@ -191,7 +196,9 @@ export async function driveExport(
 				await env.conn.query(`USE ${escapeId(db)}`);
 			} else {
 				const cols = await nonGeneratedColumns(env.conn, db, table);
-				const where = req.where?.length ? ' WHERE ' + req.where.map((w) => `(${w})`).join(' OR ') : '';
+				const where = req.where?.length
+					? ' WHERE ' + req.where.map((w) => `(${w})`).join(' OR ')
+					: '';
 				sql = `SELECT ${cols.map(escapeId).join(', ')} FROM ${escapeQualified(db, table)}${where}${limit}`;
 			}
 			await streamRows(db, table, sql, ref);
@@ -251,7 +258,9 @@ export async function exportToStream(
 	opts: StreamOptions
 ): Promise<ReadableStream<Uint8Array>> {
 	const sink = createSink(opts);
-	const done = driveExport({ ...env, charset: opts.charset, asFile: true }, req, (c) => sink.write(c)).then(
+	const done = driveExport({ ...env, charset: opts.charset, asFile: true }, req, (c) =>
+		sink.write(c)
+	).then(
 		() => sink.end(),
 		(e: unknown) => {
 			sink.destroy(e instanceof Error ? e : new Error(String(e)));

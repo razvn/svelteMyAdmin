@@ -107,7 +107,13 @@ export function splitCreateTable(createQuery: string, opts: SplitCreateOptions):
 	let tail = lines[closeAt];
 	if (/\bENGINE\s*=\s*ARCHIVE\b/i.test(tail)) return unchanged;
 
-	const result: SplitCreate = { ...unchanged, constraints: [], indexes: [], fulltextIndexes: [], autoIncrement: [] };
+	const result: SplitCreate = {
+		...unchanged,
+		constraints: [],
+		indexes: [],
+		fulltextIndexes: [],
+		autoIncrement: []
+	};
 	const kept: string[] = [];
 	for (const raw of lines.slice(1, closeAt)) {
 		let def = raw.trim();
@@ -138,7 +144,12 @@ export function splitCreateTable(createQuery: string, opts: SplitCreateOptions):
 		if (!opts.ifNotExists) tail = removeOutsideQuotes(tail, /\sAUTO_INCREMENT=\d+/);
 	}
 
-	result.create = [lines[0], kept.map((d) => '  ' + d).join(',\n'), tail, ...lines.slice(closeAt + 1)]
+	result.create = [
+		lines[0],
+		kept.map((d) => '  ' + d).join(',\n'),
+		tail,
+		...lines.slice(closeAt + 1)
+	]
 		.filter((l, i) => i !== 1 || l !== '')
 		.join('\n');
 	return result;
@@ -210,7 +221,8 @@ export function formatViewDefinition(create: string, opts: ViewOptions): string 
 	const m = /^CREATE\s+(.*?)VIEW\s+(`(?:[^`]|``)+`|\S+)(\s*\([^)]*\))?\s+AS\s+([\s\S]*)$/.exec(q);
 	if (!m) return q;
 	let options = m[1];
-	if (opts.removeDefiner || opts.simple) options = options.replace(/DEFINER=(`[^`]*`|[^\s`]+)@(`[^`]*`|[^\s`]+)\s*/, '');
+	if (opts.removeDefiner || opts.simple)
+		options = options.replace(/DEFINER=(`[^`]*`|[^\s`]+)@(`[^`]*`|[^\s`]+)\s*/, '');
 	if (opts.simple) {
 		options = options.replace(/ALGORITHM=\w+\s*/, '').replace(/SQL SECURITY\s+\w+\s*/, '');
 	}
@@ -257,7 +269,8 @@ export function formatValue(
 			return buf.length === 0 ? "''" : '0x' + buf.toString('hex');
 		}
 		const text = buf.toString('utf8');
-		if (Buffer.from(text, 'utf8').equals(buf)) return text === '' ? "''" : "'" + escapeString(text) + "'";
+		if (Buffer.from(text, 'utf8').equals(buf))
+			return text === '' ? "''" : "'" + escapeString(text) + "'";
 		return buf.length === 0 ? "''" : '0x' + buf.toString('hex');
 	}
 	return cell === '' ? "''" : "'" + escapeString(cell) + "'";
@@ -284,8 +297,7 @@ export function createInsertBatcher(o: InsertBatcherOptions) {
 	const { crlf } = o;
 	let schemaInsert: string;
 	let separator = ';';
-	const extended =
-		o.command !== 'UPDATE' && (o.syntax === 'extended' || o.syntax === 'both');
+	const extended = o.command !== 'UPDATE' && (o.syntax === 'extended' || o.syntax === 'both');
 	if (o.command === 'UPDATE') {
 		schemaInsert = 'UPDATE ' + (o.ignore ? 'IGNORE ' : '') + o.table + ' SET';
 	} else {
