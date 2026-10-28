@@ -101,3 +101,37 @@ export interface ScriptResult {
 	rolledBack: boolean;
 	totalMs: number;
 }
+
+export type SqlScope =
+	{ level: 'server' } | { level: 'db'; db: string } | { level: 'table'; db: string; table: string };
+
+export interface SqlPageSettings {
+	maxRows: number;
+	showSql: boolean;
+	maxCharsInSql: number;
+	retainQueryBox: boolean;
+	limitChars: number;
+	order: 'ASC' | 'DESC' | 'SMART';
+	sqlQuery: { Edit: boolean; Explain: boolean; Refresh: boolean };
+	/** `EXPLAIN FORMAT=TREE` is available (MySQL >= 8.0.16). */
+	explainTree: boolean;
+	profilingAvailable: boolean;
+	dialect: 'mysql' | 'mariadb';
+}
+
+export interface SqlRunOptions {
+	showQuery: boolean;
+	retainQueryBox: boolean;
+	rollback: boolean;
+	foreignKeyChecks: boolean;
+	profiling: boolean;
+	continueOnError: boolean;
+	delimiter: string;
+}
+
+/** Parameters of re-running one statement from its result block. */
+export interface ExecParams {
+	pos?: number;
+	explain?: 'traditional' | 'tree';
+	profiling?: boolean;
+}

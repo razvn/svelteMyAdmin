@@ -8,29 +8,13 @@ import { getSecret } from '#lib/server/auth/session.ts';
 import { escapeId } from '#lib/server/db/escape.ts';
 import { runScript } from './execute.ts';
 import { createRowKeyResolver } from './row-keys.ts';
-import type { ScriptResult } from '#lib/sql/run-types.ts';
+import type { ScriptResult, SqlPageSettings, SqlRunOptions, SqlScope } from '#lib/sql/run-types.ts';
 
-export type SqlScope =
-	| { level: 'server' }
-	| { level: 'db'; db: string }
-	| { level: 'table'; db: string; table: string };
+export type { SqlPageSettings, SqlRunOptions, SqlScope };
 
 export interface SqlTableColumns {
 	name: string;
 	columns: string[];
-}
-
-export interface SqlPageSettings {
-	maxRows: number;
-	showSql: boolean;
-	maxCharsInSql: number;
-	retainQueryBox: boolean;
-	limitChars: number;
-	order: 'ASC' | 'DESC' | 'SMART';
-	sqlQuery: { Edit: boolean; Explain: boolean; Refresh: boolean };
-	/** `EXPLAIN FORMAT=TREE` is available (MySQL >= 8.0.16). */
-	explainTree: boolean;
-	profilingAvailable: boolean;
 }
 
 export interface SqlPageData {
@@ -40,16 +24,6 @@ export interface SqlPageData {
 	/** Tables (db level) or the single table (table level) with their columns. */
 	tables: SqlTableColumns[];
 	settings: SqlPageSettings;
-}
-
-export interface SqlRunOptions {
-	showQuery: boolean;
-	retainQueryBox: boolean;
-	rollback: boolean;
-	foreignKeyChecks: boolean;
-	profiling: boolean;
-	continueOnError: boolean;
-	delimiter: string;
 }
 
 /** What the `run` action returns (the page's `form` prop). */
@@ -117,7 +91,8 @@ export async function loadSqlPage(
 			order: config.Order,
 			sqlQuery: config.SQLQuery,
 			explainTree: info.serverType !== 'MariaDB' && info.versionInt >= 80016,
-			profilingAvailable: true
+			profilingAvailable: true,
+			dialect: info.serverType === 'MariaDB' ? 'mariadb' : 'mysql'
 		}
 	};
 }
@@ -138,11 +113,7 @@ const runForm = z.object({
 	fk_checks: flag,
 	profiling: flag,
 	continue_on_error: flag,
-	delimiter: z
-		.string()
-		.max(16)
-		.regex(/^\S*$/)
-		.default(';')
+	delimiter: z.string().max(16).regex(/^\S*$/).default(';')
 });
 
 export async function runSqlAction(

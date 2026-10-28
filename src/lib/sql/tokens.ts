@@ -33,7 +33,9 @@ export function tokenize(sql: string): Token[] {
 			i++;
 		} else if (
 			c === '#' ||
-			(c === '-' && sql[i + 1] === '-' && (i + 2 >= len || /[\s\x00-\x1f]/.test(sql[i + 2])))
+			(c === '-' &&
+				sql[i + 1] === '-' &&
+				(i + 2 >= len || /\s/.test(sql[i + 2]) || sql.charCodeAt(i + 2) < 32))
 		) {
 			let j = i;
 			while (j < len && sql[j] !== '\n' && sql[j] !== '\r') j++;

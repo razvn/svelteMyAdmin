@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { classifyStatement } from './classify.ts';
 import { appendLimit, canPaginate } from './limit.ts';
 import { analyzeSimpleSelect, applySort, isSortableField } from './result-sort.ts';
+import { queryTemplate } from './templates.ts';
 import {
 	affectedRowsMessage,
 	errorMessage,
@@ -163,5 +164,15 @@ describe('messages', () => {
 	it('truncates', () => {
 		expect(truncateSql('abcdef', 3)).toEqual({ text: 'abc', truncated: true });
 		expect(truncateSql('abcdef', 0).truncated).toBe(false);
+	});
+});
+
+describe('queryTemplate', () => {
+	it('builds the table templates', () => {
+		expect(queryTemplate('select-all', 't', ['a'])).toBe('SELECT * FROM `t` WHERE 1');
+		expect(queryTemplate('select', 't', ['a', 'b'])).toBe('SELECT `a`, `b`\nFROM `t`\nWHERE 1');
+		expect(queryTemplate('insert', 't', ['a', 'b'])).toContain('INSERT INTO `t`\n(`a`, `b`)');
+		expect(queryTemplate('update', 't', ['a'])).toContain('SET `a` = ');
+		expect(queryTemplate('delete', 'we`ird', [])).toBe('DELETE FROM `we``ird`\nWHERE ');
 	});
 });
