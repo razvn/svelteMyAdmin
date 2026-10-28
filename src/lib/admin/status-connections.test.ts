@@ -25,6 +25,13 @@ describe('connectionRows', () => {
 		expect(rows.map((r) => r.number)).toEqual(['9', '0', '0', '1,234']);
 	});
 
+	it('switches to SI prefixes above 4 digits, like PHP getConnectionsInfo', () => {
+		const rows = connectionRows({ ...base, connections: 12345, abortedClients: 23456 });
+		const byName = Object.fromEntries(rows.map((r) => [r.name, r.number]));
+		expect(byName['Total']).toBe('12 k');
+		expect(byName['Aborted']).toBe('23.5 k');
+	});
+
 	it('computes per hour and percentage like phpMyAdmin', () => {
 		const rows = connectionRows({ ...base, abortedClients: 9, abortedConnects: 0 });
 		const byName = Object.fromEntries(rows.map((r) => [r.name, r]));

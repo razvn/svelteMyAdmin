@@ -3,7 +3,7 @@
  * (Controllers/Server/Status/StatusController.php::getConnectionsInfo).
  * Pure: no framework imports.
  */
-import { formatNumber, formatSi } from '#lib/format.ts';
+import { formatSi } from '#lib/format.ts';
 
 export interface ConnectionsInput {
 	uptime: number;
@@ -15,7 +15,7 @@ export interface ConnectionsInput {
 
 export interface ConnectionRow {
 	name: string;
-	/** Absolute count: plain grouped integer, e.g. "9" or "1,234". */
+	/** Absolute count, formatted exactly as PHP getConnectionsInfo does (e.g. "9", "1,234", "12.3 k"). */
 	number: string;
 	/** "ø per hour". */
 	perHour: string;
@@ -38,25 +38,25 @@ export function connectionRows(input: ConnectionsInput): ConnectionRow[] {
 	return [
 		{
 			name: 'Max. concurrent connections',
-			number: formatNumber(input.maxUsedConnections),
+			number: si(input.maxUsedConnections, 0, 0),
 			perHour: '---',
 			percentage: '---'
 		},
 		{
 			name: 'Failed attempts',
-			number: formatNumber(input.abortedConnects),
+			number: si(input.abortedConnects, 4, 1, true),
 			perHour: perHour(input.abortedConnects),
 			percentage: share(input.abortedConnects, input.connections)
 		},
 		{
 			name: 'Aborted',
-			number: formatNumber(input.abortedClients),
+			number: si(input.abortedClients, 4, 1, true),
 			perHour: perHour(input.abortedClients),
 			percentage: share(input.abortedClients, input.connections)
 		},
 		{
 			name: 'Total',
-			number: formatNumber(input.connections),
+			number: si(input.connections, 4, 0),
 			perHour: si(input.connections * hourFactor, 4, 2),
 			percentage: '100.00%'
 		}
