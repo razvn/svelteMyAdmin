@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createConnection, type Connection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t4d_e2e';
 const DB_B = 'tmp_t4d_e2e_b';
@@ -43,11 +44,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 /** First column of the first row (COUNT(*) comes back as a string or number). */
@@ -62,14 +59,10 @@ async function scalar(sql: string): Promise<string | undefined> {
 	}
 }
 
-/** Open a select and choose an option; retried because a click before hydration is lost. */
+/** Open a select and choose an option (the page is hydrated: see gotoReady). */
 async function pick(page: Page, trigger: Locator, option: string) {
-	const item = page.getByRole('option', { name: option, exact: true });
-	await expect(async () => {
-		await trigger.click();
-		await expect(item).toBeVisible({ timeout: 2000 });
-	}).toPass({ timeout: 20000 });
-	await item.click();
+	await trigger.click();
+	await page.getByRole('option', { name: option, exact: true }).click();
 }
 
 const info = (col: string, table: string) =>
@@ -77,7 +70,7 @@ const info = (col: string, table: string) =>
 
 test('rename, change comment and engine, copy, truncate and drop a table', async ({ page }) => {
 	const main = page.getByRole('main');
-	await page.goto(`/db/${DB}/table/t_orig/operations`);
+	await gotoReady(page, `/db/${DB}/table/t_orig/operations`);
 	await expect(main.getByRole('heading', { name: 'Operations' })).toBeVisible();
 
 	// rename + comment + engine in one go, with a live SQL preview

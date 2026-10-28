@@ -173,3 +173,23 @@
 		display: none !important;
 	}
 }
+
+/*
+ * Before hydration (html[data-hydrated] is set by the root layout) controls that only work with JS are
+ * inert: a click would be silently lost. pointer-events:none also makes Playwright's click auto-wait.
+ * Plain submit buttons, links and named inputs keep working as ordinary HTML.
+ */
+html:not([data-hydrated='true'])
+	:is(
+		button:not([type='submit']),
+		[role='checkbox'],
+		[role='combobox'],
+		[role='switch'],
+		[role='tab'],
+		[role='radio'],
+		[role='menuitem'],
+		[role='option']
+	) {
+	pointer-events: none;
+	cursor: progress;
+}

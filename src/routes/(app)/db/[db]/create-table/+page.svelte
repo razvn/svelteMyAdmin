@@ -6,6 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import ColumnEditor from '#lib/components/columns/column-editor.svelte';
+	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { getNavState } from '#lib/components/navigation/nav-state.svelte.ts';
 	import * as Alert from '#lib/components/ui/alert/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
@@ -173,7 +174,8 @@
 			<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
 				Preview SQL
 			</Button>
-			<Button type="submit" disabled={saving}>Save</Button>
+			<!-- the definition payload is built client-side: never post it before hydration -->
+			<Button type="submit" disabled={saving || !hydration.ready}>Save</Button>
 		</div>
 	</form>
 </div>

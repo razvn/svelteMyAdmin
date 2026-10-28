@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t3b_e2e';
 let dbUp = false;
@@ -30,11 +31,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 async function pick(
@@ -51,7 +48,7 @@ async function pick(
 }
 
 test('create a 3-column table through the UI, see it in the sidebar', async ({ page }) => {
-	await page.goto(`/db/${DB}/create-table?name=people&num_fields=3`);
+	await gotoReady(page, `/db/${DB}/create-table?name=people&num_fields=3`);
 	await expect(page.getByRole('heading', { name: 'Create new table' })).toBeVisible();
 	await expect(page.getByLabel('Table name')).toHaveValue('people');
 	await expect(page.getByRole('group', { name: /^Column \d$/ })).toHaveCount(3);
@@ -86,7 +83,7 @@ test('create a 3-column table through the UI, see it in the sidebar', async ({ p
 });
 
 test('a MySQL error is shown inline and the form is kept', async ({ page }) => {
-	await page.goto(`/db/${DB}/create-table?name=broken&num_fields=1`);
+	await gotoReady(page, `/db/${DB}/create-table?name=broken&num_fields=1`);
 	const c1 = page.getByRole('group', { name: 'Column 1' });
 	await c1.getByLabel('Name').fill('s');
 	await pick(page, 1, 'Type', 'VARCHAR'); // no length -> server error

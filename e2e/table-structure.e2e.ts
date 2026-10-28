@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t4b_e2e';
 let dbUp = false;
@@ -48,11 +49,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 const structure = (table: string) => `/db/${DB}/table/${table}/structure`;
@@ -73,8 +70,7 @@ async function choose(
 }
 
 test('structure shows columns, indexes, statistics and partitions', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { name: 'Structure' })).toBeVisible();
 	expect(await colNames(page)).toEqual(['id', 'name', 'email', 'age', 'org_id']);
@@ -82,8 +78,7 @@ test('structure shows columns, indexes, statistics and partitions', async ({ pag
 	await expect(main.getByTestId('table-stats')).toContainText('Space usage');
 	await expect(main.getByTestId('table-stats')).toContainText('Total');
 
-	await page.goto(structure('parts'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('parts'));
 	const parts = page.getByTestId('partitions-card');
 	await expect(parts).toContainText('RANGE(`id`)');
 	await expect(parts.getByTestId('partition-p0')).toBeVisible();
@@ -91,8 +86,7 @@ test('structure shows columns, indexes, statistics and partitions', async ({ pag
 });
 
 test('add a column after another one, then make it UNIQUE', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	const add = main.getByTestId('add-columns');
 	await choose(page, add, 'Position of the new columns', 'after');
@@ -124,8 +118,7 @@ test('add a column after another one, then make it UNIQUE', async ({ page }) => 
 });
 
 test('create a composite index with a sub-part', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	await main.getByLabel('Number of index columns').fill('2');
 	await main.getByRole('button', { name: 'Go' }).last().click();
@@ -148,8 +141,7 @@ test('create a composite index with a sub-part', async ({ page }) => {
 });
 
 test('add a foreign key with ON DELETE CASCADE', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/people/relation`);
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${DB}/table/people/relation`);
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { name: 'Relation view' })).toBeVisible();
 	await main.getByRole('button', { name: 'Add foreign key' }).click();
@@ -170,8 +162,7 @@ test('add a foreign key with ON DELETE CASCADE', async ({ page }) => {
 });
 
 test('drop a column after confirming the SQL', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	await main.getByRole('button', { name: 'Drop age' }).click();
 	const dialog = page.getByRole('dialog');
@@ -183,8 +174,7 @@ test('drop a column after confirming the SQL', async ({ page }) => {
 });
 
 test('change a column keeps its definition', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	await main.getByRole('link', { name: 'Change email' }).click();
 	const row = main.getByRole('group', { name: 'Column 1' });
@@ -197,8 +187,7 @@ test('change a column keeps its definition', async ({ page }) => {
 });
 
 test('move columns', async ({ page }) => {
-	await page.goto(structure('people'));
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, structure('people'));
 	const main = page.getByRole('main');
 	await main.getByRole('button', { name: 'Move columns' }).click();
 	const dialog = page.getByTestId('move-columns');

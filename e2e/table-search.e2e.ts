@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 import { verifyClause } from '../src/lib/server/table/signed-clause.ts';
+import { gotoReady, login } from './helpers.ts';
 
 const FIXTURE = 'sma_test';
 const DB = 'tmp_t4e_e2e';
@@ -47,17 +48,11 @@ test.afterAll(async () => {
 
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 test('search books by title LIKE redirects to browse with a signed filter', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/table/books/search`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${FIXTURE}/table/books/search`);
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { name: 'Search', exact: true })).toBeVisible();
 	const row = main.getByTestId('qbe-row-title');
@@ -77,9 +72,7 @@ test('search books by title LIKE redirects to browse with a signed filter', asyn
 });
 
 test('search combines criteria, BETWEEN and the custom where clause', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/table/books/search`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${FIXTURE}/table/books/search`);
 	const main = page.getByRole('main');
 	const price = main.getByTestId('qbe-row-price');
 	await price.getByLabel('Operator for price').selectOption('BETWEEN');
@@ -96,9 +89,7 @@ test('search combines criteria, BETWEEN and the custom where clause', async ({ p
 		"`price` BETWEEN 9 AND 13 AND `status` = 'published'"
 	);
 
-	await page.goto(`/db/${FIXTURE}/table/books/search`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${FIXTURE}/table/books/search`);
 	await main.getByLabel('Or add search conditions', { exact: false }).fill('id < 3');
 	await main.getByRole('button', { name: 'Go', exact: true }).click();
 	await page.waitForURL(/browse\?/);
@@ -108,9 +99,7 @@ test('search combines criteria, BETWEEN and the custom where clause', async ({ p
 });
 
 test('zoom search plots the books and opens a row in a side sheet', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/table/books/zoom-search`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${FIXTURE}/table/books/zoom-search`);
 	const main = page.getByRole('main');
 	await main.getByLabel('X axis column').selectOption('price');
 	await main.getByLabel('Y axis column').selectOption('id');
@@ -136,7 +125,8 @@ test('zoom search plots the books and opens a row in a side sheet', async ({ pag
 });
 
 test('zoom search narrows the points with a criterion', async ({ page }) => {
-	await page.goto(
+	await gotoReady(
+		page,
 		`/db/${FIXTURE}/table/books/zoom-search?go=1&col_0=price&col_1=id&op_0=%3E&val_0=9&limit=500`
 	);
 	const result = page.getByRole('main').getByTestId('zoom-result');
@@ -144,9 +134,7 @@ test('zoom search narrows the points with a criterion', async ({ page }) => {
 });
 
 test('find and replace previews and replaces text in a table', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/items/find-replace`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${DB}/table/items/find-replace`);
 	const main = page.getByRole('main');
 	await main.getByLabel('Find:').fill('apple');
 	await main.getByLabel('Replace with:').fill('pear');
@@ -167,9 +155,7 @@ test('find and replace previews and replaces text in a table', async ({ page }) 
 });
 
 test('find and replace with a regular expression', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/items/find-replace`);
-	// bound selects are reset by hydration, so wait for it before touching the form
-	await page.waitForLoadState('networkidle');
+	await gotoReady(page, `/db/${DB}/table/items/find-replace`);
 	const main = page.getByRole('main');
 	await main.getByLabel('Find:').fill('^p(.)');
 	await main.getByLabel('Replace with:').fill('P-$1');

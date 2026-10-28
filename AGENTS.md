@@ -83,6 +83,14 @@ Test conventions (specs run in parallel workers against shared Docker databases)
   page: the sidebar tree, breadcrumbs, tab bar and command palette repeat table/db names, and strict mode
   fails on duplicates. Specs that touch server-global state (`event_scheduler`, `max_connect_errors`, ...)
   must restore it in `finally` and live alone in their file (files run in parallel, tests within a file serially).
+- **e2e: always navigate with `gotoReady(page, url)`** from `e2e/helpers.ts` (`page.goto` + wait for
+  `html[data-hydrated="true"]`, set by the root layout); use `login`/`reloadReady` from there too. Never use
+  `page.goto` directly, `waitForTimeout`, `networkidle` or `toPass` retry loops to mask hydration races.
+- **JS-dependent controls are disabled until hydrated**: `app.css` makes non-submit buttons and bits-ui
+  checkbox/select/tab/menu roles inert (`pointer-events: none`) until `html[data-hydrated]`; submit buttons whose
+  payload is built client-side must use `disabled={!hydration.ready}` (`#lib/hooks/hydration.svelte.ts`).
+  Native `<form method="POST">` must work as plain HTML: every value the action reads needs a real `name`d
+  control or hidden input rendered by SSR (no state that only exists in client JS).
 - Do not rely on form fields being pre-filled with the current name; name inputs use a `placeholder`.
 
 ## Commands

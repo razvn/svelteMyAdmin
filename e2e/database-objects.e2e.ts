@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t3d_e2e';
 let dbUp = false;
@@ -40,24 +41,16 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 test('create a procedure, execute it, see results, export and drop it', async ({ page }) => {
-	await page.goto(`/db/${DB}/routines`);
-	await page.waitForLoadState('networkidle'); // hydrated
+	await gotoReady(page, `/db/${DB}/routines`);
 	await expect(page.getByRole('heading', { name: 'Routines' })).toBeVisible();
 
 	const editor = page.getByTestId('routine-editor');
-	// retry the click: it can land before the page hydrated
-	await expect(async () => {
-		await page.getByTestId('routine-add').click();
-		await expect(editor).toBeVisible({ timeout: 1000 });
-	}).toPass();
+	await page.getByTestId('routine-add').click();
+	await expect(editor).toBeVisible();
 	await editor.getByLabel('Routine name').fill('p_double');
 	await editor.getByRole('button', { name: 'Add parameter' }).click();
 	await editor.getByLabel('Name of parameter 1').fill('n');
@@ -88,7 +81,7 @@ test('create a procedure, execute it, see results, export and drop it', async ({
 	await expect(row).toHaveCount(0);
 	await page.getByTestId('routines-filter').fill('double');
 	await expect(row).toBeVisible();
-	await page.goto(`/db/${DB}/routines?type=PROCEDURE&item=p_double`);
+	await gotoReady(page, `/db/${DB}/routines?type=PROCEDURE&item=p_double`);
 	await expect(page.locator('[data-highlighted-routine="true"]')).toHaveAttribute(
 		'data-routine',
 		'p_double'
@@ -101,14 +94,11 @@ test('create a procedure, execute it, see results, export and drop it', async ({
 });
 
 test('create a trigger from the table Triggers tab, then drop it', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/t/triggers`);
-	await page.waitForLoadState('networkidle'); // hydrated
+	await gotoReady(page, `/db/${DB}/table/t/triggers`);
 	await expect(page.getByRole('heading', { name: 'Triggers' })).toBeVisible();
 	const editor = page.getByTestId('trigger-editor');
-	await expect(async () => {
-		await page.getByTestId('trigger-add').click();
-		await expect(editor).toBeVisible({ timeout: 1000 });
-	}).toPass();
+	await page.getByTestId('trigger-add').click();
+	await expect(editor).toBeVisible();
 	await editor.getByLabel('Trigger name').fill('trg_e2e');
 	await editor.getByLabel('Definition').fill('SET NEW.v = 5');
 	await editor.getByTestId('trigger-save').click();
@@ -118,7 +108,7 @@ test('create a trigger from the table Triggers tab, then drop it', async ({ page
 	await expect(row).toContainText('INSERT');
 
 	// visible at database level too
-	await page.goto(`/db/${DB}/triggers`);
+	await gotoReady(page, `/db/${DB}/triggers`);
 	await expect(row).toBeVisible();
 
 	await page.getByRole('button', { name: 'Drop trg_e2e' }).click();
@@ -135,8 +125,7 @@ test('list events and toggle the scheduler (restoring it)', async ({ page }) => 
 		return r[0].s;
 	});
 	try {
-		await page.goto(`/db/${DB}/events`);
-		await page.waitForLoadState('networkidle'); // hydrated
+		await gotoReady(page, `/db/${DB}/events`);
 		const row = page.locator('[data-testid="event-row"][data-event="ev_seed"]');
 		await expect(row).toBeVisible();
 		await expect(row).toContainText('DISABLED');

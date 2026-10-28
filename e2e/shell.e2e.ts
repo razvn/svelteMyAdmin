@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login, reloadReady } from './helpers.ts';
 
 let dbUp = false;
 test.beforeAll(async () => {
@@ -19,11 +20,7 @@ test.beforeAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 async function expandSmaTest(page: Page) {
@@ -48,7 +45,7 @@ test('the connection collation can be changed and is remembered', async ({ page 
 	await page.getByRole('option', { name: 'utf8mb4_general_ci', exact: true }).click();
 	await page.getByRole('button', { name: 'Apply' }).click();
 	await expect(page.getByRole('status')).toContainText('utf8mb4_general_ci');
-	await page.reload();
+	await reloadReady(page);
 	await expect(page.getByTestId('collation-select')).toHaveText('utf8mb4_general_ci');
 });
 
@@ -96,34 +93,34 @@ test('clicking a table opens browse with breadcrumbs and the table tab bar', asy
 });
 
 test('a view gets the reduced tab set', async ({ page }) => {
-	await page.goto('/db/sma_test/table/v_book_authors');
+	await gotoReady(page, '/db/sma_test/table/v_book_authors');
 	await expect(page).toHaveURL(/\/db\/sma_test\/table\/v_book_authors\/browse$/);
 	const tabs = page.getByRole('navigation', { name: 'View' });
 	await expect(tabs.getByRole('link', { name: 'Browse' })).toBeVisible();
 	await expect(tabs.getByRole('link', { name: 'Insert' })).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'breadcrumb' })).toContainText('View:');
-	const res = await page.goto('/db/sma_test/table/v_book_authors/insert');
+	const res = await gotoReady(page, '/db/sma_test/table/v_book_authors/insert');
 	expect(res?.status()).toBe(404);
 });
 
 test('db and server routes: redirect, tab bars, 404', async ({ page }) => {
-	await page.goto('/db/sma_test');
+	await gotoReady(page, '/db/sma_test');
 	await expect(page).toHaveURL(/\/db\/sma_test\/structure$/);
 	await expect(
 		page.getByRole('navigation', { name: 'Database' }).getByRole('link', { name: 'Routines' })
 	).toBeVisible();
 
-	await page.goto('/server/privileges');
+	await gotoReady(page, '/server/privileges');
 	await expect(page.getByRole('navigation', { name: 'Server' })).toBeVisible();
 	await expect(page.getByTestId('not-implemented')).toContainText('Phase 7');
 
-	const res = await page.goto('/db/doesnotexist/structure');
+	const res = await gotoReady(page, '/db/doesnotexist/structure');
 	expect(res?.status()).toBe(404);
 	await expect(page.getByTestId('error-card')).toContainText('Database not found');
 	// the shell stays around the error
 	await expect(page.getByRole('link', { name: 'svelteMyAdmin home' })).toBeVisible();
 
-	const missingTable = await page.goto('/db/sma_test/table/nope/browse');
+	const missingTable = await gotoReady(page, '/db/sma_test/table/nope/browse');
 	expect(missingTable?.status()).toBe(404);
 	await expect(page.getByTestId('error-card')).toContainText('Table not found');
 });
@@ -149,7 +146,7 @@ test('the sidebar can be resized with the keyboard and remembers its width', asy
 	await sep.focus();
 	await page.keyboard.press('ArrowRight');
 	await expect(sep).toHaveAttribute('aria-valuenow', String(before + 16));
-	await page.reload();
+	await reloadReady(page);
 	await expect(page.getByRole('separator', { name: 'Resize navigation' })).toHaveAttribute(
 		'aria-valuenow',
 		String(before + 16)
@@ -167,18 +164,18 @@ test('a rejected password sends the user back to the login with a message', asyn
 	await admin.query(`CREATE USER '${user}'@'%' IDENTIFIED BY 'first-pass'`);
 	try {
 		await page.context().clearCookies();
-		await page.goto('/login');
+		await gotoReady(page, '/login');
 		await page.getByLabel('Username').fill(user);
 		await page.getByLabel('Password').fill('first-pass');
 		await page.getByRole('button', { name: 'Log in' }).click();
 		await expect(page).toHaveURL(/\/$/);
 
 		await admin.query(`ALTER USER '${user}'@'%' IDENTIFIED BY 'second-pass'`);
-		await page.goto('/server/databases');
+		await gotoReady(page, '/server/databases');
 		await expect(page).toHaveURL(/\/login\?expired=1/);
 		await expect(page.getByTestId('login-expired')).toContainText('no longer valid');
 		// the stale session cookie is gone: protected pages redirect to the login form
-		await page.goto('/');
+		await gotoReady(page, '/');
 		await expect(page).toHaveURL(/\/login/);
 	} finally {
 		await admin.query(`DROP USER '${user}'@'%'`).catch(() => {});

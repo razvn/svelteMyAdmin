@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection, type Connection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 let dbUp = false;
 test.beforeAll(async () => {
@@ -19,17 +20,13 @@ test.beforeAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 const subnav = (page: Page) => page.getByTestId('status-subnav');
 
 test('status page shows uptime, traffic and connections with sub navigation', async ({ page }) => {
-	await page.goto('/server/status');
+	await gotoReady(page, '/server/status');
 	await expect(page.getByTestId('uptime')).toContainText('has been running for');
 	await expect(page.getByTestId('traffic-table')).toContainText('Received');
 	await expect(page.getByTestId('traffic-table')).toContainText('Sent');
@@ -58,19 +55,19 @@ test('status page shows uptime, traffic and connections with sub navigation', as
 	}
 	await subnav(page).getByRole('link', { name: 'Monitor' }).click();
 	await expect(page.getByTestId('not-implemented')).toBeVisible();
-	await page.goto('/server/status/advisor');
+	await gotoReady(page, '/server/status/advisor');
 	await expect(page.getByTestId('not-implemented')).toBeVisible();
 });
 
 test('query statistics', async ({ page }) => {
-	await page.goto('/server/status/queries');
+	await gotoReady(page, '/server/status/queries');
 	await expect(page.getByTestId('questions')).toContainText('Questions since startup');
 	await expect(page.getByTestId('queries-table')).toContainText('show status');
 	await expect(page.getByTestId('queries-chart')).toBeVisible();
 });
 
 test('status variables filter, category and alerts', async ({ page }) => {
-	await page.goto('/server/status/variables');
+	await gotoReady(page, '/server/status/variables');
 	const table = page.getByTestId('variables-table');
 	await expect(table.locator('[data-variable="Uptime"]')).toBeVisible();
 	await page.getByLabel('Containing the word').fill('bytes received');
@@ -98,7 +95,7 @@ test('processes: filter, kill dialog and kill of a sleeping connection', async (
 		const [rows] = await victim.query('SELECT CONNECTION_ID() AS id');
 		const id = Number((rows as { id: number }[])[0].id);
 
-		await page.goto('/server/status/processes');
+		await gotoReady(page, '/server/status/processes');
 		const row = page.locator(`[data-process-id="${id}"]`);
 		await expect(row).toContainText('Sleep');
 		await page.getByLabel('Show only active').click();
@@ -123,13 +120,13 @@ test('processes: filter, kill dialog and kill of a sleeping connection', async (
 });
 
 test('replication page', async ({ page }) => {
-	await page.goto('/server/replication');
+	await gotoReady(page, '/server/replication');
 	await expect(page.getByTestId('primary-status')).toBeVisible();
 	await expect(page.getByTestId('replica-status')).toContainText('not configured as replica');
 });
 
 test('binary log tab and events', async ({ page }) => {
-	await page.goto('/server/replication');
+	await gotoReady(page, '/server/replication');
 	await expect(page.locator('[data-tab="binlog"]')).toBeVisible();
 	await page.locator('[data-tab="binlog"]').click();
 	await expect(page).toHaveURL(/\/server\/binlog$/);

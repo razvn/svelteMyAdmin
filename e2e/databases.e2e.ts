@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t2a_e2e';
 let dbUp = false;
@@ -29,15 +30,11 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 test('create a database, see it in the table and sidebar, drop it in bulk', async ({ page }) => {
-	await page.goto('/server/databases');
+	await gotoReady(page, '/server/databases');
 	await expect(page.getByRole('heading', { name: 'Databases' })).toBeVisible();
 
 	await page.getByLabel('Database name').fill(DB);
@@ -70,7 +67,7 @@ test('create a database, see it in the table and sidebar, drop it in bulk', asyn
 
 test('breadcrumbs keep the database and table visible at 800px', async ({ page }) => {
 	await page.setViewportSize({ width: 800, height: 700 });
-	await page.goto('/db/sma_test/table/books');
+	await gotoReady(page, '/db/sma_test/table/books');
 	const crumbs = page.getByRole('navigation', { name: 'breadcrumb' });
 	await expect(crumbs.getByRole('link', { name: /sma_test/ })).toBeVisible();
 	await expect(crumbs.getByRole('link', { name: /books/ })).toBeVisible();
@@ -80,7 +77,7 @@ test('breadcrumbs keep the database and table visible at 800px', async ({ page }
 
 test('server tab bar moves overflowing tabs into More at 800px', async ({ page }) => {
 	await page.setViewportSize({ width: 800, height: 700 });
-	await page.goto('/server/databases');
+	await gotoReady(page, '/server/databases');
 	const bar = page.getByTestId('tab-bar');
 	await expect(bar.getByRole('button', { name: 'More' })).toBeVisible();
 	// Measured after layout and fonts settle, so poll: no tab link may extend past the viewport.

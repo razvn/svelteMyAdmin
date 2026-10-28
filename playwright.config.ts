@@ -14,6 +14,9 @@ export default defineConfig({
 		env: { SMA_CONFIG: config }
 	},
 	use: { baseURL: `http://localhost:${port}` },
+	// Never hide flakiness with retries: every spec must be deterministic (navigate with gotoReady).
+	retries: 0,
+	fullyParallel: false, // tests inside a file run serially, files run in parallel workers
 	testDir: 'e2e',
 	testMatch: '**/*.e2e.{ts,js}'
 });

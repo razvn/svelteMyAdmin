@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const FIXTURE = 'sma_test';
 const DB = 'tmp_t4a_e2e';
@@ -51,27 +52,21 @@ test.afterAll(async () => {
 
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 const books = `/db/${FIXTURE}/table/books/browse?sort=`;
 
 test('browse books and sort by title with a header click', async ({ page }) => {
-	await page.goto(books);
+	await gotoReady(page, books);
 	const main = page.getByRole('main');
 	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 4');
 	await expect(main.getByTestId('rows-message')).toContainText('4 total');
 	await expect(main.getByRole('cell', { name: 'The Left Hand of Darkness' })).toBeVisible();
 
 	const header = main.getByRole('button', { name: 'title', exact: true });
-	await expect(async () => {
-		await header.click();
-		await expect(page).toHaveURL(/sort=title/, { timeout: 1000 });
-	}).toPass();
+	await header.click();
+	await expect(page).toHaveURL(/sort=title/);
 	await expect(main.getByRole('columnheader', { name: 'title' })).toHaveAttribute(
 		'aria-sort',
 		'ascending'
@@ -94,18 +89,13 @@ test('browse books and sort by title with a header click', async ({ page }) => {
 });
 
 test('change the page size and move between pages', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/notes/browse`);
+	await gotoReady(page, `/db/${DB}/table/notes/browse`);
 	const main = page.getByRole('main');
 	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 25');
 	await expect(main.getByTestId('rows-message')).toContainText('60 total');
 
-	// retry: on a cold load the click may land before hydration
-	await expect(async () => {
-		await main.getByRole('button', { name: 'Next page' }).click();
-		await expect(main.getByTestId('rows-message')).toContainText('Showing rows 26 - 50', {
-			timeout: 1000
-		});
-	}).toPass();
+	await main.getByRole('button', { name: 'Next page' }).click();
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 26 - 50');
 
 	await main.getByRole('combobox', { name: 'Rows per page' }).click();
 	await page.getByRole('option', { name: '100 rows' }).click();
@@ -120,13 +110,11 @@ test('change the page size and move between pages', async ({ page }) => {
 });
 
 test('inline edit a cell by double click', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/notes/browse?sort=`);
+	await gotoReady(page, `/db/${DB}/table/notes/browse?sort=`);
 	const main = page.getByRole('main');
 	const cell = main.getByRole('cell', { name: 'note 2', exact: true });
-	await expect(async () => {
-		await cell.dblclick();
-		await expect(main.getByRole('textbox', { name: 'title value' })).toBeVisible({ timeout: 1000 });
-	}).toPass();
+	await cell.dblclick();
+	await expect(main.getByRole('textbox', { name: 'title value' })).toBeVisible({ timeout: 1000 });
 	await main.getByRole('textbox', { name: 'title value' }).fill('edited note');
 	await main.getByRole('button', { name: 'Save' }).click();
 	await expect(main.getByRole('cell', { name: 'edited note', exact: true })).toBeVisible();
@@ -146,15 +134,12 @@ test('inline edit a cell by double click', async ({ page }) => {
 });
 
 test('delete a row after confirming the statement', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/notes/browse?sort=&rows=100`);
+	await gotoReady(page, `/db/${DB}/table/notes/browse?sort=&rows=100`);
 	const main = page.getByRole('main');
 	await expect(main.getByTestId('rows-message')).toContainText('60 total');
 	const dialog = page.getByRole('alertdialog');
-	// retry: on a cold load the click may land before hydration
-	await expect(async () => {
-		await main.getByRole('button', { name: 'Delete row 3', exact: true }).click();
-		await expect(dialog).toBeVisible({ timeout: 1000 });
-	}).toPass();
+	await main.getByRole('button', { name: 'Delete row 3', exact: true }).click();
+	await expect(dialog).toBeVisible({ timeout: 1000 });
 	await expect(dialog.getByTestId('confirm-sql')).toContainText(
 		`DELETE FROM \`${DB}\`.\`notes\` WHERE \`notes\`.\`id\` = 3 LIMIT 1;`
 	);
@@ -168,11 +153,11 @@ test('delete a row after confirming the statement', async ({ page }) => {
 	expect(Number((rows as { c: unknown }[])[0].c)).toBe(0);
 
 	// restore the default page size
-	await page.goto(`/db/${DB}/table/notes/browse?rows=25`);
+	await gotoReady(page, `/db/${DB}/table/notes/browse?rows=25`);
 });
 
 test('a forged row signature is rejected', async ({ page }) => {
-	await page.goto(`/db/${DB}/table/notes/browse?sort=`);
+	await gotoReady(page, `/db/${DB}/table/notes/browse?sort=`);
 	const res = await page.request.post(`/db/${DB}/table/notes/browse?/delete`, {
 		form: { where: '1=1', sig: 'forged' },
 		headers: { 'x-sveltekit-action': 'true', origin: new URL(page.url()).origin }
@@ -183,7 +168,7 @@ test('a forged row signature is rejected', async ({ page }) => {
 });
 
 test('follow a foreign key link to the referenced row', async ({ page }) => {
-	await page.goto(books);
+	await gotoReady(page, books);
 	const main = page.getByRole('main');
 	const row = main.getByRole('row', { name: /The Dispossessed/ });
 	await row.getByRole('link', { name: '1', exact: true }).click();
@@ -205,7 +190,7 @@ test('a tampered filter is rejected', async ({ page }) => {
 });
 
 test('type_zoo renders binary, geometry, NULL and JSON values', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/table/type_zoo/browse?sort=`);
+	await gotoReady(page, `/db/${FIXTURE}/table/type_zoo/browse?sort=`);
 	const main = page.getByRole('main');
 	await expect(main.getByText('[BLOB - 8 B]')).toBeVisible();
 	await expect(main.getByText('POINT(1 2)')).toBeVisible();
@@ -218,14 +203,14 @@ test('type_zoo renders binary, geometry, NULL and JSON values', async ({ page })
 });
 
 test('views are read-only and empty tables show a friendly state', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/table/v_book_authors/browse?sort=`);
+	await gotoReady(page, `/db/${FIXTURE}/table/v_book_authors/browse?sort=`);
 	const main = page.getByRole('main');
 	await expect(main.getByTestId('rows-message')).toContainText('4 total');
 	await expect(main.getByRole('link', { name: /Edit row/ })).toHaveCount(0);
 	await expect(main.getByRole('button', { name: /Delete row/ })).toHaveCount(0);
 	await expect(main.getByRole('link', { name: /Insert/ })).toHaveCount(0);
 
-	await page.goto(`/db/${DB}/table/empty_t/browse`);
+	await gotoReady(page, `/db/${DB}/table/empty_t/browse`);
 	await expect(main.getByTestId('empty-state')).toContainText('no rows yet');
 	await expect(
 		main.getByTestId('empty-state').getByRole('link', { name: /Insert/ })

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -127,7 +128,7 @@
 		<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
 			Preview SQL
 		</Button>
-		<Button type="submit" disabled={busy}>Save</Button>
+		<Button type="submit" disabled={busy || !hydration.ready}>Save</Button>
 	</div>
 </form>
 

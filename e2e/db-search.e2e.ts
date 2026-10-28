@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const FIXTURE = 'sma_test';
 const DB = 'tmp_t3e_e2e';
@@ -44,27 +45,20 @@ test.afterAll(async () => {
 
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 test('search a known author across all tables and see the match counts', async ({ page }) => {
-	await page.goto(`/db/${FIXTURE}/search`);
+	await gotoReady(page, `/db/${FIXTURE}/search`);
 	await expect(page.getByRole('heading', { name: 'Search', exact: true })).toBeVisible();
 	// every table is checked before the first submit
 	await expect(page.getByRole('checkbox', { name: 'authors', exact: true })).toBeChecked();
 	await expect(page.getByRole('checkbox', { name: 'books', exact: true })).toBeChecked();
 
 	await page.getByLabel(/Words or values to search for/).fill('Ursula K. Le Guin');
-	// retry the click until it sticks: on a cold load the radio may not be hydrated yet
 	const wholeField = page.getByRole('radio', { name: 'the exact phrase as whole field' });
-	await expect(async () => {
-		await wholeField.click();
-		await expect(wholeField).toBeChecked({ timeout: 500 });
-	}).toPass();
+	await wholeField.click();
+	await expect(wholeField).toBeChecked({ timeout: 500 });
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
 
 	await expect(page).toHaveURL(/criteriaSearchType=4/);
@@ -91,7 +85,8 @@ test('search a known author across all tables and see the match counts', async (
 });
 
 test('the results URL is linkable and reproduces the same counts', async ({ page }) => {
-	await page.goto(
+	await gotoReady(
+		page,
 		`/db/${FIXTURE}/search?criteriaSearchString=Lem&criteriaSearchType=3&criteriaColumnName=name&submit_search=Go&criteriaTables=authors`
 	);
 	await expect(page.getByTestId('search-row-authors')).toContainText('1 match in authors');
@@ -102,18 +97,16 @@ test('the results URL is linkable and reproduces the same counts', async ({ page
 test('delete the matching rows after confirming the SQL, only in a tmp_t3e_* scratch db', async ({
 	page
 }) => {
-	await page.goto(
+	await gotoReady(
+		page,
 		`/db/${DB}/search?criteriaSearchString=apple&criteriaSearchType=3&submit_search=Go&criteriaTables=items`
 	);
 	const row = page.getByTestId('search-row-items');
 	await expect(row).toContainText('2 matches in items');
 
 	const dialog = page.getByRole('alertdialog');
-	// retry the click until the dialog opens: on a cold load the handler may not be hydrated yet
-	await expect(async () => {
-		await row.getByRole('button', { name: 'Delete' }).click();
-		await expect(dialog).toBeVisible({ timeout: 500 });
-	}).toPass();
+	await row.getByRole('button', { name: 'Delete' }).click();
+	await expect(dialog).toBeVisible({ timeout: 500 });
 	await expect(page.getByTestId('delete-sql')).toHaveText(
 		"DELETE FROM `tmp_t3e_e2e`.`items` WHERE (CONVERT(`id` USING utf8mb4) LIKE '%apple%' OR CONVERT(`name` USING utf8mb4) LIKE '%apple%')"
 	);

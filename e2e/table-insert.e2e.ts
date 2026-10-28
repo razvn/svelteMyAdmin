@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection, type Connection } from 'mysql2/promise';
 import { signClause } from '../src/lib/server/table/signed-clause.ts';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t4c_e2e';
 const SECRET = (
@@ -58,11 +59,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 const insertUrl = '/db/' + DB + '/table/items/insert';
@@ -77,8 +74,7 @@ const go = (page: Page) => page.getByRole('button', { name: 'Go', exact: true })
 test.describe.configure({ mode: 'serial' });
 
 test('inserts two rows at once', async ({ page }) => {
-	await page.goto(insertUrl);
-	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
+	await gotoReady(page, insertUrl);
 	const row0 = page.getByTestId('insert-row-0');
 	const row1 = page.getByTestId('insert-row-1');
 	await expect(row0.getByRole('columnheader', { name: 'Function' })).toBeVisible();
@@ -104,8 +100,7 @@ test('inserts two rows at once', async ({ page }) => {
 
 test('edits a row through a signed URL and rejects forged ones', async ({ page }) => {
 	const [first] = await items();
-	await page.goto(rowUrl(first.id));
-	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
+	await gotoReady(page, rowUrl(first.id));
 	const row = page.getByTestId('insert-row-0');
 	await expect(row.getByLabel('Value of name')).toHaveValue('first');
 	await row.getByLabel('Value of name').fill('first (edited)');
@@ -123,16 +118,15 @@ test('edits a row through a signed URL and rejects forged ones', async ({ page }
 	);
 	expect((await items())[0].name).toBe('first (edited)');
 
-	const response = await page.goto(`${rowUrl(first.id)}x`);
+	const response = await gotoReady(page, `${rowUrl(first.id)}x`);
 	expect(response?.status()).toBe(400);
-	const unsigned = await page.goto(`${insertUrl}?where=${encodeURIComponent('`id` = 1')}`);
+	const unsigned = await gotoReady(page, `${insertUrl}?where=${encodeURIComponent('`id` = 1')}`);
 	expect(unsigned?.status()).toBe(400);
 });
 
 test('copies a row as a new row', async ({ page }) => {
 	const [first] = await items();
-	await page.goto(rowUrl(first.id, '&copy=1'));
-	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
+	await gotoReady(page, rowUrl(first.id, '&copy=1'));
 	const row = page.getByTestId('insert-row-0');
 	await expect(row.getByLabel('Value of name')).toHaveValue('first (edited)');
 	await expect(row.getByLabel('Value of id')).toHaveValue('');
@@ -146,8 +140,7 @@ test('copies a row as a new row', async ({ page }) => {
 });
 
 test('foreign key dropdown lists the referenced values', async ({ page }) => {
-	await page.goto(insertUrl);
-	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
+	await gotoReady(page, insertUrl);
 	const row = page.getByTestId('insert-row-0');
 	await row.getByLabel('Value of name').fill('with parent');
 	await row.getByRole('checkbox', { name: 'Null p_id' }).click();
@@ -157,6 +150,7 @@ test('foreign key dropdown lists the referenced values', async ({ page }) => {
 	await page.getByPlaceholder('Search referenced values').fill('bet');
 	await expect(page.getByRole('option', { name: 'alpha - 1' })).toBeHidden();
 	await page.getByRole('option', { name: 'beta - 2' }).click();
+	await expect(row.getByRole('combobox', { name: 'Value of p_id' })).toContainText('beta - 2');
 	await page.getByLabel('After saving').selectOption('new_insert');
 	await go(page);
 	await expect(page.getByTestId('insert-result')).toContainText('1 row affected');

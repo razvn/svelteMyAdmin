@@ -179,7 +179,6 @@
 	aria-label={mode === 'edit' ? 'Edit rows' : 'Insert rows'}
 >
 	<input type="hidden" name="rows" value={rows.length} />
-	<input type="hidden" name="submit_type" value={submitType} />
 	<div class="flex flex-wrap items-center gap-2 text-sm">
 		<span class="text-muted-foreground">Show</span>
 		<Button
@@ -334,7 +333,12 @@
 		<Card.Content class="flex flex-wrap items-end gap-4">
 			<div class="flex flex-col gap-1.5">
 				<Label for="submit-type">Action</Label>
-				<NativeSelect id="submit-type" bind:value={submitType} aria-label="Action">
+				<NativeSelect
+					id="submit-type"
+					name="submit_type"
+					bind:value={submitType}
+					aria-label="Action"
+				>
 					<NativeSelectOption value="save">{editing ? 'Save' : 'Insert'}</NativeSelectOption>
 					{#if editing}
 						<NativeSelectOption value="insert">Insert as new row</NativeSelectOption>

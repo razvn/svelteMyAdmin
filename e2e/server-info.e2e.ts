@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection, type Connection, type RowDataPacket } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 let dbUp = false;
 test.beforeAll(async () => {
@@ -19,11 +20,7 @@ test.beforeAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 async function withConnection<T>(fn: (c: Connection) => Promise<T>): Promise<T> {
@@ -56,7 +53,7 @@ async function setVariableInUi(page: Page, name: string, value: string) {
 }
 
 test('variables: filter, byte tooltip and inline edit of a global variable', async ({ page }) => {
-	await page.goto('/server/variables');
+	await gotoReady(page, '/server/variables');
 	await expect(
 		page.getByRole('heading', { level: 1, name: 'Server variables and settings' })
 	).toBeVisible();
@@ -95,7 +92,7 @@ test('variables: filter, byte tooltip and inline edit of a global variable', asy
 		expect(await globalMaxConnectErrors()).toBe(target);
 	} finally {
 		if ((await globalMaxConnectErrors()) !== original) {
-			await page.goto('/server/variables');
+			await gotoReady(page, '/server/variables');
 			await page.getByTestId('variables-filter').fill('max_connect_errors');
 			await setVariableInUi(page, 'max_connect_errors', original);
 		}
@@ -107,7 +104,7 @@ test('variables: filter, byte tooltip and inline edit of a global variable', asy
 
 test('variables: the table fits a 1280px window and long values wrap', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
-	await page.goto('/server/variables');
+	await gotoReady(page, '/server/variables');
 	await expect(page.getByTestId('variables-table')).toBeVisible();
 	const value = await page.getByRole('columnheader', { name: 'Value' }).boundingBox();
 	expect(value).not.toBeNull();
@@ -125,7 +122,7 @@ test('variables: the table fits a 1280px window and long values wrap', async ({ 
 });
 
 test('variables: a MySQL error is shown in a toast and the edit is cancelled', async ({ page }) => {
-	await page.goto('/server/variables');
+	await gotoReady(page, '/server/variables');
 	await page.getByTestId('variables-filter').fill('version');
 	await page.getByRole('button', { name: 'Edit version', exact: true }).click();
 	await page.getByTestId('variable-input').fill('x');
@@ -136,7 +133,7 @@ test('variables: a MySQL error is shown in a toast and the edit is cancelled', a
 });
 
 test('charsets: charsets with their collations and the server default', async ({ page }) => {
-	await page.goto('/server/charsets');
+	await gotoReady(page, '/server/charsets');
 	await expect(
 		page.getByRole('heading', { level: 1, name: 'Character sets and collations' })
 	).toBeVisible();
@@ -147,7 +144,7 @@ test('charsets: charsets with their collations and the server default', async ({
 });
 
 test('engines: list with support badges and the InnoDB detail page', async ({ page }) => {
-	await page.goto('/server/engines');
+	await gotoReady(page, '/server/engines');
 	await expect(page.getByRole('heading', { level: 1, name: 'Storage engines' })).toBeVisible();
 	const innodb = page.locator('[data-engine="InnoDB"]');
 	await expect(innodb).toContainText('DEFAULT');
@@ -161,12 +158,12 @@ test('engines: list with support badges and the InnoDB detail page', async ({ pa
 });
 
 test('engines: an unknown engine is a 404', async ({ page }) => {
-	const response = await page.goto('/server/engines/NoSuchEngine');
+	const response = await gotoReady(page, '/server/engines/NoSuchEngine');
 	expect(response?.status()).toBe(404);
 });
 
 test('plugins: grouped by type and filterable', async ({ page }) => {
-	await page.goto('/server/plugins');
+	await gotoReady(page, '/server/plugins');
 	await expect(page.getByRole('heading', { level: 1, name: 'Plugins' })).toBeVisible();
 	await expect(page.locator('[data-type="STORAGE ENGINE"]')).toBeVisible();
 	await expect(page.locator('[data-plugin="InnoDB"]')).toBeVisible();

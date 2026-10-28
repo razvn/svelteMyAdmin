@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
+import { gotoReady, login } from './helpers.ts';
 
 const DB = 'tmp_t3a_e2e';
 let dbUp = false;
@@ -46,11 +47,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
 	test.skip(!dbUp, 'MySQL fixture on 127.0.0.1:33306 unreachable (run pnpm db:up)');
-	await page.goto('/login');
-	await page.getByLabel('Username').fill('root');
-	await page.getByLabel('Password').fill('root');
-	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await login(page);
 });
 
 async function choose(page: Page, label: string) {
@@ -61,7 +58,7 @@ async function choose(page: Page, label: string) {
 test('structure lists tables and views, optimize shows the result, prefix, drop with sidebar update', async ({
 	page
 }) => {
-	await page.goto(`/db/${DB}/structure`);
+	await gotoReady(page, `/db/${DB}/structure`);
 	await expect(page.getByRole('heading', { name: 'Structure' })).toBeVisible();
 	await expect(page.getByTestId('stat-tables')).toContainText('4');
 	await expect(page.getByTestId('table-count')).toHaveText('4');
@@ -132,7 +129,7 @@ test('structure lists tables and views, optimize shows the result, prefix, drop 
 });
 
 test('create new table form links to the create-table page', async ({ page }) => {
-	await page.goto(`/db/${DB}/structure`);
+	await gotoReady(page, `/db/${DB}/structure`);
 	const form = page.locator('form[action$="/create-table"]');
 	await form.getByLabel('Table name').fill('t_new');
 	await form.getByLabel('Number of columns').fill('3');
