@@ -31,6 +31,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.6.5",
+		"@types/pdfkit": "0.17.7",
 		"@vitest/browser-playwright": "^5.0.5",
 		"bits-ui": "^2.20.2",
 		"cn": "^0.5.0",
@@ -54,7 +55,8 @@
 		"typescript-eslint": "^8.60.1",
 		"vite": "^8.3.5",
 		"vitest": "^5.0.5",
-		"vitest-browser-svelte": "^3.1.0"
+		"vitest-browser-svelte": "^3.1.0",
+		"xlsx": "0.18.5"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -71,8 +73,11 @@
 		"@codemirror/view": "6.43.15",
 		"@lezer/highlight": "1.2.5",
 		"@tanstack/table-core": "^9.3.1",
+		"dejavu-fonts-ttf": "2.37.3",
+		"fflate": "0.8.3",
 		"mode-watcher": "^1.1.0",
 		"mysql2": "^3.24.6",
+		"pdfkit": "0.20.2",
 		"sql-formatter": "15.9.0",
 		"zod": "^4.6.7"
 	},
