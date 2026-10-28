@@ -35,7 +35,8 @@ test('status page shows uptime, traffic and connections with sub navigation', as
 	await expect(page.getByTestId('traffic-table')).toContainText('Sent');
 	await expect(page.getByTestId('connections-table')).toContainText('Max. concurrent connections');
 	await expect(page.getByTestId('connections-table')).toContainText('Failed attempts');
-	// the # column is a plain count, never an SI-prefixed value such as "9,000 m"
+	// the # column never uses a sub-unit SI prefix such as "9,000 m"; above 4 digits phpMyAdmin
+	// switches to k/M (e.g. "12 k"), which this test must accept
 	for (const label of ['Failed attempts', 'Aborted', 'Total']) {
 		const count = page
 			.getByTestId('connections-table')
@@ -43,7 +44,7 @@ test('status page shows uptime, traffic and connections with sub navigation', as
 			.filter({ hasText: label })
 			.getByRole('cell')
 			.nth(1);
-		await expect(count).toHaveText(/^[\d,]+$/);
+		await expect(count).toHaveText(/^[\d,.]+( [kMGT])?$/);
 	}
 	for (const label of [
 		'Server',
