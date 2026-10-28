@@ -38,6 +38,9 @@ importers:
       '@tanstack/table-core':
         specifier: ^9.3.1
         version: 9.3.1
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       mode-watcher:
         specifier: ^1.1.0
         version: 1.1.0(svelte@5.57.3(@typescript-eslint/types@8.72.1))
