@@ -39,7 +39,7 @@ for (const { name, port } of servers) {
 		// Read-only fixture.
 		const fixture = 'sma_test';
 		// Writable scratch database, dropped afterwards.
-		const scratch = `sma_t3e_int_${port}`;
+		const scratch = `tmp_t3e_int_${port}`;
 
 		beforeAll(async () => {
 			try {
@@ -193,7 +193,7 @@ for (const { name, port } of servers) {
 				const [before] = await searchTables(dbi, scratch, tables, req);
 				expect(before).toMatchObject({ table: 'items', count: 2, isView: false });
 				expect(before.deleteSql).toBe(
-					'DELETE FROM `sma_t3e_int_' +
+					'DELETE FROM `tmp_t3e_int_' +
 						port +
 						"`.`items` WHERE (CONVERT(`name` USING utf8mb4) LIKE '%apple%')"
 				);

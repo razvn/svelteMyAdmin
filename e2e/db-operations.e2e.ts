@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 
-const COPY = 'sma_t3c_e2e_copy';
-const RENAMED = 'sma_t3c_e2e_ren';
+const COPY = 'tmp_t3c_e2e_copy';
+const RENAMED = 'tmp_t3c_e2e_ren';
 let dbUp = false;
 
 async function cleanup() {
@@ -55,7 +55,7 @@ test('copy sma_test, rename the copy, then drop it', async ({ page }) => {
 		`CREATE DATABASE IF NOT EXISTS \`${COPY}\``
 	);
 	await expect(
-		page.getByTestId(`nav-db-${COPY}`).or(page.getByTestId('nav-dbgroup-sma')).first()
+		page.getByTestId(`nav-db-${COPY}`).or(page.getByTestId('nav-dbgroup-tmp')).first()
 	).toBeVisible();
 
 	// rename the copy

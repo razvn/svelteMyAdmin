@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 
-const DB = 'sma_t2a_e2e';
+const DB = 'tmp_t2a_e2e';
 let dbUp = false;
 
 async function cleanup() {
@@ -47,7 +47,7 @@ test('create a database, see it in the table and sidebar, drop it in bulk', asyn
 	await expect(row.getByRole('link', { name: DB })).toHaveAttribute('href', `/db/${DB}/structure`);
 	// sidebar refreshed (grouped under the `sma` prefix when several sma_* databases exist)
 	await expect(
-		page.getByTestId(`nav-db-${DB}`).or(page.getByTestId('nav-dbgroup-sma'))
+		page.getByTestId(`nav-db-${DB}`).or(page.getByTestId('nav-dbgroup-tmp'))
 	).toBeVisible();
 
 	// system schemas cannot be selected

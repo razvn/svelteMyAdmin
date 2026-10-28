@@ -27,12 +27,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function expandSmaTest(page: Page) {
-	// With other `sma_*` databases around, `sma_test` would live inside the `sma` group.
-	const expand = page.getByRole('button', { name: 'Expand sma_test' });
-	if (!(await expand.isVisible())) {
-		await page.getByTestId('nav-dbgroup-sma').getByRole('button').first().click();
-	}
-	await expand.click();
+	// If other `sma_*` databases exist, `sma_test` lives inside the `sma` group: open it first.
+	const db = page.getByTestId('nav-db-sma_test');
+	const group = page.getByTestId('nav-dbgroup-sma');
+	await expect(db.or(group).first()).toBeVisible();
+	if (!(await db.isVisible())) await group.getByRole('button').first().click();
+	await db.getByRole('button', { name: 'Expand sma_test', exact: true }).click();
 }
 
 test('home shows the server version and the web server cards', async ({ page }) => {
@@ -54,7 +54,7 @@ test('the connection collation can be changed and is remembered', async ({ page 
 
 test('sidebar lists sma_test and lazily loads its children', async ({ page }) => {
 	await expect(
-		page.getByTestId('nav-db-sma_test').or(page.getByTestId('nav-dbgroup-sma'))
+		page.getByTestId('nav-db-sma_test').or(page.getByTestId('nav-dbgroup-sma')).first()
 	).toBeVisible();
 	await expandSmaTest(page);
 

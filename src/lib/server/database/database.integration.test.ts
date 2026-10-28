@@ -46,7 +46,7 @@ const procDef = (over: Partial<RoutineDef> = {}): RoutineDef => ({
 for (const { name, port } of servers) {
 	describe(`database routines/events/triggers against ${name}`, () => {
 		let conn: Connection | undefined;
-		const db = `sma_t3d_int_${port}`;
+		const db = `tmp_t3d_int_${port}`;
 
 		beforeAll(async () => {
 			try {

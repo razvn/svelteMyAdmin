@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 
-const DB = 'sma_t3a_e2e';
+const DB = 'tmp_t3a_e2e';
 let dbUp = false;
 
 async function connect() {
@@ -68,10 +68,9 @@ test('structure lists tables and views, optimize shows the result, prefix, drop 
 	await expect(page.getByTestId('rows-a_users')).toContainText('3');
 	await expect(page.getByTestId('table-row-v_users')).toContainText('View');
 	await expect(page.getByTestId('table-row-a_posts')).toContainText('all posts');
-	await expect(page.getByRole('link', { name: 'a_users', exact: true })).toHaveAttribute(
-		'href',
-		`/db/${DB}/table/a_users/browse`
-	);
+	await expect(
+		page.getByRole('main').getByRole('link', { name: 'a_users', exact: true })
+	).toHaveAttribute('href', `/db/${DB}/table/a_users/browse`);
 
 	// filter
 	await page.getByLabel('Filter tables').fill('posts');

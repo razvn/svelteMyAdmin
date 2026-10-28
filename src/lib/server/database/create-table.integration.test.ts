@@ -15,7 +15,7 @@ for (const { name, port } of servers) {
 	describe(`create table against ${name}`, () => {
 		let conn: Connection | undefined;
 		let dbi: DatabaseInterface;
-		const db = `sma_t3b_int_${port}`;
+		const db = `tmp_t3b_int_${port}`;
 
 		beforeAll(async () => {
 			try {

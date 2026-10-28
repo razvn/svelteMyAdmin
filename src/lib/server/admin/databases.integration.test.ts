@@ -18,7 +18,7 @@ for (const { name, port } of servers) {
 	describe(`admin/databases against ${name}`, () => {
 		let conn: Connection | undefined;
 		let dbi: DatabaseInterface;
-		const db = `sma_t2a_int_${port}`;
+		const db = `tmp_t2a_int_${port}`;
 
 		beforeAll(async () => {
 			try {
@@ -98,7 +98,7 @@ for (const { name, port } of servers) {
 			if (!conn) return skip();
 			expect((await dropDatabases(dbi, ['mysql'])).ok).toBe(false);
 			expect((await dropDatabases(dbi, [])).ok).toBe(false);
-			const odd = `sma_t2a_odd\`x_${port}`;
+			const odd = `tmp_t2a_odd\`x_${port}`;
 			expect((await createDatabase(dbi, { new_db: odd })).ok).toBe(true);
 			expect(await dbi.databaseExists(odd)).toBe(true);
 			expect((await dropDatabases(dbi, [odd])).ok).toBe(true);

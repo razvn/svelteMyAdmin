@@ -22,8 +22,21 @@ export default defineConfig({
 			{
 				// Component tests in a real browser (vitest-browser-svelte + playwright).
 				extends: './vite.config.ts',
-				// Pre-bundle icons up front: discovering them mid-run makes Vite reload the test page.
-				optimizeDeps: { include: ['@lucide/svelte/icons/*'] },
+				// Pre-bundle client deps up front: discovering them mid-run makes Vite re-optimise and
+				// reload the test page (cold-start flake).
+				optimizeDeps: {
+					include: [
+						'@lucide/svelte/icons/*',
+						'bits-ui',
+						'svelte-sonner',
+						'mode-watcher',
+						'paneforge',
+						'tailwind-variants',
+						'svelte/reactivity',
+						'vitest-browser-svelte',
+						'vitest/browser'
+					]
+				},
 				test: {
 					name: 'client',
 					browser: {

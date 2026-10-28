@@ -20,7 +20,7 @@ for (const { name, port } of servers) {
 	describe(`database/structure against ${name}`, () => {
 		let conn: Connection | undefined;
 		let dbi: DatabaseInterface;
-		const db = `sma_t3a_int_${port}`;
+		const db = `tmp_t3a_int_${port}`;
 		const opts = { maxExactCount: 50000, maxExactCountViews: 0 };
 
 		const run = async (

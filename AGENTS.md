@@ -74,6 +74,17 @@ verify light + dark at 1440 px and 800 px.
 
 Never weaken or delete a test to make it pass: fix the code.
 
+Test conventions (specs run in parallel workers against shared Docker databases):
+
+- **Temporary databases are named `tmp_<suite>_...`** (e.g. `tmp_t3a_e2e`, `tmp_t3c_int_33306`), integration
+  AND e2e. Never `sma_*`: the sidebar groups databases by the `_` separator, so an `sma_...` temp db would
+  move the fixture `sma_test` into an `sma` group and break other specs. Only the fixture is `sma_test`.
+- **Scope e2e locators** to `page.getByRole('main')` (or a `data-testid`/dialog/row) instead of the whole
+  page: the sidebar tree, breadcrumbs, tab bar and command palette repeat table/db names, and strict mode
+  fails on duplicates. Specs that touch server-global state (`event_scheduler`, `max_connect_errors`, ...)
+  must restore it in `finally` and live alone in their file (files run in parallel, tests within a file serially).
+- Do not rely on form fields being pre-filled with the current name; name inputs use a `placeholder`.
+
 ## Commands
 
 ```

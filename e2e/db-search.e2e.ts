@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 
 const FIXTURE = 'sma_test';
-const DB = 'sma_t3e_e2e';
+const DB = 'tmp_t3e_e2e';
 let dbUp = false;
 
 async function withRoot<T>(fn: (c: Awaited<ReturnType<typeof createConnection>>) => Promise<T>) {
@@ -99,7 +99,7 @@ test('the results URL is linkable and reproduces the same counts', async ({ page
 	await expect(page.getByRole('checkbox', { name: 'books', exact: true })).not.toBeChecked();
 });
 
-test('delete the matching rows after confirming the SQL, only in a sma_t3e_* scratch db', async ({
+test('delete the matching rows after confirming the SQL, only in a tmp_t3e_* scratch db', async ({
 	page
 }) => {
 	await page.goto(
@@ -115,7 +115,7 @@ test('delete the matching rows after confirming the SQL, only in a sma_t3e_* scr
 		await expect(dialog).toBeVisible({ timeout: 500 });
 	}).toPass();
 	await expect(page.getByTestId('delete-sql')).toHaveText(
-		"DELETE FROM `sma_t3e_e2e`.`items` WHERE (CONVERT(`id` USING utf8mb4) LIKE '%apple%' OR CONVERT(`name` USING utf8mb4) LIKE '%apple%')"
+		"DELETE FROM `tmp_t3e_e2e`.`items` WHERE (CONVERT(`id` USING utf8mb4) LIKE '%apple%' OR CONVERT(`name` USING utf8mb4) LIKE '%apple%')"
 	);
 	await dialog.getByRole('button', { name: 'Delete' }).click();
 

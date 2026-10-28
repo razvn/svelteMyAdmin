@@ -25,10 +25,10 @@ for (const { name, port } of servers) {
 	describe(`database/operations against ${name}`, () => {
 		let conn: Connection | undefined;
 		let dbi: DatabaseInterface;
-		const src = `sma_t3c_src_${port}`;
-		const copy = `sma_t3c_copy_${port}`;
-		const renamed = `sma_t3c_ren_${port}`;
-		const pma = `sma_t3c_pma_${port}`;
+		const src = `tmp_t3c_src_${port}`;
+		const copy = `tmp_t3c_copy_${port}`;
+		const renamed = `tmp_t3c_ren_${port}`;
+		const pma = `tmp_t3c_pma_${port}`;
 		const all = [src, copy, renamed, pma];
 		const storage: StorageServer = {
 			host: '127.0.0.1',
@@ -136,7 +136,7 @@ for (const { name, port } of servers) {
 			await setDbComment(dbi, storage, src, '');
 			expect(await getDbComment(dbi, storage, src)).toBe('');
 			await setDbComment(dbi, storage, src, 'kept');
-			expect(await hasColumnInfo(dbi, { ...storage, pmadb: 'sma_t3c_nope' })).toBe(false);
+			expect(await hasColumnInfo(dbi, { ...storage, pmadb: 'tmp_t3c_nope' })).toBe(false);
 		});
 
 		it('copies structure and data with view, routines, trigger and event', async ({ skip }) => {
@@ -312,24 +312,24 @@ for (const { name, port } of servers) {
 		it('copies and moves database privileges', async ({ skip }) => {
 			if (!conn) return skip();
 			expect(await canAdjustPrivileges(dbi)).toBe(true);
-			const user = `'sma_t3c_u'@'localhost'`;
-			const a = 'sma_t3c_pa';
-			const b = 'sma_t3c_pb';
-			const c = 'sma_t3c_pc';
+			const user = `'tmp_t3c_u'@'localhost'`;
+			const a = 'tmp_t3c_pa';
+			const b = 'tmp_t3c_pb';
+			const c = 'tmp_t3c_pc';
 			try {
 				await conn.query(`CREATE USER ${user} IDENTIFIED BY 'x'`);
-				await conn.query(`GRANT SELECT ON \`sma\\_t3c\\_pa\`.* TO ${user}`);
+				await conn.query(`GRANT SELECT ON \`tmp\\_t3c\\_pa\`.* TO ${user}`);
 				const dbs = async () =>
-					(await q(`SELECT Db AS d FROM mysql.db WHERE User = 'sma_t3c_u' ORDER BY Db`)).map(
+					(await q(`SELECT Db AS d FROM mysql.db WHERE User = 'tmp_t3c_u' ORDER BY Db`)).map(
 						(r) => r.d
 					);
-				expect(await dbs()).toEqual(['sma\\_t3c\\_pa']);
+				expect(await dbs()).toEqual(['tmp\\_t3c\\_pa']);
 				const cp = await adjustPrivileges(conn, a, b, false);
 				expect(cp.error).toBeUndefined();
-				expect(await dbs()).toEqual(['sma\\_t3c\\_pa', 'sma\\_t3c\\_pb']);
+				expect(await dbs()).toEqual(['tmp\\_t3c\\_pa', 'tmp\\_t3c\\_pb']);
 				const mv = await adjustPrivileges(conn, b, c, true);
 				expect(mv.error).toBeUndefined();
-				expect(await dbs()).toEqual(['sma\\_t3c\\_pa', 'sma\\_t3c\\_pc']);
+				expect(await dbs()).toEqual(['tmp\\_t3c\\_pa', 'tmp\\_t3c\\_pc']);
 			} finally {
 				await conn.query(`DROP USER IF EXISTS ${user}`);
 			}

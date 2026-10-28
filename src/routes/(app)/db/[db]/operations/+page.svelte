@@ -202,7 +202,7 @@
 					>
 						<Input
 							name="newname"
-							value={dbName}
+							placeholder={dbName}
 							maxlength={64}
 							required
 							aria-label="New database name"
@@ -258,7 +258,7 @@
 				>
 					<Input
 						name="newname"
-						value={dbName}
+						placeholder={dbName}
 						maxlength={64}
 						required
 						aria-label="Copy to database name"

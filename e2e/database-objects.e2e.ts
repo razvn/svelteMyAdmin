@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createConnection } from 'mysql2/promise';
 
-const DB = 'sma_t3d_e2e';
+const DB = 'tmp_t3d_e2e';
 let dbUp = false;
 
 async function withConn<T>(fn: (c: Awaited<ReturnType<typeof createConnection>>) => Promise<T>) {
