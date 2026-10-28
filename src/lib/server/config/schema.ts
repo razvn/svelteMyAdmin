@@ -127,6 +127,8 @@ export const configSchema = z
 		UseDbSearch: z.boolean().default(true),
 		AllowArbitraryServer: z.boolean().default(false),
 		ArbitraryServerRegexp: z.string().default(''),
+		/** proxy IP => header carrying the client address (e.g. `X-Forwarded-For`). */
+		TrustedProxies: z.record(z.string(), z.string()).default({}),
 
 		// Navigation panel
 		ShowDatabasesNavigationAsTree: z.boolean().default(true),

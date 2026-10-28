@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
+	import LogOut from '@lucide/svelte/icons/log-out';
 	import ThemeToggle from '#lib/components/theme-toggle.svelte';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
@@ -20,8 +23,16 @@
 				<ThemeToggle />
 			</Card.Action>
 		</Card.Header>
-		<Card.Content>
-			<Button onclick={() => toast.success('shadcn-svelte is ready')}>Show toast</Button>
+		<Card.Content class="grid gap-4">
+			<p class="text-sm text-muted-foreground" data-testid="connection-info">
+				Connected as <span class="font-medium text-foreground">{data.user}@{data.host}</span>
+			</p>
+			<form method="POST" action="/logout">
+				<Button type="submit" variant="outline">
+					<LogOut />
+					Log out
+				</Button>
+			</form>
 		</Card.Content>
 	</Card.Root>
 </main>
