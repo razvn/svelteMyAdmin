@@ -1,4 +1,6 @@
 -- Fixture database used by integration tests. Works on MySQL 8.4 and MariaDB 11.4.
+-- The mysql client in the MySQL image defaults to latin1; force UTF-8 so non-ASCII data is not double-encoded.
+SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS `sma_test` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `sma_test`;
 
