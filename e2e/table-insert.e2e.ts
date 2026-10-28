@@ -78,6 +78,7 @@ test.describe.configure({ mode: 'serial' });
 
 test('inserts two rows at once', async ({ page }) => {
 	await page.goto(insertUrl);
+	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
 	const row0 = page.getByTestId('insert-row-0');
 	const row1 = page.getByTestId('insert-row-1');
 	await expect(row0.getByRole('columnheader', { name: 'Function' })).toBeVisible();
@@ -104,6 +105,7 @@ test('inserts two rows at once', async ({ page }) => {
 test('edits a row through a signed URL and rejects forged ones', async ({ page }) => {
 	const [first] = await items();
 	await page.goto(rowUrl(first.id));
+	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
 	const row = page.getByTestId('insert-row-0');
 	await expect(row.getByLabel('Value of name')).toHaveValue('first');
 	await row.getByLabel('Value of name').fill('first (edited)');
@@ -130,6 +132,7 @@ test('edits a row through a signed URL and rejects forged ones', async ({ page }
 test('copies a row as a new row', async ({ page }) => {
 	const [first] = await items();
 	await page.goto(rowUrl(first.id, '&copy=1'));
+	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
 	const row = page.getByTestId('insert-row-0');
 	await expect(row.getByLabel('Value of name')).toHaveValue('first (edited)');
 	await expect(row.getByLabel('Value of id')).toHaveValue('');
@@ -144,6 +147,7 @@ test('copies a row as a new row', async ({ page }) => {
 
 test('foreign key dropdown lists the referenced values', async ({ page }) => {
 	await page.goto(insertUrl);
+	await page.waitForLoadState('networkidle'); // native form posts before hydration would bypass the client logic
 	const row = page.getByTestId('insert-row-0');
 	await row.getByLabel('Value of name').fill('with parent');
 	await row.getByRole('checkbox', { name: 'Null p_id' }).click();
