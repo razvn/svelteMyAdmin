@@ -1,0 +1,45 @@
+# Development databases for integration tests and manual testing.
+#   pnpm db:up    -> mysql 8.4 on 127.0.0.1:33306, mariadb 11.4 on 127.0.0.1:33307
+#   pnpm db:down  -> stop and remove containers + volumes
+# Credentials: root/root. Fixture DB `sma_test`, config storage DB `phpmyadmin`
+# (control user `pma` / `pmapass`).
+name: sveltemyadmin
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: sma-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command:
+      - --event-scheduler=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - '33306:3306'
+    volumes:
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-proot']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mariadb:
+    image: mariadb:11.4
+    container_name: sma-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    command:
+      - --event-scheduler=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - '33307:3306'
+    volumes:
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 30

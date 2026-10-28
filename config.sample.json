@@ -1,0 +1,19 @@
+{
+	"blowfish_secret": "",
+	"Servers": [
+		{
+			"verbose": "Local MySQL",
+			"auth_type": "cookie",
+			"host": "127.0.0.1",
+			"port": 3306,
+			"AllowNoPassword": false,
+			"AllowRoot": true
+		}
+	],
+	"MaxRows": 25,
+	"LoginCookieValidity": 1440,
+	"DefaultLang": "en",
+	"ThemeDefault": "pmahomme",
+	"NavigationTreeEnableGrouping": true,
+	"ShowStats": true
+}
