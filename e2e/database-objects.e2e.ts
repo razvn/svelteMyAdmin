@@ -49,10 +49,15 @@ test.beforeEach(async ({ page }) => {
 
 test('create a procedure, execute it, see results, export and drop it', async ({ page }) => {
 	await page.goto(`/db/${DB}/routines`);
+	await page.waitForLoadState('networkidle'); // hydrated
 	await expect(page.getByRole('heading', { name: 'Routines' })).toBeVisible();
 
-	await page.getByTestId('routine-add').click();
 	const editor = page.getByTestId('routine-editor');
+	// retry the click: it can land before the page hydrated
+	await expect(async () => {
+		await page.getByTestId('routine-add').click();
+		await expect(editor).toBeVisible({ timeout: 1000 });
+	}).toPass();
 	await editor.getByLabel('Routine name').fill('p_double');
 	await editor.getByRole('button', { name: 'Add parameter' }).click();
 	await editor.getByLabel('Name of parameter 1').fill('n');
@@ -97,9 +102,13 @@ test('create a procedure, execute it, see results, export and drop it', async ({
 
 test('create a trigger from the table Triggers tab, then drop it', async ({ page }) => {
 	await page.goto(`/db/${DB}/table/t/triggers`);
+	await page.waitForLoadState('networkidle'); // hydrated
 	await expect(page.getByRole('heading', { name: 'Triggers' })).toBeVisible();
-	await page.getByTestId('trigger-add').click();
 	const editor = page.getByTestId('trigger-editor');
+	await expect(async () => {
+		await page.getByTestId('trigger-add').click();
+		await expect(editor).toBeVisible({ timeout: 1000 });
+	}).toPass();
 	await editor.getByLabel('Trigger name').fill('trg_e2e');
 	await editor.getByLabel('Definition').fill('SET NEW.v = 5');
 	await editor.getByTestId('trigger-save').click();
@@ -127,6 +136,7 @@ test('list events and toggle the scheduler (restoring it)', async ({ page }) => 
 	});
 	try {
 		await page.goto(`/db/${DB}/events`);
+		await page.waitForLoadState('networkidle'); // hydrated
 		const row = page.locator('[data-testid="event-row"][data-event="ev_seed"]');
 		await expect(row).toBeVisible();
 		await expect(row).toContainText('DISABLED');
