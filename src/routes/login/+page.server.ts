@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
+import { EXPIRED_MESSAGE } from '#lib/server/auth/expired.ts';
 import { attemptLogin, safeRedirectTarget, serverLabel } from '#lib/server/auth/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -20,6 +21,8 @@ export const load: PageServerLoad = ({ locals, url }) => {
 
 	const { config } = locals;
 	return {
+		expired: url.searchParams.get('expired') === '1',
+		expiredMessage: EXPIRED_MESSAGE,
 		redirectTo: url.searchParams.get('redirect') ? redirectTo : '',
 		servers: config.Servers.map((s, i) => ({
 			index: i + 1,

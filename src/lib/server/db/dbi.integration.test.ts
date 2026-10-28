@@ -133,5 +133,18 @@ for (const { name, port, type } of servers) {
 			expect(idx.find((i) => i.keyName === 'PRIMARY')!.nonUnique).toBe(false);
 			await expect(dbi.getColumns('sma_test', 'nope')).rejects.toThrow();
 		});
+
+		it('databaseExists / getTableType / listCollations / isSslConnection', async ({ skip }) => {
+			if (!conn) return skip();
+			expect(await dbi.databaseExists('sma_test')).toBe(true);
+			expect(await dbi.databaseExists('SMA_TEST')).toBe(false);
+			expect(await dbi.databaseExists('doesnotexist')).toBe(false);
+			expect(await dbi.getTableType('sma_test', 'books')).toBe('BASE TABLE');
+			expect(await dbi.getTableType('sma_test', 'v_book_authors')).toBe('VIEW');
+			expect(await dbi.getTableType('sma_test', 'nope')).toBeNull();
+			const collations = await dbi.listCollations();
+			expect(collations.map((c) => c.name)).toContain('utf8mb4_general_ci');
+			expect(typeof (await dbi.isSslConnection())).toBe('boolean');
+		});
 	});
 }

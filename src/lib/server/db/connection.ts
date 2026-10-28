@@ -11,6 +11,8 @@ export type { Connection };
 export interface ConnectOptions {
 	/** Allow several statements in one query() call (off by default; use the SQL splitter instead). */
 	multipleStatements?: boolean;
+	/** Connection collation applied with `SET collation_connection` after connecting. */
+	collation?: string;
 	/** Extra mysql2 options (override everything else). */
 	extra?: Partial<ConnectionOptions>;
 }
@@ -73,6 +75,27 @@ export function buildConnectionOptions(
 	return { ...opts, ...options.extra };
 }
 
+const COLLATION_NAME = /^[A-Za-z0-9_]{1,64}$/;
+
+export const isValidCollationName = (name: string): boolean => COLLATION_NAME.test(name);
+
+/**
+ * `SET collation_connection` (phpMyAdmin: "Server connection collation"). Unknown collations
+ * (other server flavour) are ignored. Returns whether it was applied.
+ */
+export async function applyConnectionCollation(
+	conn: Pick<Connection, 'query'>,
+	collation: string | undefined
+): Promise<boolean> {
+	if (!collation || !isValidCollationName(collation)) return false;
+	try {
+		await conn.query('SET collation_connection = ?', [collation]);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 /** Open a single connection. The caller is responsible for calling `end()`. */
 export async function createConnection(
 	server: ConnectionServer,
@@ -80,5 +103,7 @@ export async function createConnection(
 	password: string,
 	options?: ConnectOptions
 ): Promise<Connection> {
-	return mysqlCreateConnection(buildConnectionOptions(server, user, password, options));
+	const conn = await mysqlCreateConnection(buildConnectionOptions(server, user, password, options));
+	await applyConnectionCollation(conn, options?.collation);
+	return conn;
 }

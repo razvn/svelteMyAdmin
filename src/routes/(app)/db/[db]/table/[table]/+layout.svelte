@@ -1,0 +1,20 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import TabBar from '#lib/components/app-shell/tab-bar.svelte';
+	import { currentTabPath, tabHref, tableTabs } from '#lib/nav/tabs.ts';
+	import type { LayoutProps } from './$types';
+
+	let { data, children }: LayoutProps = $props();
+
+	const ctx = $derived({ db: page.params.db ?? '', table: data.table });
+	const tabs = $derived(tableTabs({ isView: data.tableType === 'view' }));
+	const current = $derived(currentTabPath('table', ctx, page.url.pathname));
+</script>
+
+<TabBar
+	label={data.tableType === 'view' ? 'View' : 'Table'}
+	{tabs}
+	{current}
+	hrefFor={(tab) => tabHref('table', ctx, tab.path)}
+/>
+{@render children()}

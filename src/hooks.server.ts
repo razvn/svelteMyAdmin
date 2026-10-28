@@ -1,6 +1,8 @@
+import { redirect } from '@sveltejs/kit';
 import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { sequence } from '@sveltejs/kit/hooks';
 import {
+	clearSessionCookie,
 	resolveAuth,
 	resolveClientIp,
 	sessionInfo,
@@ -10,6 +12,8 @@ import { isAccessDenied, RULE_MESSAGES } from '#lib/server/auth/errors.ts';
 import { getConfig } from '#lib/server/config/index.ts';
 import { createConnection, type Connection } from '#lib/server/db/connection.ts';
 import { DatabaseInterface } from '#lib/server/db/dbi.ts';
+import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
+import { expiredLoginLocation } from '#lib/server/auth/expired.ts';
 import { legacyRedirectTarget } from '#lib/server/routing/legacy.ts';
 
 /** Reachable without authentication (static assets are served before `handle`). */
@@ -94,10 +98,22 @@ const auth: Handle = async ({ event, resolve }) => {
 	let creds = resolution.status === 'ok' ? resolution.creds : undefined;
 	const server = resolution.status === 'ok' ? resolution.server : ctx.server;
 
-	const open = (): Promise<Connection> => {
+	const open = async (): Promise<Connection> => {
 		if (!creds) throw new Error('Not authenticated');
 		const c = creds;
-		return createConnection(server, c.user, c.password);
+		const collation =
+			event.cookies.get(COLLATION_COOKIE) || config.DefaultConnectionCollation || undefined;
+		try {
+			return await createConnection(server, c.user, c.password, { collation });
+		} catch (e) {
+			// Cookie sessions whose credentials MySQL no longer accepts (e.g. the password was
+			// changed): drop the session and go back to the login form instead of an error page.
+			if (plugin.type === 'cookie' && isAccessDenied(e)) {
+				clearSessionCookie(event.cookies, config, event.url);
+				redirect(303, expiredLoginLocation(event.request.method, event.url));
+			}
+			throw e;
+		}
 	};
 	let dbi: Promise<DatabaseInterface> | undefined;
 

@@ -23,6 +23,12 @@ export interface ServerInfo {
 	hostname: string;
 }
 
+export interface CollationInfo {
+	name: string;
+	charset: string;
+	isDefault: boolean;
+}
+
 export interface TableInfo {
 	name: string;
 	type: 'BASE TABLE' | 'VIEW' | 'SYSTEM VIEW' | string;
@@ -144,6 +150,46 @@ export class DatabaseInterface {
 			collation: str(r.collation),
 			hostname: str(r.hostname)
 		};
+	}
+
+	/** Does the database exist and is it visible (`only_db` / `hide_db`)? Exact (case-sensitive) name. */
+	async databaseExists(name: string): Promise<boolean> {
+		const rows = await this.rows(
+			'SELECT SCHEMA_NAME AS name FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?',
+			[name]
+		);
+		const found = rows.map((r) => str(r.name)).filter((n) => n === name);
+		return filterDatabases(found, this.server).length > 0;
+	}
+
+	/** `TABLE_TYPE` of a table (`BASE TABLE`, `VIEW`, `SYSTEM VIEW`, ...) or null when it does not exist. */
+	async getTableType(db: string, table: string): Promise<string | null> {
+		const rows = await this.rows(
+			'SELECT TABLE_NAME AS name, TABLE_TYPE AS type FROM information_schema.TABLES ' +
+				'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+			[db, table]
+		);
+		const hit = rows.find((r) => str(r.name) === table);
+		return hit ? str(hit.type) : null;
+	}
+
+	/** Collations of the server (information_schema.COLLATIONS), default ones flagged. */
+	async listCollations(): Promise<CollationInfo[]> {
+		const rows = await this.rows(
+			'SELECT COLLATION_NAME AS name, CHARACTER_SET_NAME AS charset, IS_DEFAULT AS is_default ' +
+				'FROM information_schema.COLLATIONS ORDER BY COLLATION_NAME'
+		);
+		return rows.map((r) => ({
+			name: str(r.name),
+			charset: str(r.charset),
+			isDefault: str(r.is_default) === 'Yes'
+		}));
+	}
+
+	/** Is the current connection encrypted (non-empty `Ssl_cipher`)? */
+	async isSslConnection(): Promise<boolean> {
+		const rows = await this.rows("SHOW SESSION STATUS LIKE 'Ssl_cipher'");
+		return rows.length > 0 && str(Object.values(rows[0])[1]) !== '';
 	}
 
 	/** All databases visible to the user, honouring `only_db` and `hide_db`. */

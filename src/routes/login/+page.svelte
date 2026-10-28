@@ -47,6 +47,12 @@
 					};
 				}}
 			>
+				{#if data.expired && !form?.error}
+					<Alert.Root data-testid="login-expired">
+						<CircleAlert />
+						<Alert.Description>{data.expiredMessage}</Alert.Description>
+					</Alert.Root>
+				{/if}
 				{#if form?.error}
 					<Alert.Root variant="destructive" data-testid="login-error">
 						<CircleAlert />

@@ -22,6 +22,8 @@ export default defineConfig({
 			{
 				// Component tests in a real browser (vitest-browser-svelte + playwright).
 				extends: './vite.config.ts',
+				// Pre-bundle icons up front: discovering them mid-run makes Vite reload the test page.
+				optimizeDeps: { include: ['@lucide/svelte/icons/*'] },
 				test: {
 					name: 'client',
 					browser: {

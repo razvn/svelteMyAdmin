@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createConnection, type Connection } from './connection';
+import { applyConnectionCollation, createConnection, type Connection } from './connection';
 
 const servers = [
 	{ name: 'mysql 8.4', port: 33306 },
@@ -75,6 +75,19 @@ for (const { name, port } of servers) {
 		it('rejects multiple statements by default', async (ctx) => {
 			if (!conn) return ctx.skip();
 			await expect(conn.query('SELECT 1; SELECT 2')).rejects.toThrow();
+		});
+
+		it('applies the connection collation and ignores unknown ones', async (ctx) => {
+			if (!conn) return ctx.skip();
+			const get = async () => {
+				const [rows] = await conn!.query('SELECT @@collation_connection AS c');
+				return (rows as { c: string }[])[0].c;
+			};
+			expect(await applyConnectionCollation(conn, 'utf8mb4_general_ci')).toBe(true);
+			expect(await get()).toBe('utf8mb4_general_ci');
+			expect(await applyConnectionCollation(conn, 'no_such_collation')).toBe(false);
+			expect(await get()).toBe('utf8mb4_general_ci');
+			expect(await applyConnectionCollation(conn, 'bad name; DROP')).toBe(false);
 		});
 	});
 }

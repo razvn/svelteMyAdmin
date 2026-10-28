@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { buildConnectionOptions } from './connection';
+import { describe, expect, it, vi } from 'vitest';
+import {
+	applyConnectionCollation,
+	buildConnectionOptions,
+	isValidCollationName
+} from './connection';
 
 const base = {
 	host: 'db.example',
@@ -46,5 +50,26 @@ describe('buildConnectionOptions', () => {
 		});
 		expect(o.multipleStatements).toBe(true);
 		expect(o.connectTimeout).toBe(5);
+	});
+});
+
+describe('applyConnectionCollation', () => {
+	it('runs SET collation_connection for valid names', async () => {
+		const query = vi.fn().mockResolvedValue([]);
+		expect(await applyConnectionCollation({ query } as never, 'utf8mb4_unicode_ci')).toBe(true);
+		expect(query).toHaveBeenCalledWith('SET collation_connection = ?', ['utf8mb4_unicode_ci']);
+	});
+
+	it('does nothing for empty or malformed names', async () => {
+		const query = vi.fn();
+		expect(await applyConnectionCollation({ query } as never, undefined)).toBe(false);
+		expect(await applyConnectionCollation({ query } as never, "x'; DROP")).toBe(false);
+		expect(query).not.toHaveBeenCalled();
+		expect(isValidCollationName('utf8mb4_0900_ai_ci')).toBe(true);
+	});
+
+	it('swallows server errors (unknown collation)', async () => {
+		const query = vi.fn().mockRejectedValue(new Error('Unknown collation'));
+		expect(await applyConnectionCollation({ query } as never, 'nope')).toBe(false);
 	});
 });
