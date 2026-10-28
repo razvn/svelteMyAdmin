@@ -77,6 +77,7 @@
 		"@tanstack/table-core": "^9.3.1",
 		"dejavu-fonts-ttf": "2.37.3",
 		"fflate": "0.8.3",
+		"iconv-lite": "0.7.3",
 		"mode-watcher": "^1.1.0",
 		"mysql2": "^3.24.6",
 		"pdfkit": "0.20.2",

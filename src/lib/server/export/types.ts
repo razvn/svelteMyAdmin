@@ -5,7 +5,12 @@
  * the same order as phpMyAdmin's Export::exportServer/exportDatabase/exportTable:
  *
  *   header
- *     for each database:  dbHeader, dbCreate, (for each table: structure?, data?), routines?, events?, dbFooter
+ *     for each database (scope server/database):
+ *       dbHeader, dbCreate, routines?,
+ *       for each table: structure?, data?, triggers?   (views: structure only, tables first)
+ *       dbAfterTables?, dbFooter, events?
+ *     table scope: dbHeader, structure?, data?, triggers?, dbFooter    (no dbCreate, like phpMyAdmin)
+ *     raw scope:   data (the rows of an arbitrary query)
  *   footer
  *
  * Plugins only produce text/bytes through `ctx.write`; the framework handles streaming,
@@ -55,6 +60,8 @@ export interface ExportField {
 	isNumeric: boolean;
 	nullable: boolean;
 	isGenerated?: boolean;
+	/** Display width / bit count (`bit(8)` -> 8) when known. */
+	length?: number;
 }
 
 /**
@@ -85,6 +92,16 @@ export interface ExportContext {
 	appVersion: string;
 	/** Export start time (headers use it). */
 	now: Date;
+	/**
+	 * Additive fields set by the framework (optional so plugin unit tests can omit them):
+	 * `asFile` is false for "view as text" (the SQL plugin only emits the charset block for files),
+	 * `charset` the output charset id (`utf-8`, `iso-8859-1`, ...), `dataTables` the tables whose
+	 * data is exported (database scope), `structureOrData` the global structure/data choice.
+	 */
+	asFile?: boolean;
+	charset?: string;
+	dataTables?: ReadonlySet<string>;
+	structureOrData?: StructureOrData;
 }
 
 export interface ExportData {
@@ -120,6 +137,15 @@ export interface ExportPlugin {
 	data?(ctx: ExportContext, data: ExportData): Promise<void>;
 	routines?(ctx: ExportContext, db: string): Promise<void>;
 	events?(ctx: ExportContext, db: string): Promise<void>;
-	/** Called once after all tables of a db (SQL plugin: constraints, AUTO_INCREMENT, triggers). */
+	/**
+	 * Triggers of one table; called right after the table's data (phpMyAdmin exports them after the
+	 * data because triggers can modify already imported tables). Only when structure is exported.
+	 * (Additive to the original contract; formats other than SQL do not implement it.)
+	 */
+	triggers?(ctx: ExportContext, ref: ExportTableRef): Promise<void>;
+	/**
+	 * Called once after all tables of a db, before `dbFooter` (SQL plugin: views, indexes,
+	 * AUTO_INCREMENT, constraints are collected during `structure` and flushed in `dbFooter`).
+	 */
 	dbAfterTables?(ctx: ExportContext, db: string, tables: ExportTableRef[]): Promise<void>;
 }
