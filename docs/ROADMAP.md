@@ -151,7 +151,7 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 
 - [x] Phase 0 — Foundation
 - [x] Phase 1 — Auth & shell
-- [ ] Phase 2 — Server level
+- [x] Phase 2 — Server level (SQL tab → Phase 5)
 - [ ] Phase 3 — Database level
 - [ ] Phase 4 — Table level
 - [ ] Phase 5 — SQL engine & editor

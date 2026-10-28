@@ -112,9 +112,9 @@ test('db and server routes: redirect, tab bars, 404', async ({ page }) => {
 		page.getByRole('navigation', { name: 'Database' }).getByRole('link', { name: 'Routines' })
 	).toBeVisible();
 
-	await page.goto('/server/variables');
+	await page.goto('/server/privileges');
 	await expect(page.getByRole('navigation', { name: 'Server' })).toBeVisible();
-	await expect(page.getByTestId('not-implemented')).toContainText('Phase 2');
+	await expect(page.getByTestId('not-implemented')).toContainText('Phase 7');
 
 	const res = await page.goto('/db/doesnotexist/structure');
 	expect(res?.status()).toBe(404);
