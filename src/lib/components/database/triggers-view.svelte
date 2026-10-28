@@ -18,7 +18,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
-	import { Textarea } from '#lib/components/ui/textarea/index.ts';
+	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
 	import { callAction } from '#lib/forms/call-action.ts';
 	import { TRIGGER_EVENTS, TRIGGER_TIMINGS } from '#lib/sql/trigger-types.ts';
 	import type { TriggerDef } from '#lib/sql/trigger.ts';
@@ -261,11 +261,11 @@
 				</div>
 			</div>
 			<div class="grid gap-1.5">
-				<Label for="trigger-definition">Definition</Label>
-				<Textarea
+				<Label>Definition</Label>
+				<SqlEditor
 					id="trigger-definition"
-					class="min-h-32 font-mono text-[13px]"
-					spellcheck={false}
+					aria-label="Definition"
+					minLines={6}
 					bind:value={def.definition}
 				/>
 			</div>
