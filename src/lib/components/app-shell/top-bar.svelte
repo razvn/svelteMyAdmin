@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
+	import Terminal from '@lucide/svelte/icons/terminal';
+	import { Button } from '#lib/components/ui/button/index.ts';
 	import ThemeToggle from '#lib/components/theme-toggle.svelte';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
 	import ServerSwitcher from './server-switcher.svelte';
@@ -16,9 +18,12 @@
 		};
 		servers: { index: number; label: string; auth: string }[];
 		onsearch: () => void;
+		/** Toggle the SQL console drawer. */
+		onconsole?: () => void;
+		consoleOpen?: boolean;
 	}
 
-	let { session, servers, onsearch }: Props = $props();
+	let { session, servers, onsearch, onconsole, consoleOpen = false }: Props = $props();
 
 	let shortcut = $state('Ctrl K');
 	onMount(() => {
@@ -51,6 +56,20 @@
 		<div class="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
 			{#if servers.length > 1}
 				<ServerSwitcher {servers} current={session.serverIndex} />
+			{/if}
+			{#if onconsole}
+				<Button
+					type="button"
+					variant={consoleOpen ? 'secondary' : 'ghost'}
+					size="icon"
+					aria-label="Toggle SQL console"
+					aria-pressed={consoleOpen}
+					aria-keyshortcuts="Control+Alt+C Meta+Alt+C"
+					title="SQL console ({shortcut === '⌘K' ? '⌘⌥C' : 'Ctrl+Alt+C'})"
+					onclick={onconsole}
+				>
+					<Terminal class="size-4" aria-hidden="true" />
+				</Button>
 			{/if}
 			<ThemeToggle />
 			<UserMenu

@@ -10,6 +10,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	const { config } = locals;
 	const dbi = await locals.dbi;
 	const databases = await dbi.listDatabases();
+	const info = await dbi.getServerInfo();
 	const hostLabel = s.port ? `${s.host}:${s.port}` : s.host;
 
 	return {
@@ -27,6 +28,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			auth: server.auth_type
 		})),
 		nav: toNavConfig(config),
-		databases
+		databases,
+		dialect: (info.serverType === 'MariaDB' ? 'mariadb' : 'mysql') as 'mariadb' | 'mysql'
 	};
 };

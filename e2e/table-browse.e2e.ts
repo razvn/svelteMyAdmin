@@ -60,7 +60,7 @@ const books = `/db/${FIXTURE}/table/books/browse?sort=`;
 test('browse books and sort by title with a header click', async ({ page }) => {
 	await gotoReady(page, books);
 	const main = page.getByRole('main');
-	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 4');
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 0 - 3');
 	await expect(main.getByTestId('rows-message')).toContainText('4 total');
 	await expect(main.getByRole('cell', { name: 'The Left Hand of Darkness' })).toBeVisible();
 
@@ -91,22 +91,22 @@ test('browse books and sort by title with a header click', async ({ page }) => {
 test('change the page size and move between pages', async ({ page }) => {
 	await gotoReady(page, `/db/${DB}/table/notes/browse`);
 	const main = page.getByRole('main');
-	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 25');
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 0 - 24');
 	await expect(main.getByTestId('rows-message')).toContainText('60 total');
 
 	await main.getByRole('button', { name: 'Next page' }).click();
-	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 26 - 50');
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 25 - 49');
 
 	await main.getByRole('combobox', { name: 'Rows per page' }).click();
 	await page.getByRole('option', { name: '100 rows' }).click();
 	await expect(page).toHaveURL(/rows=100/);
-	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 60');
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 0 - 59');
 	await expect(main.getByRole('button', { name: 'Next page' })).toBeDisabled();
 
 	// back to the configured default so the remembered value does not leak into reruns
 	await main.getByRole('combobox', { name: 'Rows per page' }).click();
 	await page.getByRole('option', { name: '25 rows' }).click();
-	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 1 - 25');
+	await expect(main.getByTestId('rows-message')).toContainText('Showing rows 0 - 24');
 });
 
 test('inline edit a cell by double click', async ({ page }) => {

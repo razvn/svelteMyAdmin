@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Database from '@lucide/svelte/icons/database';
 	import Play from '@lucide/svelte/icons/play';
+	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
@@ -12,6 +13,7 @@
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
+	import * as Tabs from '#lib/components/ui/tabs/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import { callAction } from '#lib/forms/call-action.ts';
 	import { escapeId } from '#lib/sql/escape.ts';
@@ -24,6 +26,9 @@
 		StatementResult
 	} from '#lib/sql/run-types.ts';
 	import { queryTemplate, type TemplateName } from '#lib/sql/templates.ts';
+	import BookmarkForm from './bookmark-form.svelte';
+	import BookmarkList from './bookmark-list.svelte';
+	import QueryHistory from './query-history.svelte';
 	import StatementResultBlock from './statement-result.svelte';
 
 	/** What the `run` action returns (see `SqlRunResult` in `#lib/server/sql/page.ts`). */
@@ -72,6 +77,20 @@
 	let editor = $state<ReturnType<typeof SqlEditor>>();
 	let running = $state(false);
 	let busyIndex = $state<number | null>(null);
+
+	// History / bookmarks panel
+	let historyKey = $state(0);
+	let bookmarkKey = $state(0);
+	let bookmarkLabel = $state('');
+	let bookmarkReplace = $state(false);
+	let panelTab = $state('history');
+	const bookmarkDb = $derived(scope.level === 'server' ? '' : scope.db);
+
+	async function runBookmark(sql: string) {
+		value = sql;
+		await tick();
+		formEl?.requestSubmit();
+	}
 
 	// Per-statement replacements (pagination, sorting, refresh) for the current result.
 	let patch = $state.raw<{ base: unknown; map: Record<number, StatementResult> }>({
@@ -180,6 +199,7 @@
 				return async ({ update }) => {
 					running = false;
 					await update({ reset: false });
+					historyKey++;
 				};
 			}}
 		>
@@ -310,6 +330,50 @@
 				</Button>
 			</div>
 		</form>
+	</Card.Root>
+
+	<Card.Root class="gap-0 py-0" data-testid="sql-extras">
+		<Tabs.Root bind:value={panelTab} class="gap-0 p-4">
+			<Tabs.List>
+				<Tabs.Trigger value="history">SQL history</Tabs.Trigger>
+				<Tabs.Trigger value="bookmarks">Bookmarks</Tabs.Trigger>
+				<Tabs.Trigger value="bookmark-save">Bookmark this SQL query</Tabs.Trigger>
+			</Tabs.List>
+			<Tabs.Content value="history" class="pt-3">
+				<QueryHistory
+					refreshKey={historyKey}
+					onload={(sql) => {
+						value = sql;
+						editor?.focus();
+					}}
+				/>
+			</Tabs.Content>
+			<Tabs.Content value="bookmarks" class="pt-3">
+				<BookmarkList
+					db={bookmarkDb}
+					refreshKey={bookmarkKey}
+					onload={(sql, b) => {
+						value = sql;
+						bookmarkLabel = b.label;
+						bookmarkReplace = true;
+						editor?.focus();
+					}}
+					onrun={runBookmark}
+				/>
+			</Tabs.Content>
+			<Tabs.Content value="bookmark-save" class="pt-3">
+				<BookmarkForm
+					db={bookmarkDb}
+					sql={value}
+					bind:label={bookmarkLabel}
+					bind:replace={bookmarkReplace}
+					oncreated={() => {
+						bookmarkKey++;
+						panelTab = 'bookmarks';
+					}}
+				/>
+			</Tabs.Content>
+		</Tabs.Root>
 	</Card.Root>
 
 	{#if formError}

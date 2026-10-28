@@ -175,7 +175,7 @@
 					{#if data.page.to === 0}
 						Showing no rows
 					{:else}
-						Showing rows {formatNumber(data.page.from)} - {formatNumber(data.page.to)}
+						Showing rows {formatNumber(data.page.from - 1)} - {formatNumber(data.page.to - 1)}
 					{/if}
 					<span class="text-muted-foreground">
 						({data.approx ? '~' : ''}{formatNumber(data.total)} total, Query took {data.seconds.toFixed(

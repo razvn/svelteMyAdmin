@@ -2,7 +2,7 @@
  * DEFINER handling shared by routines, events and triggers
  * (Routines::getQueryFromRequest, Events::getQueryFromRequest, Triggers::getQueryFromRequest).
  */
-import { escapeId } from '#lib/server/db/escape.ts';
+import { escapeId } from './escape.ts';
 
 export interface Definer {
 	user: string;

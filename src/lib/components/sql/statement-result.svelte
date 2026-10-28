@@ -6,7 +6,9 @@
 	import ChevronsRight from '@lucide/svelte/icons/chevrons-right';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import { toast } from 'svelte-sonner';
+	import { getNavState } from '#lib/components/navigation/nav-state.svelte.ts';
 	import ResultGrid from '#lib/components/results/result-grid.svelte';
 	import type { GridColumn } from '#lib/components/results/types.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
@@ -34,6 +36,8 @@
 		StatementResult
 	} from '#lib/sql/run-types.ts';
 	import type { Sort } from '#lib/table/sort.ts';
+	import ChartDialog from './chart-dialog.svelte';
+	import CreateViewDialog from './create-view-dialog.svelte';
 
 	interface Props {
 		statement: StatementResult;
@@ -117,6 +121,25 @@
 			...params
 		});
 		if (next) onreplace(next);
+	}
+
+	// ---- chart / create view -----------------------------------------------------------------
+	let chartOpen = $state(false);
+	let viewOpen = $state(false);
+	const chartSet = $derived(
+		statement.ok && statement.resultSets[0]?.rows.length ? statement.resultSets[0] : null
+	);
+	let navState: ReturnType<typeof getNavState> | undefined;
+	try {
+		navState = getNavState();
+	} catch {
+		// rendered outside the app layout (component tests)
+	}
+
+	async function viewCreated(name: string) {
+		toast.success(`View ${name} has been created`);
+		await refreshAll();
+		await navState?.reload();
 	}
 
 	// ---- explain -----------------------------------------------------------------------------
@@ -329,10 +352,14 @@
 			{/if}
 			{#if statement.ok && statement.kind === 'select'}
 				<Button variant="outline" size="sm" href={exportHref}>Export</Button>
-				<!-- Phase 5c: creating a view from the query -->
-				<Button variant="outline" size="sm" disabled title="Coming with the views editor"
-					>Create view</Button
-				>
+				{#if scope.level !== 'server'}
+					<Button variant="outline" size="sm" onclick={() => (viewOpen = true)}>Create view</Button>
+				{/if}
+			{/if}
+			{#if chartSet}
+				<Button variant="outline" size="sm" onclick={() => (chartOpen = true)}>
+					<ChartColumn class="size-4" aria-hidden="true" />Display chart
+				</Button>
 			{/if}
 		</div>
 
@@ -464,3 +491,15 @@
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
+
+{#if chartSet}
+	<ChartDialog bind:open={chartOpen} result={chartSet} />
+{/if}
+{#if scope.level !== 'server'}
+	<CreateViewDialog
+		bind:open={viewOpen}
+		db={scope.db}
+		query={statement.sql}
+		oncreated={viewCreated}
+	/>
+{/if}

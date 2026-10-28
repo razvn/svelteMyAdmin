@@ -6,6 +6,7 @@ import { fail, type RequestEvent } from '@sveltejs/kit';
 import { z } from 'zod';
 import { getSecret } from '#lib/server/auth/session.ts';
 import { escapeId } from '#lib/server/db/escape.ts';
+import { recordHistory } from '#lib/server/pmadb/history.ts';
 import { runScript } from './execute.ts';
 import { createRowKeyResolver } from './row-keys.ts';
 import type { ScriptResult, SqlPageSettings, SqlRunOptions, SqlScope } from '#lib/sql/run-types.ts';
@@ -97,6 +98,15 @@ export async function loadSqlPage(
 	};
 }
 
+/** Executed statements of a script as history entries (db/table of the page the query ran from). */
+export function historyEntries(scope: SqlScope, result: ScriptResult) {
+	return result.statements.map((s) => ({
+		db: scope.level === 'server' ? '' : scope.db,
+		table: scope.level === 'table' ? scope.table : '',
+		sqlquery: s.sql
+	}));
+}
+
 const flag = z
 	.union([z.literal('1'), z.literal('0'), z.literal('on'), z.literal('')])
 	.optional()
@@ -144,6 +154,8 @@ export async function runSqlAction(
 		explain: f.explain || null,
 		rowKeys: createRowKeyResolver(dbi, getSecret(config.blowfish_secret))
 	});
+
+	if (!f.single) await recordHistory(locals, historyEntries(scope, result));
 
 	const options: SqlRunOptions = {
 		showQuery: f.show_query,

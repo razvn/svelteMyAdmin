@@ -3,6 +3,8 @@
 	import { page } from '$app/state';
 	import { refreshAll } from '$app/navigation';
 	import Breadcrumbs from '#lib/components/app-shell/breadcrumbs.svelte';
+	import ConsoleDrawer from '#lib/components/console/console-drawer.svelte';
+	import { ConsoleState, setConsoleState } from '#lib/components/console/console-state.svelte.ts';
 	import TopBar from '#lib/components/app-shell/top-bar.svelte';
 	import AppSidebar from '#lib/components/navigation/app-sidebar.svelte';
 	import CommandPalette from '#lib/components/navigation/command-palette.svelte';
@@ -19,6 +21,9 @@
 	// svelte-ignore state_referenced_locally
 	const width = new SidebarWidth(data.nav.width);
 	onMount(() => width.restore());
+
+	const consoleState = new ConsoleState();
+	setConsoleState(consoleState);
 
 	let paletteOpen = $state(false);
 
@@ -43,11 +48,18 @@
 		onreload={reload}
 	/>
 	<Sidebar.Inset class="min-w-0 bg-background">
-		<TopBar session={data.session} servers={data.servers} onsearch={() => (paletteOpen = true)} />
+		<TopBar
+			session={data.session}
+			servers={data.servers}
+			onsearch={() => (paletteOpen = true)}
+			onconsole={() => consoleState.toggle()}
+			consoleOpen={consoleState.open}
+		/>
 		<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<Breadcrumbs nav={data.nav} serverLabel={data.session.serverLabel} {db} {table} {tableType} />
 			{@render children()}
 		</div>
+		<ConsoleDrawer {db} {table} dialect={data.dialect} />
 	</Sidebar.Inset>
 </Sidebar.Provider>
 

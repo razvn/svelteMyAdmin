@@ -89,7 +89,7 @@ test('clicking a table opens browse with breadcrumbs and the table tab bar', asy
 	}
 	await expect(tabs.getByRole('link', { name: 'Browse' })).toHaveAttribute('aria-current', 'page');
 	// Browse is implemented: the table's rows are listed
-	await expect(page.getByTestId('rows-message')).toContainText('Showing rows 1 - 4');
+	await expect(page.getByTestId('rows-message')).toContainText('Showing rows 0 - 3');
 });
 
 test('a view gets the reduced tab set', async ({ page }) => {
