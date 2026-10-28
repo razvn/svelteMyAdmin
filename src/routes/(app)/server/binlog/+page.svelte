@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { bare } from '#lib/nav/paths.ts';
 	import { page } from '$app/state';
-	import { formatBytes, truncate } from '#lib/admin/format.ts';
+	import { formatBytes, truncate } from '#lib/format.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
@@ -18,7 +20,8 @@
 			if (v === null) url.searchParams.delete(k);
 			else url.searchParams.set(k, v);
 		}
-		return goto(url, { reset: false });
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved path plus query string
+		return goto(`${resolve(bare('/server/binlog'))}${url.search}`, { reset: false });
 	}
 
 	const file = $derived(data.file ?? '');

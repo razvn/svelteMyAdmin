@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatNumber } from '#lib/admin/format.ts';
+	import { formatNumber, formatSi } from '#lib/format.ts';
 	import { pieSlices } from '#lib/admin/queries.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
@@ -19,13 +19,13 @@
 
 <div class="flex flex-col gap-4">
 	<h1 class="text-lg font-semibold" data-testid="questions">
-		Questions since startup: {formatNumber(stats.total, 0)}
+		Questions since startup: {formatNumber(stats.total)}
 	</h1>
 	<ul class="list-disc pl-6 text-sm">
-		<li>ø per hour: {formatNumber(stats.perHour, 0)}</li>
-		<li>ø per minute: {formatNumber(stats.perMinute, 0)}</li>
+		<li>ø per hour: {formatNumber(stats.perHour)}</li>
+		<li>ø per minute: {formatNumber(stats.perMinute)}</li>
 		{#if stats.perSecond >= 1}
-			<li>ø per second: {formatNumber(stats.perSecond, 0)}</li>
+			<li>ø per second: {formatNumber(stats.perSecond)}</li>
 		{/if}
 	</ul>
 
@@ -43,10 +43,9 @@
 				{#each stats.queries as q (q.key)}
 					<Table.Row>
 						<Table.Head scope="row" class="font-normal">{q.name}</Table.Head>
-						<Table.Cell class="text-end font-mono">{formatNumber(q.value, 5, 0, true)}</Table.Cell>
-						<Table.Cell class="text-end font-mono">{formatNumber(q.perHour, 4, 1, true)}</Table.Cell
-						>
-						<Table.Cell class="text-end font-mono">{formatNumber(q.percentage, 0, 2)}</Table.Cell>
+						<Table.Cell class="text-end font-mono">{formatSi(q.value, 5, 0, true)}</Table.Cell>
+						<Table.Cell class="text-end font-mono">{formatSi(q.perHour, 4, 1, true)}</Table.Cell>
+						<Table.Cell class="text-end font-mono">{formatSi(q.percentage, 0, 2)}</Table.Cell>
 					</Table.Row>
 				{/each}
 			</Table.Body>

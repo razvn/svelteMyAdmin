@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatNumber } from '#lib/admin/format.ts';
+	import { formatSi } from '#lib/format.ts';
 	import { filterVariables, usedCategories } from '#lib/admin/status-vars.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
@@ -30,8 +30,8 @@
 	function show(value: string, numeric: boolean, name: string): string {
 		if (raw || !numeric) return value;
 		const n = Number(value);
-		if (name.endsWith('%')) return formatNumber(n, 0, 2);
-		return formatNumber(n, 0, Number.isInteger(n) ? 0 : 2);
+		if (name.endsWith('%')) return formatSi(n, 0, 2);
+		return formatSi(n, 0, Number.isInteger(n) ? 0 : 2);
 	}
 </script>
 
