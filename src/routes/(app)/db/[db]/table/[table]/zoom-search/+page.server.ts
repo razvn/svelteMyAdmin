@@ -3,9 +3,10 @@ import { buildAxis, axisKindForType, toAxisData, type Axis } from '#lib/chart/sc
 import { tabHref } from '#lib/nav/tabs.ts';
 import { getSecret } from '#lib/server/auth/session.ts';
 import { escapeQualified } from '#lib/server/db/escape.ts';
-import { simpleUniqueCondition } from '#lib/server/table/row-condition.ts';
+import { loadTableMeta } from '#lib/server/table/browse.ts';
 import { loadSearchColumns, toCriterion } from '#lib/server/table/search.ts';
 import { signClause } from '#lib/server/table/signed-clause.ts';
+import { uniqueCondition, type RowValue } from '#lib/server/table/unique-condition.ts';
 import {
 	baseColumnType,
 	buildWhereBody,
@@ -98,8 +99,8 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 					(where ? ` WHERE ${where}` : '') +
 					` LIMIT ${limit}`
 			);
-			const tableColumns = await dbi.getColumns(params.db, params.table);
-			const names = tableColumns.map((c) => c.field);
+			const meta = await loadTableMeta(dbi, params.db, params.table);
+			const names = meta.columns.map((c) => c.name);
 			const secret = getSecret(locals.config.blowfish_secret);
 			const base = tabHref('table', { db: params.db, table: params.table }, 'insert');
 
@@ -123,7 +124,11 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 					skipped++;
 					return;
 				}
-				const cond = simpleUniqueCondition(tableColumns, row);
+				const cond = uniqueCondition(
+					params.table,
+					meta.condCols,
+					names.map((n) => row[n] as RowValue)
+				).clause;
 				const editHref = cond
 					? `${base}?${new URLSearchParams({ where: cond, sig: signClause(secret, params.db, params.table, cond) })}`
 					: null;

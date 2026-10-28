@@ -80,12 +80,21 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 		filter = { clause: filterClause, sig: sig ?? '' };
 	}
 
+	// Hints from table search: orderBy/order/perPage/cols act like sort/dir/rows and hidden columns.
+	const sp = new URLSearchParams(url.searchParams);
+	if (!sp.has('sort') && sp.has('orderBy')) {
+		sp.set('sort', sp.get('orderBy') ?? '');
+		sp.set('dir', sp.get('order') ?? 'ASC');
+	}
+	if (!sp.has('rows') && sp.has('perPage')) sp.set('rows', sp.get('perPage') ?? '');
+	const colsHint = sp.getAll('cols').filter((c) => names.includes(c));
+
 	// Sorting: explicit `sort` param (empty = none) wins over the remembered one.
 	const remember = config.RememberSorting;
 	let sort: Sort | null;
 	const patch: Record<string, unknown> = {};
-	if (url.searchParams.has('sort')) {
-		sort = parseSort(url.searchParams.get('sort'), url.searchParams.get('dir'), names);
+	if (sp.has('sort')) {
+		sort = parseSort(sp.get('sort'), sp.get('dir'), names);
 		if (remember) {
 			const stored = parseSortedCol(prefs.sorted_col, names);
 			if (stored?.column !== sort?.column || stored?.dir !== sort?.dir) {
@@ -102,13 +111,15 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 			? parseRows(String(prefs.max_rows), config.MaxRows)
 			: config.MaxRows;
 	let rows: RowsPerPage = storedRows;
-	if (url.searchParams.has('rows')) {
-		rows = parseRows(url.searchParams.get('rows'), storedRows);
+	if (sp.has('rows')) {
+		rows = parseRows(sp.get('rows'), storedRows);
 		if (rows !== storedRows) patch.max_rows = rows === config.MaxRows ? undefined : rows;
 	}
 	if (Object.keys(patch).length) await savePrefs(prefsCtx, patch);
 
-	const hidden = hiddenFromPrefs(prefs, names);
+	const hidden = colsHint.length
+		? names.filter((n) => !colsHint.includes(n))
+		: hiddenFromPrefs(prefs, names);
 	const conn = await locals.db;
 	const where = filter?.clause;
 	const orderBy = sort ? buildOrderBy([sort], names) : '';
