@@ -73,7 +73,7 @@ test('unauthenticated protected page redirects with ?redirect and returns after 
 test('open redirects are ignored', async ({ page }) => {
 	await page.goto('/login?redirect=//evil.example/x');
 	await login(page);
-	await expect(page).toHaveURL(/localhost:4173\/$/);
+	await expect(page).toHaveURL(/localhost:\d+\/$/);
 });
 
 test('legacy index.php URL redirects after login', async ({ page }) => {
