@@ -27,6 +27,8 @@ export interface SnapshotTable {
 	createSql: string;
 	/** Columns that can be written by `INSERT ... SELECT` (generated columns excluded). */
 	columns: string[];
+	/** Name of the copy when it differs from `name` (single table copy). */
+	targetName?: string;
 }
 
 export interface SnapshotNamed {
@@ -199,10 +201,11 @@ export function planDatabaseCopy(snap: DatabaseSnapshot, opts: CopyOptions): Pla
 	} else {
 		const fkAlters: PlanStep[] = [];
 		for (const t of snap.tables) {
-			const target = escapeQualified(nu, t.name);
+			const targetTable = t.targetName ?? t.name;
+			const target = escapeQualified(nu, targetTable);
 			if (copyStructure) {
 				if (opts.dropTable) add('table', `DROP TABLE IF EXISTS ${target}`);
-				const { create, constraints } = rewriteCreateTable(t.createSql, t.name, nu, {
+				const { create, constraints } = rewriteCreateTable(t.createSql, targetTable, nu, {
 					autoIncrement: opts.autoIncrement
 				});
 				add('table', create);
@@ -254,7 +257,7 @@ export function planDatabaseCopy(snap: DatabaseSnapshot, opts: CopyOptions): Pla
  * Loading
  * ----------------------------------------------------------------------------------------- */
 
-async function rows(conn: Connection, sql: string, params: unknown[] = []): Promise<Row[]> {
+export async function rows(conn: Connection, sql: string, params: unknown[] = []): Promise<Row[]> {
 	const [res] = params.length ? await conn.query(sql, params) : await conn.query(sql);
 	return res as Row[];
 }
@@ -345,7 +348,7 @@ export interface RunResult {
 	error?: string;
 }
 
-function messageOf(e: unknown): string {
+export function messageOf(e: unknown): string {
 	return e instanceof Error ? e.message : String(e);
 }
 
@@ -364,7 +367,11 @@ export async function runStatements(conn: Connection, statements: string[]): Pro
 }
 
 /** Run `fn` with foreign key checks / sql_mode / current database restored afterwards. */
-async function withSessionRestored<T>(dbi: DatabaseInterface, db: string, fn: () => Promise<T>) {
+export async function withSessionRestored<T>(
+	dbi: DatabaseInterface,
+	db: string,
+	fn: () => Promise<T>
+) {
 	const conn = dbi.conn;
 	const [saved] = await rows(
 		conn,
