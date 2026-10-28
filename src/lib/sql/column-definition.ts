@@ -327,10 +327,13 @@ export const namedColumns = (columns: ColumnDef[]): ColumnDef[] =>
  * UNIQUE / FULLTEXT / SPATIAL per column (the order phpMyAdmin uses). An AUTO_INCREMENT column
  * without any key gets a PRIMARY KEY when the table has none (needed by the server).
  */
-export function buildKeyDefinitions(columns: ColumnDef[]): string[] {
+export function buildKeyDefinitions(
+	columns: ColumnDef[],
+	opts: { tableHasPrimary?: boolean } = {}
+): string[] {
 	const cols = namedColumns(columns);
 	const primary = cols.filter((c) => c.index === 'PRIMARY');
-	const hasPrimary = primary.length > 0;
+	const hasPrimary = primary.length > 0 || opts.tableHasPrimary === true;
 	const unkeyedAutoInc = cols.find((c) => c.autoIncrement && c.index === '' && c.virtuality === '');
 	if (!hasPrimary && unkeyedAutoInc) primary.push(unkeyedAutoInc);
 
