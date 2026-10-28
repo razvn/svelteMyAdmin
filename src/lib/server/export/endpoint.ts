@@ -9,7 +9,7 @@ import { getSecret } from '#lib/server/auth/session.ts';
 import { readSignedClauses } from '#lib/server/table/signed-clause.ts';
 import { buildDefaults } from './defaults.ts';
 import { exportFilename } from './filename.ts';
-import { exportPlugins, pluginsForScope } from './registry.ts';
+import { exportPlugins, IGNORES_STRUCTURE_OR_DATA, pluginsForScope } from './registry.ts';
 import { ExportInputError, checkExportQuery, parseExportForm } from './request.ts';
 import { exportToStream, exportToText, type ExportEnv } from './run.ts';
 import {
@@ -63,6 +63,7 @@ export async function loadExportPage(event: RequestEvent, level: ExportLevel) {
 		label: p.label,
 		extension: p.extension,
 		binary: !!p.binary,
+		fixedStructure: IGNORES_STRUCTURE_OR_DATA.has(p.id),
 		supports: p.supports,
 		options: p.options
 	}));

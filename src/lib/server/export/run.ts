@@ -9,6 +9,7 @@
 import { Readable } from 'node:stream';
 import type { Connection } from 'mysql2/promise';
 import { escapeId, escapeQualified } from '#lib/sql/escape.ts';
+import { IGNORES_STRUCTURE_OR_DATA } from './registry.ts';
 import { openRowStream, type OpenedRows } from './rows.ts';
 import { createSink, normalizeCharset } from './sink.ts';
 import type { Compression } from './filename.ts';
@@ -105,9 +106,10 @@ export async function driveExport(
 ): Promise<void> {
 	const p = req.plugin;
 	const plugin = p;
+	const always = IGNORES_STRUCTURE_OR_DATA.has(p.id);
 	const wantsStructure =
-		p.supports.structure && req.structureOrData !== 'data' && req.scope !== 'raw';
-	const wantsData = p.supports.data && req.structureOrData !== 'structure';
+		p.supports.structure && (always || req.structureOrData !== 'data') && req.scope !== 'raw';
+	const wantsData = p.supports.data && (always || req.structureOrData !== 'structure');
 	const ctx: ExportContext = {
 		write,
 		conn: env.conn,

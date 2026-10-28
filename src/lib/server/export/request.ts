@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { splitStatements } from '#lib/server/db/splitter.ts';
 import { verifyClause } from '#lib/server/table/signed-clause.ts';
 import { COMPRESSIONS } from './defaults.ts';
-import { getExportPlugin } from './registry.ts';
+import { getExportPlugin, IGNORES_STRUCTURE_OR_DATA } from './registry.ts';
 import { normalizeCharset } from './sink.ts';
 import type { Compression } from './filename.ts';
 import type { ExportRequest, ExportTableSelection } from './run.ts';
@@ -110,6 +110,7 @@ export function parseExportForm(form: FormData, ctx: ParseContext): ParsedExport
 	if (!plugin.supports.structure) structureOrData = 'data';
 	if (!plugin.supports.data) structureOrData = 'structure';
 	if (scope === 'raw') structureOrData = 'data';
+	if (IGNORES_STRUCTURE_OR_DATA.has(plugin.id)) structureOrData = 'structure_and_data';
 
 	const request: ExportRequest = {
 		scope,

@@ -503,7 +503,7 @@ async function tableDef(ctx: ExportContext, ref: ExportTableRef, isView: boolean
 				table
 			) + alterAutoIncrement(tname, parts, crlf, withValue);
 	}
-	let createText = parts.create;
+	const createText = parts.create;
 	if (ifNotExists && on(ctx, 'auto_increment')) {
 		// kept as is
 	}
@@ -533,7 +533,7 @@ async function standInDef(ctx: ExportContext, ref: ExportTableRef): Promise<stri
 async function viewAsTableDef(ctx: ExportContext, ref: ExportTableRef): Promise<string> {
 	const { crlf } = ctx;
 	const name = ref.alias || ref.table;
-	let q =
+	const q =
 		'CREATE TABLE' +
 		(on(ctx, 'if_not_exists') ? ' IF NOT EXISTS ' : '') +
 		backquote(name) +

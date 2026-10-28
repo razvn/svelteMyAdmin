@@ -59,7 +59,12 @@ export function buildDefaults(
 				: p.supports.structure
 					? 'structure'
 					: 'data';
+		const own = p.options.find((o) => o.name === 'structure_or_data');
+		if (own && !['structure', 'data', 'structure_and_data'].includes(sod)) {
+			defaults[`${p.id}_structure_or_data`] = String(own.default);
+		}
 		for (const o of p.options) {
+			if (o.name === 'structure_or_data') continue;
 			const key = `${p.id}_${o.name}`;
 			const configured = cfg[key];
 			if (o.kind === 'bool')

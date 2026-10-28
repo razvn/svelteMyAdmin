@@ -103,7 +103,9 @@ test('view the output as text and honour format options', async ({ page }) => {
 	await gotoReady(page, `/db/${DB}/table/items/export`);
 	await main(page).getByLabel('Custom - display all possible options').click();
 	await main(page).getByLabel('View output as text').click();
-	await main(page).getByLabel('Add DROP TABLE / VIEW / PROCEDURE / FUNCTION / EVENT / TRIGGER statement').check();
+	await main(page)
+		.getByLabel('Add DROP TABLE / VIEW / PROCEDURE / FUNCTION / EVENT / TRIGGER statement')
+		.check();
 	await main(page).getByTestId('export-submit').click();
 	const out = main(page).getByTestId('export-result');
 	await expect(out).toHaveValue(/DROP TABLE IF EXISTS `items`;/);
@@ -166,7 +168,9 @@ test('binary formats cannot be viewed as text and download a file', async ({ pag
 	expect(file.bytes.subarray(0, 2).toString()).toBe('PK');
 });
 
-test('browse: exporting selected rows lands preselected and exports only them', async ({ page }) => {
+test('browse: exporting selected rows lands preselected and exports only them', async ({
+	page
+}) => {
 	await gotoReady(page, `/db/${DB}/table/items/browse`);
 	await main(page).getByLabel('Select row 2', { exact: true }).click();
 	await page.getByTestId('with-selected').getByRole('link', { name: 'Export' }).click();

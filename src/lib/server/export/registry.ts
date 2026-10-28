@@ -5,8 +5,15 @@
 import type { ExportPlugin, ExportScope } from './types.ts';
 import sql from './plugins/sql.ts';
 import { binaryPlugins } from './plugins/binary-plugins.ts';
+import { textPlugins } from './plugins/text-plugins.ts';
 
-export const exportPlugins: ExportPlugin[] = [sql, ...binaryPlugins];
+export const exportPlugins: ExportPlugin[] = [sql, ...textPlugins, ...binaryPlugins];
+
+/**
+ * Plugins that ignore the structure/data choice: XML selects its objects with its own `export_*`
+ * options (the structure/data radio is hidden in phpMyAdmin), so structure() and data() are always called.
+ */
+export const IGNORES_STRUCTURE_OR_DATA = new Set(['xml']);
 
 export function getExportPlugin(id: string): ExportPlugin | undefined {
 	return exportPlugins.find((p) => p.id === id);

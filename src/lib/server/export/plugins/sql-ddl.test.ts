@@ -96,10 +96,10 @@ describe('views', () => {
 	it('supports the view options', () => {
 		expect(
 			formatViewDefinition(view, { db: 'db', removeDefiner: true, simple: false, orReplace: true })
-		).toMatch(/^CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `v`  AS SELECT/);
+		).toMatch(/^CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `v` {2}AS SELECT/);
 		expect(
 			formatViewDefinition(view, { db: 'db', removeDefiner: false, simple: true, orReplace: false })
-		).toMatch(/^CREATE VIEW `v`  AS SELECT/);
+		).toMatch(/^CREATE VIEW `v` {2}AS SELECT/);
 	});
 	it('upper-cases only keywords', () => {
 		expect(upperClauseKeywords("select 'select' as `from`, onx from t")).toBe(

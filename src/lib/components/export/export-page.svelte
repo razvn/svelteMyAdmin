@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Download from '@lucide/svelte/icons/download';
 	import { toast } from 'svelte-sonner';
+	import { untrack } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
@@ -18,6 +20,7 @@
 		label: string;
 		extension: string;
 		binary: boolean;
+		fixedStructure: boolean;
 		supports: { structure: boolean; data: boolean };
 		options: ExportOption[];
 	}
@@ -40,7 +43,6 @@
 	let { data }: { data: PageData } = $props();
 
 	// ---- form state (keys are the phpMyAdmin form field names) ----------------------------------
-	// svelte-ignore state_referenced_locally
 	const initial = (() => {
 		const bools: Record<string, boolean> = {};
 		const texts: Record<string, string> = {};
@@ -52,12 +54,13 @@
 	})();
 	let bools = $state<Record<string, boolean>>(initial.bools);
 	let texts = $state<Record<string, string>>(initial.texts);
-	// svelte-ignore state_referenced_locally -- initial form state; the page remounts (#key) per query
-	let selDbs = $state<string[]>(data.databases.filter((d) => d.checked).map((d) => d.name));
-	// svelte-ignore state_referenced_locally
-	let selStructure = $state<string[]>(data.tables.map((t) => t.name));
-	// svelte-ignore state_referenced_locally
-	let selData = $state<string[]>(data.tables.filter((t) => t.kind === 'table').map((t) => t.name));
+	let selDbs = $state<string[]>(
+		untrack(() => data.databases.filter((d) => d.checked).map((d) => d.name))
+	);
+	let selStructure = $state<string[]>(untrack(() => data.tables.map((t) => t.name)));
+	let selData = $state<string[]>(
+		untrack(() => data.tables.filter((t) => t.kind === 'table').map((t) => t.name))
+	);
 
 	const plugin = $derived(data.plugins.find((p) => p.id === texts.what) ?? data.plugins[0]);
 	const custom = $derived(texts.quick_or_custom === 'custom');
@@ -73,8 +76,9 @@
 		data: 'Data creation options'
 	};
 	function groups(p: PluginInfo): { title: string; options: ExportOption[] }[] {
-		const map = new Map<string, ExportOption[]>();
+		const map = new SvelteMap<string, ExportOption[]>();
 		for (const o of p.options) {
+			if (o.name === 'structure_or_data') continue; // rendered as the "Dump table" card
 			const g = o.group ?? 'general';
 			map.set(g, [...(map.get(g) ?? []), o]);
 		}
@@ -97,8 +101,7 @@
 	}
 
 	// ---- templates -------------------------------------------------------------------------------
-	// svelte-ignore state_referenced_locally
-	let templates = $state(data.templates);
+	let templates = $state(untrack(() => data.templates));
 	let templateId = $state('');
 	let templateName = $state('');
 
@@ -548,7 +551,7 @@
 				class={custom && texts.what === p.id ? 'flex flex-col gap-6' : 'hidden'}
 				data-testid={`options-${p.id}`}
 			>
-				{#if p.supports.structure && p.supports.data && data.scope !== 'raw'}
+				{#if p.supports.structure && p.supports.data && data.scope !== 'raw' && !p.fixedStructure}
 					<Card.Root>
 						<Card.Header><Card.Title>Dump table</Card.Title></Card.Header>
 						<Card.Content>

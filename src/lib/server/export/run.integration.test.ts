@@ -36,14 +36,22 @@ for (const server of SERVERS) {
 			await conn.end();
 		});
 
-		const base = () => ({ scope: 'database' as const, databases: [db], structureOrData: 'structure_and_data' as const });
+		const base = () => ({
+			scope: 'database' as const,
+			databases: [db],
+			structureOrData: 'structure_and_data' as const
+		});
 
 		it('skips generated columns and exports views as stand-in then real view', async ({ skip }) => {
 			if (!conn) return skip();
 			const sql = await exportString(env, base());
 			expect(sql).not.toContain('`g`,');
-			expect(sql).toContain('INSERT INTO `t` (`id`, `name`) VALUES\n(1, \'a\'),\n(2, NULL),\n(3, \'c\');');
-			expect(sql.indexOf('Stand-in structure for view `v`')).toBeLessThan(sql.indexOf('Structure for view `v`'));
+			expect(sql).toContain(
+				"INSERT INTO `t` (`id`, `name`) VALUES\n(1, 'a'),\n(2, NULL),\n(3, 'c');"
+			);
+			expect(sql.indexOf('Stand-in structure for view `v`')).toBeLessThan(
+				sql.indexOf('Structure for view `v`')
+			);
 		});
 
 		it('honours INSERT variants', async ({ skip }) => {
@@ -55,7 +63,9 @@ for (const server of SERVERS) {
 					structureOrData: 'data',
 					options
 				});
-			expect(await get({ ignore: true, insert_syntax: 'none' })).toContain("INSERT IGNORE INTO `t` VALUES(2, NULL);");
+			expect(await get({ ignore: true, insert_syntax: 'none' })).toContain(
+				'INSERT IGNORE INTO `t` VALUES(2, NULL);'
+			);
 			expect(await get({ type: 'REPLACE', insert_syntax: 'complete' })).toContain(
 				"REPLACE INTO `t` (`id`, `name`) VALUES(1, 'a');"
 			);
@@ -65,13 +75,21 @@ for (const server of SERVERS) {
 			expect(await get({ truncate: true })).toContain('TRUNCATE TABLE `t`;');
 		});
 
-		it('structure options: drop, if not exists, no backquotes, disable fk, no comments', async ({ skip }) => {
+		it('structure options: drop, if not exists, no backquotes, disable fk, no comments', async ({
+			skip
+		}) => {
 			if (!conn) return skip();
 			const sql = await exportString(env, {
 				...base(),
 				tables: [{ name: 't', structure: true, data: false }],
 				structureOrData: 'structure',
-				options: { drop_table: true, if_not_exists: true, disable_fk: true, include_comments: false, use_transaction: false }
+				options: {
+					drop_table: true,
+					if_not_exists: true,
+					disable_fk: true,
+					include_comments: false,
+					use_transaction: false
+				}
 			});
 			expect(sql).toContain('SET FOREIGN_KEY_CHECKS=0;');
 			expect(sql).toContain('DROP TABLE IF EXISTS `t`;');
@@ -91,7 +109,15 @@ for (const server of SERVERS) {
 				structureOrData: 'structure',
 				options: { create_database: true }
 			});
-			expect(sql).toMatch(new RegExp('CREATE DATABASE IF NOT EXISTS `' + db + '` DEFAULT CHARACTER SET utf8mb4 COLLATE \\w+;\\nUSE `' + db + '`;'));
+			expect(sql).toMatch(
+				new RegExp(
+					'CREATE DATABASE IF NOT EXISTS `' +
+						db +
+						'` DEFAULT CHARACTER SET utf8mb4 COLLATE \\w+;\\nUSE `' +
+						db +
+						'`;'
+				)
+			);
 			const srv = await exportString(env, {
 				scope: 'server',
 				databases: [db],
@@ -127,7 +153,7 @@ for (const server of SERVERS) {
 				sqlQuery: 'SELECT id, name FROM t WHERE id > 1',
 				structureOrData: 'data'
 			});
-			expect(raw).toContain('INSERT INTO `t` (`id`, `name`) VALUES\n(2, NULL),\n(3, \'c\');');
+			expect(raw).toContain("INSERT INTO `t` (`id`, `name`) VALUES\n(2, NULL),\n(3, 'c');");
 		});
 
 		it('a single view exports its CREATE VIEW only', async ({ skip }) => {
@@ -147,7 +173,12 @@ for (const server of SERVERS) {
 		it('rejects queries without a result set before any output', async ({ skip }) => {
 			if (!conn) return skip();
 			await expect(
-				exportString(env, { scope: 'raw', databases: [db], sqlQuery: 'SELEC 1', structureOrData: 'data' })
+				exportString(env, {
+					scope: 'raw',
+					databases: [db],
+					sqlQuery: 'SELEC 1',
+					structureOrData: 'data'
+				})
 			).rejects.toThrow();
 		});
 
@@ -156,13 +187,23 @@ for (const server of SERVERS) {
 			const plugin = getExportPlugin('sql')!;
 			const req = { ...base(), plugin, options: defaultOptions('sql') };
 			const gz = await collect(
-				await exportToStream(env, req, { compression: 'gzip', charset: 'utf-8', zipEntryName: 'x.sql' })
+				await exportToStream(env, req, {
+					compression: 'gzip',
+					charset: 'utf-8',
+					zipEntryName: 'x.sql'
+				})
 			);
 			expect(gunzipSync(gz).toString()).toContain('CREATE TABLE `t`');
 			const zip = await collect(
-				await exportToStream(env, req, { compression: 'zip', charset: 'utf-8', zipEntryName: 'x.sql' })
+				await exportToStream(env, req, {
+					compression: 'zip',
+					charset: 'utf-8',
+					zipEntryName: 'x.sql'
+				})
 			);
-			expect(Buffer.from(unzipSync(new Uint8Array(zip))['x.sql']).toString()).toContain('CREATE TABLE `t`');
+			expect(Buffer.from(unzipSync(new Uint8Array(zip))['x.sql']).toString()).toContain(
+				'CREATE TABLE `t`'
+			);
 			const text = await exportToText(env, req, 500);
 			expect(text.truncated).toBe(true);
 			expect(text.text).toHaveLength(500);
@@ -171,7 +212,9 @@ for (const server of SERVERS) {
 
 		it('streams a big table in bounded memory and converts the charset', async ({ skip }) => {
 			if (!conn) return skip();
-			await conn.query(`CREATE TABLE \`${db}\`.\`big\` (id int NOT NULL PRIMARY KEY, s varchar(40))`);
+			await conn.query(
+				`CREATE TABLE \`${db}\`.\`big\` (id int NOT NULL PRIMARY KEY, s varchar(40))`
+			);
 			const values = Array.from({ length: 20000 }, (_, i) => `(${i + 1}, 'é${i + 1}')`);
 			await conn.query(`INSERT INTO \`${db}\`.\`big\` VALUES ${values.join(',')}`);
 			const plugin = getExportPlugin('sql')!;
@@ -184,7 +227,11 @@ for (const server of SERVERS) {
 				structureOrData: 'data' as const
 			};
 			const out = await collect(
-				await exportToStream(env, req, { compression: 'none', charset: 'iso-8859-1', zipEntryName: 'x' })
+				await exportToStream(env, req, {
+					compression: 'none',
+					charset: 'iso-8859-1',
+					zipEntryName: 'x'
+				})
 			);
 			// latin1: é is the single byte 0xE9, and the dump declares the charset
 			expect(out.includes(Buffer.from([0x27, 0xe9, 0x31, 0x27]))).toBe(true);

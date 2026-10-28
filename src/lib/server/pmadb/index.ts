@@ -12,11 +12,7 @@ export { withControl };
 
 /** Table keys of the server config that name a `pma__*` table. */
 export type StorageKey =
-	| 'bookmarktable'
-	| 'history'
-	| 'table_uiprefs'
-	| 'savedsearches'
-	| 'export_templates';
+	'bookmarktable' | 'history' | 'table_uiprefs' | 'savedsearches' | 'export_templates';
 
 /** Qualified, escaped name of a storage table; null when the feature is not configured. */
 export function storageTable(
