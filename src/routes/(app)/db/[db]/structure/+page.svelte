@@ -6,6 +6,7 @@
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import BookOpen from '@lucide/svelte/icons/book-open';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Eraser from '@lucide/svelte/icons/eraser';
 	import Eye from '@lucide/svelte/icons/eye';
@@ -209,7 +210,13 @@
 		icon={Table2}
 		title="Structure"
 		description="{data.db} · {data.total} {data.total === 1 ? 'table' : 'tables'}"
-	/>
+	>
+		{#snippet actions()}
+			<Button variant="outline" href="/db/{encodeURIComponent(data.db)}/data-dictionary">
+				<BookOpen class="size-4" /> Data dictionary
+			</Button>
+		{/snippet}
+	</PageHeader>
 
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		<StatCard

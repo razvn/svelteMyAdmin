@@ -162,3 +162,14 @@
 		@apply font-sans;
 	}
 }
+
+/* Printing: only the page content, without the app shell (data dictionary, ...). */
+@media print {
+	[data-slot='sidebar-gap'],
+	[data-slot='sidebar-container'],
+	[data-slot='sidebar-inset'] > header,
+	[data-testid='tab-bar'],
+	nav[aria-label='breadcrumb'] {
+		display: none !important;
+	}
+}
