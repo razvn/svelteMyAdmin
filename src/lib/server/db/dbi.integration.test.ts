@@ -56,7 +56,10 @@ for (const { name, port, type } of servers) {
 			if (!conn) return skip();
 			expect(await dbi.listDatabases()).toContain('sma_test');
 			cfg.only_db = 'sma_%';
-			expect(await dbi.listDatabases()).toEqual(['sma_test']);
+			// Other suites may create their own `sma_*` databases concurrently on the shared servers.
+			const only = await dbi.listDatabases();
+			expect(only).toContain('sma_test');
+			expect(only.every((db) => db.startsWith('sma_'))).toBe(true);
 			cfg.only_db = '';
 			cfg.hide_db = '^(information_schema|mysql|performance_schema|sys)$';
 			const dbs = await dbi.listDatabases();
