@@ -150,7 +150,7 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 ## Progress
 
 - [x] Phase 0 — Foundation
-- [ ] Phase 1 — Auth & shell
+- [x] Phase 1 — Auth & shell
 - [ ] Phase 2 — Server level
 - [ ] Phase 3 — Database level
 - [ ] Phase 4 — Table level
