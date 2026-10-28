@@ -115,6 +115,15 @@ export const configSchema = z
 		ExecTimeLimit: z.number().int().default(300),
 		ShowSQL: z.boolean().default(true),
 		RetainQueryBox: z.boolean().default(false),
+		/** Links shown with every executed query (config.default.php `SQLQuery`). */
+		SQLQuery: z
+			.object({
+				Edit: z.boolean().default(true),
+				Explain: z.boolean().default(true),
+				ShowAsPHP: z.boolean().default(true),
+				Refresh: z.boolean().default(true)
+			})
+			.default({ Edit: true, Explain: true, ShowAsPHP: true, Refresh: true }),
 		CodemirrorEnable: z.boolean().default(true),
 		LintEnable: z.boolean().default(true),
 		AllowUserDropDatabase: z.boolean().default(false),
