@@ -59,7 +59,7 @@ describe('db-node.svelte', () => {
 			.toHaveAttribute('href', '/db/sma_test/routines?type=PROCEDURE&item=sp_books_by_author');
 		await expect
 			.element(screen.getByRole('link', { name: 'New table' }))
-			.toHaveAttribute('href', '/db/sma_test/structure');
+			.toHaveAttribute('href', '/db/sma_test/create-table');
 	});
 
 	it('collapses again and keeps the loaded data (no second fetch)', async () => {

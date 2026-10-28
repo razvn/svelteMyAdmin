@@ -105,7 +105,7 @@
 						isActive={isCurrentTable}
 						quickHref={(t) => tabHref('table', { db: name, table: t }, nav.quickTabTable)}
 						quickLabel="Open {nav.quickTabTable}"
-						newEntry={{ label: 'New table', href: tabHref('db', { db: name }, 'structure') }}
+						newEntry={{ label: 'New table', href: tabHref('db', { db: name }, 'create-table') }}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
 						forceOpen={isCurrent && !!currentTable && children.tables.includes(currentTable)}
