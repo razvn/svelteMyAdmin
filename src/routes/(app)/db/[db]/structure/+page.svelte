@@ -21,6 +21,7 @@
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import StatCard from '#lib/components/app-shell/stat-card.svelte';
+	import MaintenanceResults from '#lib/components/database/maintenance-results.svelte';
 	import { getNavState } from '#lib/components/navigation/nav-state.svelte.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
@@ -171,7 +172,6 @@
 		}
 	}
 
-	const createCols = (r: Record<string, string>[]) => (r.length ? Object.keys(r[0]) : []);
 	const createSql = (r: Record<string, string>) => r['Create Table'] ?? r['Create View'] ?? '';
 	const createName = (r: Record<string, string>) => r['Table'] ?? r['View'] ?? '';
 </script>
@@ -721,28 +721,7 @@
 					</div>
 				{/each}
 			{:else}
-				<div class="flex items-center justify-between gap-2">
-					<code class="font-mono text-xs text-muted-foreground">{r.statement}</code>
-					<Button variant="outline" size="sm" onclick={() => copy(r.statement)}>
-						<Copy /> Copy
-					</Button>
-				</div>
-				<Table.Root data-testid="maintenance-result">
-					<Table.Header>
-						<Table.Row>
-							{#each createCols(r.rows) as c (c)}<Table.Head>{c}</Table.Head>{/each}
-						</Table.Row>
-					</Table.Header>
-					<Table.Body>
-						{#each r.rows as row, i (i)}
-							<Table.Row>
-								{#each createCols(r.rows) as c (c)}
-									<Table.Cell class="font-mono whitespace-normal">{row[c]}</Table.Cell>
-								{/each}
-							</Table.Row>
-						{/each}
-					</Table.Body>
-				</Table.Root>
+				<MaintenanceResults results={[r]} />
 			{/if}
 		{/each}
 		<Dialog.Footer>
