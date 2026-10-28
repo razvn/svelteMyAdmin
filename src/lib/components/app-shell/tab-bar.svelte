@@ -40,10 +40,11 @@
 		);
 	}
 
-	// Re-measure when the container resizes or the set of tabs changes.
+	// Re-measure after mount (the observer fires once on observe) and whenever the bar or the measured
+	// copy changes size. The copy is `w-max`, so its width follows the natural width of all tabs: it
+	// changes when web fonts load, when the sidebar width is restored and when the set of tabs changes,
+	// none of which necessarily resize the bar itself.
 	const observe: Attachment<HTMLElement> = (node) => {
-		void tabs;
-		recompute();
 		const observer = new ResizeObserver(recompute);
 		observer.observe(node);
 		return () => observer.disconnect();
@@ -108,8 +109,9 @@
 	<!-- Invisible copy used to measure the natural width of every tab. -->
 	<div
 		bind:this={measure}
+		{@attach observe}
 		aria-hidden="true"
-		class="pointer-events-none invisible absolute top-0 left-0 flex h-0 gap-1 overflow-hidden"
+		class="pointer-events-none invisible absolute top-0 left-0 flex h-0 w-max gap-1 overflow-hidden"
 	>
 		{#each tabs as tab (tab.id)}
 			{@const Icon = TAB_ICONS[tab.id] ?? FALLBACK_ICON}

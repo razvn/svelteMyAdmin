@@ -105,6 +105,25 @@ test('variables: filter, byte tooltip and inline edit of a global variable', asy
 	}
 });
 
+test('variables: the table fits a 1280px window and long values wrap', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/server/variables');
+	await expect(page.getByTestId('variables-table')).toBeVisible();
+	const value = await page.getByRole('columnheader', { name: 'Value' }).boundingBox();
+	expect(value).not.toBeNull();
+	expect(value!.x + value!.width).toBeLessThanOrEqual(1280);
+
+	// a long value (optimizer_switch) is clamped and can be expanded
+	await page.getByTestId('variables-filter').fill('optimizer_switch');
+	const row = page.getByTestId('variable-row');
+	await expect(row).toHaveCount(1);
+	await expect(row.getByRole('button', { name: 'Show more' })).toBeVisible();
+	await row.getByRole('button', { name: 'Show more' }).click();
+	await expect(row.getByRole('button', { name: 'Show less' })).toBeVisible();
+	const table = await page.getByTestId('variables-table').boundingBox();
+	expect(table!.width).toBeLessThanOrEqual(1280);
+});
+
 test('variables: a MySQL error is shown in a toast and the edit is cancelled', async ({ page }) => {
 	await page.goto('/server/variables');
 	await page.getByTestId('variables-filter').fill('version');

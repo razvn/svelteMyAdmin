@@ -35,6 +35,16 @@ test('status page shows uptime, traffic and connections with sub navigation', as
 	await expect(page.getByTestId('traffic-table')).toContainText('Sent');
 	await expect(page.getByTestId('connections-table')).toContainText('Max. concurrent connections');
 	await expect(page.getByTestId('connections-table')).toContainText('Failed attempts');
+	// the # column is a plain count, never an SI-prefixed value such as "9,000 m"
+	for (const label of ['Failed attempts', 'Aborted', 'Total']) {
+		const count = page
+			.getByTestId('connections-table')
+			.getByRole('row')
+			.filter({ hasText: label })
+			.getByRole('cell')
+			.nth(1);
+		await expect(count).toHaveText(/^[\d,]+$/);
+	}
 	for (const label of [
 		'Server',
 		'Processes',

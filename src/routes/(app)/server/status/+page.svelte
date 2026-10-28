@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
-	import { formatBytes, formatNumber, formatSi, timespanFormat } from '#lib/format.ts';
+	import { formatBytes, timespanFormat } from '#lib/format.ts';
+	import { connectionRows } from '#lib/admin/status-connections.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
@@ -14,7 +15,7 @@
 	const received = $derived(s.bytesReceived);
 	const sent = $derived(s.bytesSent);
 	const perHour = (n: number) => formatBytes(n / hours);
-	const perHourNum = (n: number) => formatSi(n / hours, 4, 1, true);
+	const connections = $derived(connectionRows(s));
 </script>
 
 <svelte:head>
@@ -106,37 +107,16 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						<Table.Row>
-							<Table.Cell>Max. concurrent connections</Table.Cell>
-							<Table.Cell class="text-end font-mono">
-								{formatNumber(s.maxUsedConnections)}
-							</Table.Cell>
-							<Table.Cell class="text-end font-mono">--</Table.Cell>
-							<Table.Cell class="text-end font-mono">--</Table.Cell>
-						</Table.Row>
-						<Table.Row>
-							<Table.Cell>Failed attempts</Table.Cell>
-							<Table.Cell class="text-end font-mono">{formatSi(s.abortedConnects, 4, 0)}</Table.Cell
-							>
-							<Table.Cell class="text-end font-mono">{perHourNum(s.abortedConnects)}</Table.Cell>
-							<Table.Cell class="text-end font-mono">
-								{s.connections ? formatSi((s.abortedConnects * 100) / s.connections, 0, 2) : '--'}
-							</Table.Cell>
-						</Table.Row>
-						<Table.Row>
-							<Table.Cell>Aborted</Table.Cell>
-							<Table.Cell class="text-end font-mono">{formatSi(s.abortedClients, 4, 0)}</Table.Cell>
-							<Table.Cell class="text-end font-mono">{perHourNum(s.abortedClients)}</Table.Cell>
-							<Table.Cell class="text-end font-mono">
-								{s.connections ? formatSi((s.abortedClients * 100) / s.connections, 0, 2) : '--'}
-							</Table.Cell>
-						</Table.Row>
-						<Table.Row>
-							<Table.Cell class="font-medium">Total</Table.Cell>
-							<Table.Cell class="text-end font-mono">{formatSi(s.connections, 4, 0)}</Table.Cell>
-							<Table.Cell class="text-end font-mono">{perHourNum(s.connections)}</Table.Cell>
-							<Table.Cell class="text-end font-mono">{s.connections ? '100.00' : '--'}</Table.Cell>
-						</Table.Row>
+						{#each connections as row (row.name)}
+							<Table.Row>
+								<Table.Cell class={row.name === 'Total' ? 'font-medium' : undefined}>
+									{row.name}
+								</Table.Cell>
+								<Table.Cell class="text-end font-mono">{row.number}</Table.Cell>
+								<Table.Cell class="text-end font-mono">{row.perHour}</Table.Cell>
+								<Table.Cell class="text-end font-mono">{row.percentage}</Table.Cell>
+							</Table.Row>
+						{/each}
 					</Table.Body>
 				</Table.Root>
 			</Card.Content>

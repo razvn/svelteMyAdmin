@@ -77,3 +77,24 @@ test('breadcrumbs keep the database and table visible at 800px', async ({ page }
 	const box = await crumbs.getByRole('link', { name: /books/ }).boundingBox();
 	expect(box!.height).toBeLessThan(30);
 });
+
+test('server tab bar moves overflowing tabs into More at 800px', async ({ page }) => {
+	await page.setViewportSize({ width: 800, height: 700 });
+	await page.goto('/server/databases');
+	const bar = page.getByTestId('tab-bar');
+	await expect(bar.getByRole('button', { name: 'More' })).toBeVisible();
+	// Measured after layout and fonts settle, so poll: no tab link may extend past the viewport.
+	await expect
+		.poll(() =>
+			page.evaluate(() =>
+				Array.from(
+					document.querySelectorAll(
+						'[data-testid="tab-bar"] nav a, [data-testid="tab-bar"] nav button'
+					)
+				)
+					.filter((el) => el.getBoundingClientRect().right > window.innerWidth)
+					.map((el) => el.textContent?.trim())
+			)
+		)
+		.toEqual([]);
+});

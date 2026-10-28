@@ -19,8 +19,13 @@
 	let editing = $state<string | null>(null);
 	let draft = $state('');
 	let saving = $state(false);
+	/** Names of the long values the user expanded with "Show more". */
+	let expanded = $state<Record<string, boolean>>({});
 
 	const visible = $derived(data.variables.filter((v) => matchesFilter(filter, v.name)));
+
+	/** Values longer than this are clamped to a few lines until expanded. */
+	const CLAMP_LENGTH = 120;
 
 	function startEdit(name: string, value: string) {
 		editing = name;
@@ -31,6 +36,26 @@
 <svelte:head>
 	<title>Server variables - svelteMyAdmin</title>
 </svelte:head>
+
+{#snippet valueText(name: string, text: string)}
+	{#if text.length > CLAMP_LENGTH}
+		<div class="flex flex-col items-end gap-1">
+			<span class={expanded[name] ? 'break-all' : 'line-clamp-3 break-all'}>{text}</span>
+			<Button
+				type="button"
+				variant="link"
+				size="sm"
+				class="h-auto p-0 font-sans"
+				aria-expanded={expanded[name] ?? false}
+				onclick={() => (expanded[name] = !expanded[name])}
+			>
+				{expanded[name] ? 'Show less' : 'Show more'}
+			</Button>
+		</div>
+	{:else}
+		<span class="break-all">{text}</span>
+	{/if}
+{/snippet}
 
 <Card.Root>
 	<Card.Header>
@@ -79,11 +104,11 @@
 
 		<div class="overflow-x-auto">
 			<Tooltip.Provider>
-				<Table.Root data-testid="variables-table">
+				<Table.Root class="table-fixed" data-testid="variables-table">
 					<Table.Header>
 						<Table.Row>
 							<Table.Head class="w-24">Action</Table.Head>
-							<Table.Head>Variable</Table.Head>
+							<Table.Head class="w-56">Variable</Table.Head>
 							<Table.Head class="text-end">Value</Table.Head>
 						</Table.Row>
 					</Table.Header>
@@ -124,8 +149,8 @@
 										</Button>
 									{/if}
 								</Table.Cell>
-								<Table.Cell class="font-medium">{v.name}</Table.Cell>
-								<Table.Cell class="text-end font-mono">
+								<Table.Cell class="font-medium break-all whitespace-normal">{v.name}</Table.Cell>
+								<Table.Cell class="text-end font-mono whitespace-normal">
 									{#if editing === v.name}
 										<Input
 											form="variable-edit"
@@ -147,15 +172,19 @@
 											<Tooltip.Content>{v.title}</Tooltip.Content>
 										</Tooltip.Root>
 									{:else}
-										{v.display}
+										{@render valueText(v.name, v.display)}
 									{/if}
 								</Table.Cell>
 							</Table.Row>
 							{#if v.sessionDisplay !== null}
 								<Table.Row class="text-muted-foreground italic" data-testid="session-row">
 									<Table.Cell></Table.Cell>
-									<Table.Cell>{v.name} (Session value)</Table.Cell>
-									<Table.Cell class="text-end font-mono">{v.sessionDisplay}</Table.Cell>
+									<Table.Cell class="break-all whitespace-normal">
+										{v.name} (Session value)
+									</Table.Cell>
+									<Table.Cell class="text-end font-mono whitespace-normal">
+										{@render valueText(`${v.name} (session)`, v.sessionDisplay)}
+									</Table.Cell>
 								</Table.Row>
 							{/if}
 						{:else}
