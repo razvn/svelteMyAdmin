@@ -7,9 +7,15 @@
 	import Server from '@lucide/svelte/icons/server';
 	import Settings from '@lucide/svelte/icons/settings';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Activity from '@lucide/svelte/icons/activity';
+	import Clock from '@lucide/svelte/icons/clock';
+	import Database from '@lucide/svelte/icons/database';
 	import AppearanceSettings from '#lib/components/home/appearance-settings.svelte';
 	import CollationForm from '#lib/components/home/collation-form.svelte';
 	import InfoList from '#lib/components/home/info-list.svelte';
+	import PageHeader from '#lib/components/app-shell/page-header.svelte';
+	import StatCard from '#lib/components/app-shell/stat-card.svelte';
+	import { formatNumber, formatUptimeShort } from '#lib/format.ts';
 	import { buttonVariants } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import type { PageProps } from './$types';
@@ -40,13 +46,47 @@
 	<title>svelteMyAdmin</title>
 </svelte:head>
 
-<h1 class="text-2xl font-semibold tracking-tight">Welcome to svelteMyAdmin</h1>
+<PageHeader
+	title="Welcome to svelteMyAdmin"
+	description="Overview of {data.server.label} and your connection settings."
+/>
 
-<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+<section aria-label="Server overview" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+	<StatCard
+		label="Server version"
+		value={data.kpi.version}
+		icon={Server}
+		tone="primary"
+		hint={data.server.type}
+	/>
+	<StatCard
+		label="Uptime"
+		value={data.kpi.available ? formatUptimeShort(data.kpi.uptime) : 'n/a'}
+		icon={Clock}
+		tone="success"
+		hint="Since the last server start"
+	/>
+	<StatCard
+		label="Databases"
+		value={formatNumber(data.databases.length)}
+		icon={Database}
+		tone="info"
+		hint="Visible to {data.server.user}"
+	/>
+	<StatCard
+		label="Queries per hour"
+		value={data.kpi.available ? formatNumber(data.kpi.questionsPerHour) : 'n/a'}
+		icon={Activity}
+		tone="warning"
+		hint="{formatNumber(data.kpi.threadsConnected)} connected threads"
+	/>
+</section>
+
+<div class="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Settings class="size-4" />General settings</Card.Title
+				><Settings class="size-4 text-primary" />General settings</Card.Title
 			>
 		</Card.Header>
 		<Card.Content class="grid gap-4">
@@ -71,7 +111,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Palette class="size-4" />Appearance settings</Card.Title
+				><Palette class="size-4 text-primary" />Appearance settings</Card.Title
 			>
 		</Card.Header>
 		<Card.Content>
@@ -82,7 +122,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Server class="size-4" />Database server</Card.Title
+				><Server class="size-4 text-primary" />Database server</Card.Title
 			>
 		</Card.Header>
 		<Card.Content><InfoList rows={serverRows} /></Card.Content>
@@ -90,7 +130,9 @@
 
 	<Card.Root>
 		<Card.Header>
-			<Card.Title class="flex items-center gap-2"><Monitor class="size-4" />Web server</Card.Title>
+			<Card.Title class="flex items-center gap-2"
+				><Monitor class="size-4 text-primary" />Web server</Card.Title
+			>
 		</Card.Header>
 		<Card.Content><InfoList rows={webRows} /></Card.Content>
 	</Card.Root>
@@ -98,7 +140,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Sparkles class="size-4" />svelteMyAdmin</Card.Title
+				><Sparkles class="size-4 text-primary" />svelteMyAdmin</Card.Title
 			>
 		</Card.Header>
 		<Card.Content class="grid gap-4">
@@ -109,7 +151,7 @@
 				<li class="text-muted-foreground">Roadmap: <code>docs/ROADMAP.md</code></li>
 				<li>
 					<a
-						class="text-primary underline-offset-4 hover:underline"
+						class="font-medium text-primary underline-offset-4 hover:underline"
 						href="https://docs.phpmyadmin.net/en/latest/"
 						rel="noreferrer"
 						target="_blank">phpMyAdmin documentation</a

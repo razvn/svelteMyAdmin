@@ -83,3 +83,35 @@ export function pieSlices(chart: ChartSlice[]): { name: string; value: number; d
 		return { ...s, d: `M 0 0 L ${f(x1)} ${f(y1)} A 1 1 0 ${large} 1 ${f(x2)} ${f(y2)} Z` };
 	});
 }
+
+/**
+ * Donut segments as SVG path arcs (outer radius 1, inner radius `inner`) with their share in percent.
+ * A single segment is drawn as two half rings because an arc cannot start and end at the same point.
+ */
+export function donutSlices(
+	chart: ChartSlice[],
+	inner = 0.62
+): { name: string; value: number; percent: number; d: string }[] {
+	const sum = chart.reduce((a, s) => a + s.value, 0);
+	if (!sum) return [];
+	const f = (n: number) => n.toFixed(5);
+	const ring = (a0: number, a1: number) => {
+		const large = a1 - a0 > Math.PI ? 1 : 0;
+		const p = (r: number, a: number) => `${f(r * Math.cos(a))} ${f(r * Math.sin(a))}`;
+		return (
+			`M ${p(1, a0)} A 1 1 0 ${large} 1 ${p(1, a1)} ` +
+			`L ${p(inner, a1)} A ${inner} ${inner} 0 ${large} 0 ${p(inner, a0)} Z`
+		);
+	};
+	let angle = -Math.PI / 2;
+	return chart.map((s) => {
+		const sweep = (s.value / sum) * Math.PI * 2;
+		const start = angle;
+		angle += sweep;
+		const d =
+			chart.length === 1
+				? `${ring(start, start + Math.PI)} ${ring(start + Math.PI, start + 2 * Math.PI)}`
+				: ring(start, angle);
+		return { ...s, percent: (s.value / sum) * 100, d };
+	});
+}

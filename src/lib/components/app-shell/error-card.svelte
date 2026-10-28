@@ -30,17 +30,18 @@
 
 <div class="flex min-h-[40vh] items-center justify-center p-4">
 	<Card.Root class="w-full max-w-md" data-testid="error-card">
-		<Card.Header>
-			<Card.Title>
-				<h1 class="text-2xl font-semibold tracking-tight">{status} {title}</h1>
-			</Card.Title>
-		</Card.Header>
-		<Card.Content class="grid gap-4">
-			<Alert.Root variant="destructive">
-				<CircleAlert />
+		<Card.Content class="grid justify-items-center gap-5 text-center">
+			<span
+				aria-hidden="true"
+				class="flex size-16 items-center justify-center rounded-2xl bg-destructive-soft text-destructive"
+			>
+				<CircleAlert class="size-8" />
+			</span>
+			<h1 class="text-2xl font-semibold tracking-tight">{status} {title}</h1>
+			<Alert.Root variant="destructive" class="text-start">
 				<Alert.Description>{message}</Alert.Description>
 			</Alert.Root>
-			<a href={resolve(bare('/'))} class={buttonVariants({ variant: 'outline' })}>Back to home</a>
+			<a href={resolve(bare('/'))} class={buttonVariants({ variant: 'default' })}>Back to home</a>
 		</Card.Content>
 	</Card.Root>
 </div>

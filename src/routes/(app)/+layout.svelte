@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { refreshAll } from '$app/navigation';
+	import Breadcrumbs from '#lib/components/app-shell/breadcrumbs.svelte';
 	import TopBar from '#lib/components/app-shell/top-bar.svelte';
 	import AppSidebar from '#lib/components/navigation/app-sidebar.svelte';
 	import CommandPalette from '#lib/components/navigation/command-palette.svelte';
@@ -39,20 +40,12 @@
 		{width}
 		currentDb={db}
 		currentTable={table}
-		canLogout={data.session.canLogout}
 		onreload={reload}
 	/>
-	<Sidebar.Inset class="min-w-0">
-		<TopBar
-			nav={data.nav}
-			session={data.session}
-			servers={data.servers}
-			{db}
-			{table}
-			{tableType}
-			onsearch={() => (paletteOpen = true)}
-		/>
-		<div class="flex flex-1 flex-col gap-4 p-4">
+	<Sidebar.Inset class="min-w-0 bg-background">
+		<TopBar session={data.session} servers={data.servers} onsearch={() => (paletteOpen = true)} />
+		<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<Breadcrumbs nav={data.nav} serverLabel={data.session.serverLabel} {db} {table} {tableType} />
 			{@render children()}
 		</div>
 	</Sidebar.Inset>

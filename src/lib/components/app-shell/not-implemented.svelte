@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Construction from '@lucide/svelte/icons/construction';
+	import PageHeader from './page-header.svelte';
 	import { Badge } from '#lib/components/ui/badge/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { phaseTitle } from '#lib/nav/tabs.ts';
@@ -17,19 +18,28 @@
 	<title>{title} - svelteMyAdmin</title>
 </svelte:head>
 
-<Card.Root class="max-w-xl" data-testid="not-implemented">
-	<Card.Header>
-		<Card.Title>
-			<h1 class="flex items-center gap-2 text-xl font-semibold">
-				<Construction class="size-5 text-muted-foreground" />
-				{title}
-			</h1>
-		</Card.Title>
-		<Card.Description>This page is not implemented yet.</Card.Description>
-	</Card.Header>
-	<Card.Content class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-		Planned in
-		<Badge variant="secondary">{phaseTitle(phase)}</Badge>
-		(see docs/ROADMAP.md).
-	</Card.Content>
-</Card.Root>
+<div class="flex flex-col gap-6">
+	<PageHeader {title} />
+
+	<Card.Root data-testid="not-implemented">
+		<Card.Content class="flex flex-col items-center gap-4 py-10 text-center">
+			<span
+				aria-hidden="true"
+				class="flex size-16 items-center justify-center rounded-2xl bg-primary-soft text-primary"
+			>
+				<Construction class="size-8" />
+			</span>
+			<div class="grid gap-1">
+				<h2 class="text-lg font-semibold">Coming soon</h2>
+				<p class="max-w-md text-sm text-muted-foreground">
+					This page is not implemented yet. It is on the way and will show up here.
+				</p>
+			</div>
+			<p class="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+				Planned in
+				<Badge variant="primary">{phaseTitle(phase)}</Badge>
+				(see docs/ROADMAP.md).
+			</p>
+		</Card.Content>
+	</Card.Root>
+</div>

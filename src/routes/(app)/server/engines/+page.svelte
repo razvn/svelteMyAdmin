@@ -2,8 +2,10 @@
 	import { resolve } from '$app/paths';
 	import Cpu from '@lucide/svelte/icons/cpu';
 	import { bare } from '#lib/nav/paths.ts';
-	import { engineSupportVariant } from '#lib/admin/badges.ts';
+	import { engineSupportVariant, yesNoVariant as yesNo } from '#lib/admin/badges.ts';
 	import { Badge } from '#lib/components/ui/badge/index.ts';
+	import PageHeader from '#lib/components/app-shell/page-header.svelte';
+	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
 
@@ -14,12 +16,13 @@
 	<title>Storage engines - svelteMyAdmin</title>
 </svelte:head>
 
-<h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-	<Cpu class="size-5 text-muted-foreground" />
-	Storage engines
-</h1>
+<PageHeader
+	icon={Cpu}
+	title="Storage engines"
+	description="Engines available on this server and the features they support."
+/>
 
-<div class="overflow-x-auto">
+<Card.Root class="gap-0 py-0">
 	<Table.Root data-testid="engines-table">
 		<Table.Header>
 			<Table.Row>
@@ -36,11 +39,11 @@
 				<Table.Row
 					data-testid="engine-row"
 					data-engine={engine.name}
-					class={engine.support === 'DEFAULT' ? 'bg-muted' : ''}
+					class={engine.support === 'DEFAULT' ? 'bg-primary-soft/60 hover:bg-primary-soft' : ''}
 				>
 					<Table.Cell class="font-medium">
 						<a
-							class="text-primary underline-offset-4 hover:underline"
+							class="font-semibold text-primary underline-offset-4 hover:underline"
 							href={resolve(bare(`/server/engines/${encodeURIComponent(engine.name)}`))}
 						>
 							{engine.name}
@@ -49,12 +52,18 @@
 					<Table.Cell>
 						<Badge variant={engineSupportVariant(engine.support)}>{engine.support}</Badge>
 					</Table.Cell>
-					<Table.Cell class="whitespace-normal">{engine.comment}</Table.Cell>
-					<Table.Cell>{engine.transactions}</Table.Cell>
-					<Table.Cell>{engine.xa}</Table.Cell>
-					<Table.Cell>{engine.savepoints}</Table.Cell>
+					<Table.Cell class="min-w-64 whitespace-normal text-muted-foreground">
+						{engine.comment}
+					</Table.Cell>
+					<Table.Cell
+						><Badge variant={yesNo(engine.transactions)}>{engine.transactions}</Badge></Table.Cell
+					>
+					<Table.Cell><Badge variant={yesNo(engine.xa)}>{engine.xa}</Badge></Table.Cell>
+					<Table.Cell
+						><Badge variant={yesNo(engine.savepoints)}>{engine.savepoints}</Badge></Table.Cell
+					>
 				</Table.Row>
 			{/each}
 		</Table.Body>
 	</Table.Root>
-</div>
+</Card.Root>

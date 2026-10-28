@@ -10,7 +10,9 @@
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { toast } from 'svelte-sonner';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
+	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
+	import { Badge } from '#lib/components/ui/badge/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
@@ -108,11 +110,20 @@
 	</a>
 {/snippet}
 
-<div class="flex flex-col gap-4">
-	<h2 class="flex items-center gap-2 text-xl font-semibold">
-		<Database class="size-5" />
-		{data.statistics ? 'Databases statistics' : 'Databases'}
-	</h2>
+<div class="flex flex-col gap-6">
+	<PageHeader
+		icon={Database}
+		title={data.statistics ? 'Databases statistics' : 'Databases'}
+		description="{data.total} {data.total === 1 ? 'database' : 'databases'} on this server."
+	>
+		{#snippet actions()}
+			{#if data.statistics}
+				<Button variant="outline" href={href({ statistics: null })}>Hide statistics</Button>
+			{:else if data.total > 0}
+				<Button variant="outline" href={href({ statistics: 1 })}>Show statistics</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	{#if data.showCreate}
 		<Card.Root>
@@ -186,182 +197,189 @@
 	{/if}
 
 	{#if data.total > 0}
-		<div class="flex flex-wrap items-center gap-2">
-			{#if data.dropAllowed}
-				<div class="flex items-center gap-2">
-					<Checkbox
-						id="check-all"
-						checked={allChecked}
-						onCheckedChange={(v) => toggleAll(v === true)}
-						aria-label="Check all"
-					/>
-					<label for="check-all" class="text-sm">Check all</label>
+		<Card.Root class="gap-0 py-0">
+			<div class="flex flex-wrap items-center gap-2 border-b p-5">
+				{#if data.dropAllowed}
+					<div class="flex items-center gap-2">
+						<Checkbox
+							id="check-all"
+							checked={allChecked}
+							onCheckedChange={(v) => toggleAll(v === true)}
+							aria-label="Check all"
+						/>
+						<label for="check-all" class="text-sm">Check all</label>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={droppable.length === 0}
+							onclick={() => (confirmOpen = true)}
+							data-testid="bulk-drop"
+						>
+							<Trash2 /> Drop
+						</Button>
+					</div>
+				{/if}
+				<Input
+					bind:value={filter}
+					type="search"
+					placeholder="Search"
+					aria-label="Search"
+					class="ml-auto w-56"
+				/>
+			</div>
+
+			{#if data.total > data.maxDbList}
+				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label="Pagination">
+					<Button variant="outline" size="sm" href={href({ pos: 0 })} disabled={data.pos === 0}>
+						Start
+					</Button>
 					<Button
 						variant="outline"
 						size="sm"
-						disabled={droppable.length === 0}
-						onclick={() => (confirmOpen = true)}
-						data-testid="bulk-drop"
+						href={href({ pos: prevPos || null })}
+						disabled={data.pos === 0}
 					>
-						<Trash2 /> Drop
+						Previous
 					</Button>
-				</div>
+					<span class="text-muted-foreground">
+						Showing {data.pos + 1} - {Math.min(data.total, data.pos + data.maxDbList)} of {data.total}
+					</span>
+					<Button
+						variant="outline"
+						size="sm"
+						href={href({ pos: nextPos })}
+						disabled={nextPos > lastPos}
+					>
+						Next
+					</Button>
+				</nav>
 			{/if}
-			<Input
-				bind:value={filter}
-				type="search"
-				placeholder="Search"
-				aria-label="Search"
-				class="ml-auto w-56"
-			/>
-		</div>
 
-		{#if data.total > data.maxDbList}
-			<nav class="flex items-center gap-2 text-sm" aria-label="Pagination">
-				<Button variant="outline" size="sm" href={href({ pos: 0 })} disabled={data.pos === 0}>
-					Start
-				</Button>
-				<Button
-					variant="outline"
-					size="sm"
-					href={href({ pos: prevPos || null })}
-					disabled={data.pos === 0}
-				>
-					Previous
-				</Button>
-				<span class="text-muted-foreground">
-					Showing {data.pos + 1} - {Math.min(data.total, data.pos + data.maxDbList)} of {data.total}
-				</span>
-				<Button
-					variant="outline"
-					size="sm"
-					href={href({ pos: nextPos })}
-					disabled={nextPos > lastPos}
-				>
-					Next
-				</Button>
-			</nav>
-		{/if}
-
-		<form
-			bind:this={dropForm}
-			id="dbStatsForm"
-			method="POST"
-			action="?/drop"
-			use:enhance={() => {
-				dropping = true;
-				return async ({ result, update }) => {
-					if (result.type === 'success') {
-						const n = (result.data?.dropped as string[] | undefined)?.length ?? 0;
-						toast.success(
-							n === 1
-								? '1 database has been dropped successfully.'
-								: `${n} databases have been dropped successfully.`
-						);
-						selected = [];
-					} else if (result.type === 'failure') {
-						toast.error(String(result.data?.dropError ?? 'Could not drop the databases.'));
-					}
-					await update({ reset: false });
-					dropping = false;
-					confirmOpen = false;
-				};
-			}}
-		>
-			{#each droppable as name (name)}
-				<input type="hidden" name="selected_dbs" value={name} />
-			{/each}
-			<Table.Root class="w-auto" data-testid="databases-table">
-				<Table.Header>
-					<Table.Row>
-						{#if data.dropAllowed}<Table.Head class="w-8"></Table.Head>{/if}
-						<Table.Head>{@render sortHeader('SCHEMA_NAME', 'Database')}</Table.Head>
-						<Table.Head>{@render sortHeader('DEFAULT_COLLATION_NAME', 'Collation')}</Table.Head>
-						{#if data.statistics}
-							{#each STAT_HEADERS as h (h.key)}
-								<Table.Head colspan={h.bytes ? 2 : 1}
-									>{@render sortHeader(h.key, h.title)}</Table.Head
-								>
-							{/each}
-						{/if}
-						<Table.Head>Action</Table.Head>
-					</Table.Row>
-				</Table.Header>
-				<Table.Body>
-					{#each visible as db (db.name)}
-						<Table.Row data-testid="db-row-{db.name}">
-							{#if data.dropAllowed}
-								<Table.Cell>
-									<Checkbox
-										checked={selected.includes(db.name)}
-										onCheckedChange={(v) => toggle(db.name, v === true)}
-										disabled={db.isSystemSchema || db.isPmadb}
-										aria-label="Select {db.name}"
-									/>
-								</Table.Cell>
+			<form
+				bind:this={dropForm}
+				id="dbStatsForm"
+				method="POST"
+				action="?/drop"
+				use:enhance={() => {
+					dropping = true;
+					return async ({ result, update }) => {
+						if (result.type === 'success') {
+							const n = (result.data?.dropped as string[] | undefined)?.length ?? 0;
+							toast.success(
+								n === 1
+									? '1 database has been dropped successfully.'
+									: `${n} databases have been dropped successfully.`
+							);
+							selected = [];
+						} else if (result.type === 'failure') {
+							toast.error(String(result.data?.dropError ?? 'Could not drop the databases.'));
+						}
+						await update({ reset: false });
+						dropping = false;
+						confirmOpen = false;
+					};
+				}}
+			>
+				{#each droppable as name (name)}
+					<input type="hidden" name="selected_dbs" value={name} />
+				{/each}
+				<Table.Root data-testid="databases-table">
+					<Table.Header>
+						<Table.Row>
+							{#if data.dropAllowed}<Table.Head class="w-8"></Table.Head>{/if}
+							<Table.Head>{@render sortHeader('SCHEMA_NAME', 'Database')}</Table.Head>
+							<Table.Head>{@render sortHeader('DEFAULT_COLLATION_NAME', 'Collation')}</Table.Head>
+							{#if data.statistics}
+								{#each STAT_HEADERS as h (h.key)}
+									<Table.Head colspan={h.bytes ? 2 : 1} class={h.bytes ? 'text-center' : 'text-end'}
+										>{@render sortHeader(h.key, h.title)}</Table.Head
+									>
+								{/each}
 							{/if}
-							<Table.Cell>
-								<a
-									href="/db/{encodeURIComponent(db.name)}/structure"
-									class="font-medium hover:underline"
-									title="Jump to database '{db.name}'"
-								>
-									{db.name}
-								</a>
+							<Table.Head class="text-end">Action</Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
+						{#each visible as db (db.name)}
+							<Table.Row data-testid="db-row-{db.name}">
+								{#if data.dropAllowed}
+									<Table.Cell>
+										<Checkbox
+											checked={selected.includes(db.name)}
+											onCheckedChange={(v) => toggle(db.name, v === true)}
+											disabled={db.isSystemSchema || db.isPmadb}
+											aria-label="Select {db.name}"
+										/>
+									</Table.Cell>
+								{/if}
+								<Table.Cell>
+									<a
+										href="/db/{encodeURIComponent(db.name)}/structure"
+										class="font-medium text-foreground hover:text-primary hover:underline"
+										title="Jump to database '{db.name}'"
+									>
+										{db.name}
+									</a>
+								</Table.Cell>
+								<Table.Cell><Badge variant="muted">{db.collation}</Badge></Table.Cell>
+								{#if data.statistics && db.stats}
+									{#each STAT_HEADERS as h (h.key)}
+										{#if h.bytes}
+											{@const v = formatByteDown(db.stats[h.key], 3, 1)}
+											<Table.Cell
+												class="pe-1 text-right tabular-nums"
+												title={String(db.stats[h.key])}
+											>
+												{v?.[0]}
+											</Table.Cell>
+											<Table.Cell class="ps-0 text-muted-foreground">{v?.[1]}</Table.Cell>
+										{:else}
+											<Table.Cell class="text-right tabular-nums" title={String(db.stats[h.key])}>
+												{formatNumber(db.stats[h.key])}
+											</Table.Cell>
+										{/if}
+									{/each}
+								{/if}
+								<Table.Cell class="text-end">
+									<a
+										href="/server/privileges?db={encodeURIComponent(
+											db.name
+										)}&checkprivsdb={encodeURIComponent(db.name)}"
+										class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+										title="Check privileges for database &quot;{db.name}&quot;."
+									>
+										<ShieldCheck class="size-4" /> Check privileges
+									</a>
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					</Table.Body>
+					<Table.Footer>
+						<Table.Row>
+							<Table.Cell colspan={data.dropAllowed ? 3 : 2} class="font-semibold">
+								Total: <span data-testid="db-total">{data.total}</span>
 							</Table.Cell>
-							<Table.Cell class="text-muted-foreground">{db.collation}</Table.Cell>
-							{#if data.statistics && db.stats}
+							{#if data.statistics && data.totals}
 								{#each STAT_HEADERS as h (h.key)}
 									{#if h.bytes}
-										{@const v = formatByteDown(db.stats[h.key], 3, 1)}
-										<Table.Cell class="text-right tabular-nums" title={String(db.stats[h.key])}>
-											{v?.[0]}
-										</Table.Cell>
-										<Table.Cell class="text-muted-foreground">{v?.[1]}</Table.Cell>
+										{@const v = formatByteDown(data.totals[h.key], 3, 1)}
+										<Table.Cell class="pe-1 text-right font-semibold tabular-nums"
+											>{v?.[0]}</Table.Cell
+										>
+										<Table.Cell class="ps-0 text-muted-foreground">{v?.[1]}</Table.Cell>
 									{:else}
-										<Table.Cell class="text-right tabular-nums" title={String(db.stats[h.key])}>
-											{formatNumber(db.stats[h.key])}
+										<Table.Cell class="text-right font-semibold tabular-nums">
+											{formatNumber(data.totals[h.key])}
 										</Table.Cell>
 									{/if}
 								{/each}
 							{/if}
-							<Table.Cell>
-								<a
-									href="/server/privileges?db={encodeURIComponent(
-										db.name
-									)}&checkprivsdb={encodeURIComponent(db.name)}"
-									class="inline-flex items-center gap-1 text-sm hover:underline"
-									title="Check privileges for database &quot;{db.name}&quot;."
-								>
-									<ShieldCheck class="size-4" /> Check privileges
-								</a>
-							</Table.Cell>
+							<Table.Cell></Table.Cell>
 						</Table.Row>
-					{/each}
-				</Table.Body>
-				<Table.Footer>
-					<Table.Row>
-						<Table.Cell colspan={data.dropAllowed ? 3 : 2} class="font-medium">
-							Total: <span data-testid="db-total">{data.total}</span>
-						</Table.Cell>
-						{#if data.statistics && data.totals}
-							{#each STAT_HEADERS as h (h.key)}
-								{#if h.bytes}
-									{@const v = formatByteDown(data.totals[h.key], 3, 1)}
-									<Table.Cell class="text-right font-medium tabular-nums">{v?.[0]}</Table.Cell>
-									<Table.Cell class="text-muted-foreground">{v?.[1]}</Table.Cell>
-								{:else}
-									<Table.Cell class="text-right font-medium tabular-nums">
-										{formatNumber(data.totals[h.key])}
-									</Table.Cell>
-								{/if}
-							{/each}
-						{/if}
-						<Table.Cell></Table.Cell>
-					</Table.Row>
-				</Table.Footer>
-			</Table.Root>
-		</form>
+					</Table.Footer>
+				</Table.Root>
+			</form>
+		</Card.Root>
 
 		{#if !data.statistics}
 			<Alert>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pieSlices, queryStats, usedQueries } from './queries';
+import { donutSlices, pieSlices, queryStats, usedQueries } from './queries';
 
 describe('usedQueries', () => {
 	it('keeps positive Com_ counters except Com_admin_commands', () => {
@@ -47,5 +47,23 @@ describe('pieSlices', () => {
 		expect(slices).toHaveLength(2);
 		expect(slices[0].d.startsWith('M 0 0 L')).toBe(true);
 		expect(pieSlices([])).toEqual([]);
+	});
+});
+
+describe('donutSlices', () => {
+	it('returns ring segments with their percentage', () => {
+		const slices = donutSlices([
+			{ name: 'a', value: 1 },
+			{ name: 'b', value: 3 }
+		]);
+		expect(slices.map((s) => s.percent)).toEqual([25, 75]);
+		expect(slices[0].d.startsWith('M 0.00000 -1.00000 A 1 1')).toBe(true);
+		expect(donutSlices([])).toEqual([]);
+	});
+
+	it('draws a single segment as a full ring', () => {
+		const [only] = donutSlices([{ name: 'a', value: 5 }]);
+		expect(only.percent).toBe(100);
+		expect(only.d.match(/M /g)).toHaveLength(2);
 	});
 });

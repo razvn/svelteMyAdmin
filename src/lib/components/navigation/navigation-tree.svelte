@@ -45,7 +45,14 @@
 	}
 </script>
 
-<Sidebar.Group class="gap-1 py-1">
+<Sidebar.Group class="gap-1 px-3 py-1">
+	<Sidebar.GroupLabel class="px-3">
+		Databases
+		<span
+			class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium tracking-normal text-muted-foreground normal-case tabular-nums"
+			data-testid="db-count">{databases.length}</span
+		>
+	</Sidebar.GroupLabel>
 	{#if showFilter}
 		<Sidebar.Input
 			placeholder="Filter databases"
@@ -78,7 +85,7 @@
 					<Sidebar.MenuItem data-testid="nav-dbgroup-{entry.prefix}">
 						<button
 							type="button"
-							class="flex h-8 w-full items-center gap-1.5 rounded-md px-1 text-sm outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+							class="flex h-9 w-full items-center gap-2 rounded-lg px-2.5 text-sm outline-hidden hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 							aria-expanded={open}
 							onclick={() => (openGroups[entry.prefix] = !open)}
 						>
@@ -90,7 +97,9 @@
 							/>
 							<Folder class="size-4 shrink-0" />
 							<span class="truncate">{entry.prefix}</span>
-							<span class="ms-auto text-xs text-muted-foreground tabular-nums">
+							<span
+								class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium text-muted-foreground tabular-nums"
+							>
 								{entry.children.length}
 							</span>
 						</button>
@@ -116,7 +125,7 @@
 				<Sidebar.MenuItem>
 					<button
 						type="button"
-						class="h-8 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+						class="h-8 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 						onclick={() => (extra += nav.maxItems)}
 					>
 						Show more ({entries.length - limit} left)

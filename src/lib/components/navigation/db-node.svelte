@@ -52,7 +52,7 @@
 		{#if nav.expansionEnabled}
 			<button
 				type="button"
-				class="flex size-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 outline-hidden hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+				class="flex size-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 				aria-expanded={expanded}
 				aria-label="{expanded ? 'Collapse' : 'Expand'} {name}"
 				onclick={() => void navState.toggle(name)}

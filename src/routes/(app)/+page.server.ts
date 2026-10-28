@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
+import { getStatusData } from '#lib/server/admin/status.ts';
 import { serverLabel } from '#lib/server/auth/index.ts';
 import { getAppInfo } from '#lib/server/app-info.ts';
 import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
@@ -8,11 +9,18 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const dbi = await locals.dbi;
-	const [info, collations, ssl] = await Promise.all([
+	const conn = await locals.db;
+	const [info, collations, ssl, status] = await Promise.all([
 		dbi.getServerInfo(),
 		dbi.listCollations(),
-		dbi.isSslConnection().catch(() => false)
+		dbi.isSslConnection().catch(() => false),
+		// Only feeds the KPI cards: the page still renders when the user may not read the status.
+		getStatusData(conn)
+			.then((d) => d.status)
+			.catch(() => null)
 	]);
+	const num = (key: string) => Number(status?.[key] ?? 0) || 0;
+	const uptime = num('Uptime');
 	const s = locals.session;
 	const server = locals.server;
 	const useSocket = !!server.socket && !s?.arbitrary;
@@ -27,6 +35,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: info.connectionUser,
 			charset: info.charset === 'utf8mb4' ? 'UTF-8 Unicode (utf8mb4)' : info.charset,
 			ssl
+		},
+		kpi: {
+			version: info.version,
+			uptime,
+			questionsPerHour: uptime > 0 ? (num('Questions') * 3600) / uptime : 0,
+			threadsConnected: num('Threads_connected'),
+			available: status !== null
 		},
 		collation: info.collation,
 		collations: collations.map((c) => ({ name: c.name, charset: c.charset })),

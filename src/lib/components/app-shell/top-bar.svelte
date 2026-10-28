@@ -1,16 +1,12 @@
 <script lang="ts">
-	import LogOut from '@lucide/svelte/icons/log-out';
+	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import ThemeToggle from '#lib/components/theme-toggle.svelte';
-	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
-	import { Separator } from '#lib/components/ui/separator/index.ts';
-	import type { NavConfig } from '#lib/nav/config.ts';
-	import Breadcrumbs from './breadcrumbs.svelte';
 	import ServerSwitcher from './server-switcher.svelte';
+	import UserMenu from './user-menu.svelte';
 
 	interface Props {
-		nav: NavConfig;
 		session: {
 			user: string;
 			host: string;
@@ -19,55 +15,50 @@
 			canLogout: boolean;
 		};
 		servers: { index: number; label: string; auth: string }[];
-		db?: string;
-		table?: string;
-		tableType?: 'table' | 'view';
 		onsearch: () => void;
 	}
 
-	let { nav, session, servers, db, table, tableType, onsearch }: Props = $props();
+	let { session, servers, onsearch }: Props = $props();
+
+	let shortcut = $state('Ctrl K');
+	onMount(() => {
+		if (/Mac|iPhone|iPad/.test(navigator.platform)) shortcut = '⌘K';
+	});
 </script>
 
-<header
-	class="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur"
->
-	<Sidebar.Trigger />
-	<Separator orientation="vertical" class="h-5" />
-	<div class="min-w-0 flex-1 overflow-hidden">
-		<Breadcrumbs {nav} serverLabel={session.serverLabel} {db} {table} {tableType} />
-	</div>
-
-	<Button
-		variant="outline"
-		size="sm"
-		class="gap-2 text-muted-foreground"
-		onclick={onsearch}
-		aria-label="Open command palette"
-		aria-keyshortcuts="Control+K Meta+K"
+<header class="sticky top-0 z-20 shrink-0 bg-background/85 px-4 pt-4 backdrop-blur md:px-6">
+	<div
+		class="flex h-16 items-center gap-2 rounded-xl border bg-card px-3 shadow-card sm:gap-3 sm:px-4"
 	>
-		<Search />
-		<span class="hidden lg:inline" aria-hidden="true">Jump to...</span>
-		<kbd
-			class="hidden rounded border bg-muted px-1.5 font-mono text-xs lg:inline"
-			aria-hidden="true"
+		<Sidebar.Trigger />
+		<button
+			type="button"
+			class="flex h-10 max-w-md min-w-0 flex-1 items-center gap-2.5 rounded-full border border-transparent bg-muted px-4 text-sm text-muted-foreground transition-colors outline-none hover:border-border focus-visible:ring-3 focus-visible:ring-ring/50"
+			onclick={onsearch}
+			aria-label="Open command palette"
+			aria-keyshortcuts="Control+K Meta+K"
 		>
-			Ctrl K
-		</kbd>
-	</Button>
+			<Search class="size-4 shrink-0" aria-hidden="true" />
+			<span class="truncate" aria-hidden="true">Search…</span>
+			<kbd
+				class="ms-auto hidden shrink-0 rounded-md border bg-card px-1.5 py-0.5 font-sans text-[11px] font-medium sm:inline"
+				aria-hidden="true"
+			>
+				{shortcut}
+			</kbd>
+		</button>
 
-	{#if servers.length > 1}
-		<ServerSwitcher {servers} current={session.serverIndex} />
-	{/if}
-	<ThemeToggle />
-	<span class="hidden text-sm text-muted-foreground xl:inline" data-testid="connection-info">
-		<span class="font-medium text-foreground">{session.user}@{session.host}</span>
-	</span>
-	{#if session.canLogout}
-		<form method="POST" action="/logout">
-			<Button type="submit" variant="outline" size="sm" aria-label="Log out">
-				<LogOut />
-				<span class="hidden lg:inline" aria-hidden="true">Log out</span>
-			</Button>
-		</form>
-	{/if}
+		<div class="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+			{#if servers.length > 1}
+				<ServerSwitcher {servers} current={session.serverIndex} />
+			{/if}
+			<ThemeToggle />
+			<UserMenu
+				user={session.user}
+				host={session.host}
+				serverLabel={session.serverLabel}
+				canLogout={session.canLogout}
+			/>
+		</div>
+	</div>
 </header>

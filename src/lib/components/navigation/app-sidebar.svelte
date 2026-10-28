@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { bare } from '#lib/nav/paths.ts';
 	import Cog from '@lucide/svelte/icons/cog';
 	import House from '@lucide/svelte/icons/house';
-	import LogOut from '@lucide/svelte/icons/log-out';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import SquareTerminal from '@lucide/svelte/icons/square-terminal';
-	import favicon from '#lib/assets/favicon.svg';
-	import { buttonVariants } from '#lib/components/ui/button/index.ts';
+	import BrandMark from '#lib/components/app-shell/brand-mark.svelte';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
 	import type { NavConfig } from '#lib/nav/config.ts';
-	import { cn } from '#lib/utils.ts';
 	import NavigationTree from './navigation-tree.svelte';
 	import type { NavState } from './nav-state.svelte.ts';
 	import SidebarResizer from './sidebar-resizer.svelte';
@@ -23,60 +21,77 @@
 		width: SidebarWidth;
 		currentDb?: string;
 		currentTable?: string;
-		canLogout: boolean;
 		onreload: () => void;
 	}
 
-	let { databases, nav, navState, width, currentDb, currentTable, canLogout, onreload }: Props =
-		$props();
+	let { databases, nav, navState, width, currentDb, currentTable, onreload }: Props = $props();
 
 	const sqlHref = $derived(currentDb ? `/db/${encodeURIComponent(currentDb)}/sql` : '/server/sql');
-	const quick = cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }));
+	const pathname = $derived(page.url.pathname);
+
+	const links = $derived([
+		{ label: 'Home', href: '/', icon: House, match: (p: string) => p === '/' },
+		{
+			label: 'SQL query',
+			href: sqlHref,
+			icon: SquareTerminal,
+			match: (p: string) => p.endsWith('/sql')
+		},
+		{
+			label: 'Settings',
+			href: '/server/settings',
+			icon: Cog,
+			match: (p: string) => p.startsWith('/server/settings')
+		}
+	]);
 </script>
 
 <Sidebar.Root>
-	<Sidebar.Header class="gap-2 border-b">
+	<Sidebar.Header class="h-20 justify-center border-b px-6 pt-4 pb-0">
 		<a
 			href={resolve(bare('/'))}
-			class="flex items-center gap-2 rounded-md px-1 py-0.5 outline-hidden focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+			class="flex h-16 items-center gap-3 rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 			aria-label="svelteMyAdmin home"
 		>
 			{#if nav.displayLogo}
-				<img src={favicon} alt="" class="size-6" />
+				<BrandMark />
 			{/if}
-			<span class="text-base font-semibold tracking-tight">svelteMyAdmin</span>
+			<span class="text-lg font-semibold tracking-tight">svelteMyAdmin</span>
 		</a>
-		<div class="flex items-center gap-0.5" role="toolbar" aria-label="Quick links">
-			<a href={resolve(bare('/'))} class={quick} aria-label="Home" title="Home"><House /></a>
-			<a href={resolve(bare(sqlHref))} class={quick} aria-label="SQL query" title="SQL query"
-				><SquareTerminal /></a
-			>
-			<a
-				href={resolve(bare('/server/settings'))}
-				class={quick}
-				aria-label="Settings"
-				title="Settings"><Cog /></a
-			>
-			<button
-				type="button"
-				class={quick}
-				aria-label="Reload navigation"
-				title="Reload navigation"
-				onclick={onreload}
-			>
-				<RefreshCw />
-			</button>
-			{#if canLogout}
-				<form method="POST" action="/logout" class="contents">
-					<button type="submit" class={quick} aria-label="Sign out" title="Sign out">
-						<LogOut />
-					</button>
-				</form>
-			{/if}
-		</div>
 	</Sidebar.Header>
 
-	<Sidebar.Content>
+	<Sidebar.Content class="gap-2 py-3">
+		<Sidebar.Group class="gap-1 px-3 py-1">
+			<Sidebar.GroupLabel class="px-3">Server</Sidebar.GroupLabel>
+			<Sidebar.GroupContent>
+				<Sidebar.Menu aria-label="Quick links">
+					{#each links as link (link.label)}
+						{@const active = link.match(pathname)}
+						<Sidebar.MenuItem>
+							<Sidebar.MenuButton isActive={active}>
+								{#snippet child({ props })}
+									<a
+										{...props}
+										href={resolve(bare(link.href))}
+										aria-current={active ? 'page' : undefined}
+									>
+										<link.icon />
+										<span>{link.label}</span>
+									</a>
+								{/snippet}
+							</Sidebar.MenuButton>
+						</Sidebar.MenuItem>
+					{/each}
+					<Sidebar.MenuItem>
+						<Sidebar.MenuButton onclick={onreload}>
+							<RefreshCw />
+							<span>Reload navigation</span>
+						</Sidebar.MenuButton>
+					</Sidebar.MenuItem>
+				</Sidebar.Menu>
+			</Sidebar.GroupContent>
+		</Sidebar.Group>
+
 		<NavigationTree {databases} {nav} {navState} {currentDb} {currentTable} />
 	</Sidebar.Content>
 

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { formatSi } from '#lib/format.ts';
 	import { filterVariables, usedCategories } from '#lib/admin/status-vars.ts';
+	import { Badge } from '#lib/components/ui/badge/index.ts';
+	import * as Card from '#lib/components/ui/card/index.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
@@ -39,14 +41,8 @@
 	<title>Status variables - svelteMyAdmin</title>
 </svelte:head>
 
-<div class="flex flex-col gap-4">
-	<h1 class="sr-only">All status variables</h1>
-	<p class="text-sm text-muted-foreground">
-		Variables marked in red are above their alert threshold; values are since the last server start
-		or FLUSH STATUS.
-	</p>
-
-	<div class="flex flex-wrap items-end gap-4">
+<Card.Root class="gap-0 py-0">
+	<div class="flex flex-wrap items-end gap-x-6 gap-y-4 border-b p-5">
 		<div class="flex flex-col gap-1">
 			<Label for="filter-text">Containing the word</Label>
 			<Input id="filter-text" bind:value={text} placeholder="Filter by name" class="w-64" />
@@ -74,6 +70,10 @@
 			<Label for="raw">Show unformatted values</Label>
 		</div>
 	</div>
+	<p class="border-b px-5 py-3 text-sm text-muted-foreground">
+		Variables marked in red are above their alert threshold; values are since the last server start
+		or FLUSH STATUS.
+	</p>
 
 	<Table.Root data-testid="variables-table">
 		<Table.Header>
@@ -86,22 +86,22 @@
 		<Table.Body>
 			{#each rows as v (v.name)}
 				<Table.Row data-variable={v.name}>
-					<Table.Cell class="font-mono">{v.name.replace(/_/g, ' ')}</Table.Cell>
+					<Table.Cell class="font-medium">{v.name.replace(/_/g, ' ')}</Table.Cell>
 					<Table.Cell
 						class={[
-							'text-end font-mono',
-							v.hasAlert && (v.isAlert ? 'text-destructive' : 'text-muted-foreground')
+							'text-end tabular-nums',
+							v.hasAlert && (v.isAlert ? 'font-semibold text-destructive' : 'text-muted-foreground')
 						]}
 						data-alert={v.hasAlert ? (v.isAlert ? 'true' : 'false') : undefined}
 					>
 						{show(v.value, v.isNumeric, v.name)}
 					</Table.Cell>
-					<Table.Cell class="text-sm text-muted-foreground">
+					<Table.Cell class="text-sm whitespace-normal text-muted-foreground">
 						{v.description}
 						{#if v.hasAlert}
-							<span class="block text-xs">
+							<Badge class="mt-1 block w-fit" variant={v.isAlert ? 'destructive' : 'success'}>
 								{v.isAlert ? 'Above the recommended threshold.' : 'Within the recommended range.'}
-							</span>
+							</Badge>
 						{/if}
 					</Table.Cell>
 				</Table.Row>
@@ -114,4 +114,4 @@
 			{/each}
 		</Table.Body>
 	</Table.Root>
-</div>
+</Card.Root>

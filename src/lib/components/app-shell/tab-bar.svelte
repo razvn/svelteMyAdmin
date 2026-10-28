@@ -3,12 +3,11 @@
 	import { bare } from '#lib/nav/paths.ts';
 	import type { Attachment } from 'svelte/attachments';
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
-	import { buttonVariants } from '#lib/components/ui/button/index.ts';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.ts';
 	import { fitTabs } from '#lib/nav/tab-overflow.ts';
 	import { isTabActive, type TabDef } from '#lib/nav/tabs.ts';
-	import { cn } from '#lib/utils.ts';
 	import { FALLBACK_ICON, MORE_ICON, TAB_ICONS } from './tab-icons.ts';
+	import { TAB_STRIP, tabLinkClass } from './tab-styles.ts';
 
 	interface Props {
 		/** Accessible name of the navigation landmark. */
@@ -50,16 +49,15 @@
 		return () => observer.disconnect();
 	};
 
-	const linkClass = (active: boolean) =>
-		cn(buttonVariants({ variant: active ? 'secondary' : 'ghost', size: 'sm' }), 'shrink-0');
+	const linkClass = tabLinkClass;
 </script>
 
-<div class="relative" data-testid="tab-bar">
+<div class="relative {TAB_STRIP}" data-testid="tab-bar">
 	<nav
 		aria-label={label}
 		bind:this={container}
 		{@attach observe}
-		class="flex items-center gap-1 overflow-hidden"
+		class="flex items-center gap-0.5 overflow-hidden"
 	>
 		{#each shown as tab (tab.id)}
 			{@const Icon = TAB_ICONS[tab.id] ?? FALLBACK_ICON}
@@ -111,7 +109,7 @@
 		bind:this={measure}
 		{@attach observe}
 		aria-hidden="true"
-		class="pointer-events-none invisible absolute top-0 left-0 flex h-0 w-max gap-1 overflow-hidden"
+		class="pointer-events-none invisible absolute top-0 left-0 flex h-0 w-max gap-0.5 overflow-hidden"
 	>
 		{#each tabs as tab (tab.id)}
 			{@const Icon = TAB_ICONS[tab.id] ?? FALLBACK_ICON}

@@ -56,7 +56,7 @@
 <Sidebar.MenuSubItem data-testid="nav-group-{title.toLowerCase()}">
 	<button
 		type="button"
-		class="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+		class="flex h-8 w-full items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground outline-hidden hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 		aria-expanded={isOpen}
 		aria-controls={regionId}
 		onclick={() => (open = !isOpen)}
@@ -64,7 +64,10 @@
 		<ChevronRight class={cn('size-3.5 shrink-0 transition-transform', isOpen && 'rotate-90')} />
 		<Icon class="size-3.5 shrink-0" />
 		<span class="truncate">{title}</span>
-		<span class="ms-auto tabular-nums" data-testid="count">{items.length}</span>
+		<span
+			class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium text-muted-foreground tabular-nums"
+			data-testid="count">{items.length}</span
+		>
 	</button>
 
 	{#if isOpen}
@@ -132,7 +135,7 @@
 					<Sidebar.MenuSubItem>
 						<button
 							type="button"
-							class="h-7 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+							class="h-7 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 							onclick={() => (limit = effectiveLimit + maxItems)}
 						>
 							Show more ({filtered.length - visible.length} left)

@@ -55,7 +55,8 @@ test('login, home, logout', async ({ page }) => {
 	await page.goto('/login');
 	await expect(page).toHaveURL(/\/$/);
 
-	await page.getByRole('button', { name: 'Log out' }).click();
+	await page.getByRole('button', { name: 'User menu' }).click();
+	await page.getByRole('menuitem', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/login$/);

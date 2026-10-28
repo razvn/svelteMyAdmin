@@ -1,5 +1,8 @@
 <script lang="ts">
+	import Network from '@lucide/svelte/icons/network';
+	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import * as Alert from '#lib/components/ui/alert/index.ts';
+	import { Badge } from '#lib/components/ui/badge/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
@@ -14,8 +17,8 @@
 		<Table.Body>
 			{#each Object.entries(row) as [k, v] (k)}
 				<Table.Row>
-					<Table.Cell class="font-medium">{k}</Table.Cell>
-					<Table.Cell class="font-mono break-all">{v}</Table.Cell>
+					<Table.Cell class="w-64 font-medium text-muted-foreground">{k}</Table.Cell>
+					<Table.Cell class="font-mono text-[13px] break-all whitespace-normal">{v}</Table.Cell>
 				</Table.Row>
 			{/each}
 		</Table.Body>
@@ -26,8 +29,12 @@
 	<title>Replication - svelteMyAdmin</title>
 </svelte:head>
 
-<div class="mt-4 flex flex-col gap-4">
-	<h1 class="text-xl font-semibold">Replication</h1>
+<div class="flex flex-col gap-6">
+	<PageHeader
+		icon={Network}
+		title="Replication"
+		description="Primary and replica status as reported by the server."
+	/>
 
 	{#if r.errors.length > 0}
 		<Alert.Root variant="destructive" data-testid="replication-errors">
@@ -45,9 +52,12 @@
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-4">
 			{#if r.primary}
-				<p class="text-sm">This server is configured as primary in a replication process.</p>
+				<p class="text-sm">
+					<Badge variant="success" class="me-2">Enabled</Badge>This server is configured as primary
+					in a replication process.
+				</p>
 				{@render kv(r.primary)}
-				<h2 class="font-medium">Connected replicas</h2>
+				<h2 class="font-semibold">Connected replicas</h2>
 				{#if r.replicaHosts.length > 0}
 					<Table.Root>
 						<Table.Header>
@@ -86,7 +96,10 @@
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-4">
 			{#if r.replicas.length > 0}
-				<p class="text-sm">This server is configured as replica in a replication process.</p>
+				<p class="text-sm">
+					<Badge variant="success" class="me-2">Enabled</Badge>This server is configured as replica
+					in a replication process.
+				</p>
 				{#each r.replicas as rep, i (i)}
 					{@render kv(rep)}
 				{/each}

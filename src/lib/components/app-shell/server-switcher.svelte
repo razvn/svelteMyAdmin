@@ -37,7 +37,13 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="outline" size="icon" aria-label="Switch server">
+			<Button
+				{...props}
+				variant="ghost"
+				size="icon"
+				class="rounded-full"
+				aria-label="Switch server"
+			>
 				<Server />
 			</Button>
 		{/snippet}

@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const isReplica = repl.replicas.length > 0;
 	return {
 		summary: summarize(status),
+		questions: Number(status.Questions ?? 0) || 0,
 		replication: {
 			isPrimary: repl.primary !== null,
 			isReplica,

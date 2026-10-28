@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatByteDown, formatBytes, formatNumber } from './format.ts';
+import { formatByteDown, formatBytes, formatNumber, formatUptimeShort } from './format.ts';
 
 describe('formatNumber', () => {
 	it('groups thousands', () => {
@@ -28,5 +28,15 @@ describe('formatByteDown / formatBytes (databases page: limes 3, comma 1)', () =
 		expect(formatByteDown(null)).toBeNull();
 		expect(formatBytes(null)).toBe('');
 		expect(formatBytes('16384')).toBe('16.0 KiB');
+	});
+});
+
+describe('formatUptimeShort', () => {
+	it('keeps the two most significant units', () => {
+		expect(formatUptimeShort(42)).toBe('42s');
+		expect(formatUptimeShort(125)).toBe('2m 5s');
+		expect(formatUptimeShort(3 * 3600 + 120)).toBe('3h 2m');
+		expect(formatUptimeShort(3 * 86400 + 4 * 3600 + 59)).toBe('3d 4h');
+		expect(formatUptimeShort(-5)).toBe('0s');
 	});
 });

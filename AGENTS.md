@@ -56,6 +56,13 @@ config.sample.json         committed sample; config.json is git-ignored (overrid
   Style only with theme tokens (`bg-background`, `text-foreground`, `text-muted-foreground`, `border`,
   `bg-primary`, ...), never raw colours. Light/dark/system via `mode-watcher` (`ModeWatcher` in the root layout).
 
+## UI design
+
+The look (grey canvas, white rounded cards, indigo primary, soft status pills) is specified in
+`docs/DESIGN.md`: tokens, `PageHeader`/`StatCard`, badge variants, table and card conventions, do/don't.
+Start every page with `app-shell/page-header.svelte`, use only theme tokens and the shared components, and
+verify light + dark at 1440 px and 800 px.
+
 ## Tests are mandatory with every feature
 
 | Kind        | File name                    | What                                                                                                 |

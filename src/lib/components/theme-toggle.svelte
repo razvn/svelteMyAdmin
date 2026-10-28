@@ -9,7 +9,7 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="outline" size="icon" aria-label="Toggle theme">
+			<Button {...props} variant="ghost" size="icon" class="rounded-full" aria-label="Toggle theme">
 				{#if mode.current === 'dark'}
 					<MoonIcon />
 				{:else}

@@ -3,6 +3,9 @@
 	import { refreshAll } from '$app/navigation';
 	import { truncate } from '#lib/format.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
+	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
+	import * as Card from '#lib/components/ui/card/index.ts';
+	import { Badge } from '#lib/components/ui/badge/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
@@ -39,10 +42,8 @@
 	<title>Processes - svelteMyAdmin</title>
 </svelte:head>
 
-<div class="flex flex-col gap-4">
-	<h1 class="sr-only">Processes</h1>
-
-	<div class="flex flex-wrap items-center gap-4">
+<Card.Root class="gap-0 py-0">
+	<div class="flex flex-wrap items-center gap-x-6 gap-y-3 border-b p-5">
 		<div class="flex items-center gap-2">
 			<Checkbox id="only-active" bind:checked={onlyActive} />
 			<Label for="only-active">Show only active</Label>
@@ -65,13 +66,26 @@
 				</Select.Content>
 			</Select.Root>
 		</div>
-		<Button variant="outline" size="sm" onclick={() => refreshAll()}>Refresh now</Button>
+		<Button variant="outline" size="sm" class="ms-auto" onclick={() => refreshAll()}>
+			<RefreshCw />
+			Refresh now
+		</Button>
 	</div>
 
 	{#if form?.killError}
-		<p role="alert" class="text-sm text-destructive" data-testid="kill-error">{form.killError}</p>
+		<p
+			role="alert"
+			class="border-b bg-destructive-soft px-5 py-3 text-sm text-destructive"
+			data-testid="kill-error"
+		>
+			{form.killError}
+		</p>
 	{:else if form?.killed}
-		<p role="status" class="text-sm text-muted-foreground" data-testid="kill-ok">
+		<p
+			role="status"
+			class="border-b bg-success-soft px-5 py-3 text-sm text-success"
+			data-testid="kill-ok"
+		>
 			Thread {form.killed} was killed.
 		</p>
 	{/if}
@@ -96,11 +110,11 @@
 				<Table.Row data-process-id={p.id}>
 					<Table.Cell>
 						{#if p.id === data.ownId}
-							<span class="text-xs text-muted-foreground">this connection</span>
+							<Badge variant="primary">this connection</Badge>
 						{:else}
 							<Button
 								variant="destructive"
-								size="sm"
+								size="xs"
 								onclick={() => {
 									killTarget = p;
 									killOpen = true;
@@ -110,15 +124,17 @@
 							</Button>
 						{/if}
 					</Table.Cell>
-					<Table.Cell class="font-mono">{p.id}</Table.Cell>
+					<Table.Cell class="tabular-nums">{p.id}</Table.Cell>
 					<Table.Cell>{p.user}</Table.Cell>
 					<Table.Cell>{p.host}</Table.Cell>
 					<Table.Cell>{p.db ?? ''}</Table.Cell>
-					<Table.Cell>{p.command}</Table.Cell>
-					<Table.Cell class="text-end font-mono">{p.time}</Table.Cell>
+					<Table.Cell>
+						<Badge variant={p.command === 'Sleep' ? 'muted' : 'success'}>{p.command}</Badge>
+					</Table.Cell>
+					<Table.Cell class="text-end tabular-nums">{p.time}</Table.Cell>
 					<Table.Cell>{p.state}</Table.Cell>
 					{#if hasProgress}
-						<Table.Cell class="text-end font-mono">
+						<Table.Cell class="text-end tabular-nums">
 							{p.progress === null ? '' : `${p.progress}%`}
 						</Table.Cell>
 					{/if}
@@ -135,7 +151,7 @@
 			{/each}
 		</Table.Body>
 	</Table.Root>
-</div>
+</Card.Root>
 
 <AlertDialog.Root bind:open={killOpen}>
 	<AlertDialog.Content data-testid="kill-dialog">
