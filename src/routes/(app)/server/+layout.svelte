@@ -4,10 +4,10 @@
 	import { currentTabPath, serverTabs, tabHref } from '#lib/nav/tabs.ts';
 	import type { LayoutProps } from './$types';
 
-	let { children }: LayoutProps = $props();
+	let { data, children }: LayoutProps = $props();
 
-	// Hook for conditional tabs (e.g. "Binary log" when log_bin is ON): pass options here.
-	const tabs = serverTabs();
+	// "Binary log" is only shown when log_bin is ON.
+	const tabs = $derived(serverTabs({ binlog: data.binlog }));
 	const current = $derived(currentTabPath('server', {}, page.url.pathname));
 </script>
 
