@@ -59,14 +59,14 @@
 		<ServerSwitcher {servers} current={session.serverIndex} />
 	{/if}
 	<ThemeToggle />
-	<span class="hidden text-sm text-muted-foreground md:inline" data-testid="connection-info">
+	<span class="hidden text-sm text-muted-foreground xl:inline" data-testid="connection-info">
 		<span class="font-medium text-foreground">{session.user}@{session.host}</span>
 	</span>
 	{#if session.canLogout}
 		<form method="POST" action="/logout">
 			<Button type="submit" variant="outline" size="sm" aria-label="Log out">
 				<LogOut />
-				<span class="hidden sm:inline" aria-hidden="true">Log out</span>
+				<span class="hidden lg:inline" aria-hidden="true">Log out</span>
 			</Button>
 		</form>
 	{/if}
