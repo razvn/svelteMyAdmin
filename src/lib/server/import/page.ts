@@ -51,12 +51,13 @@ export async function loadImportPage(
 	let ldiAvailable = false;
 	let ldiReason: string | null = null;
 	if (level !== 'table') {
-		ldiReason = 'CSV using LOAD DATA is only available when importing into a table.';
+		ldiReason = locals.i18n.t('CSV using LOAD DATA is only available when importing into a table.');
 	} else if (await localInfileEnabled({ conn: await locals.db })) {
 		ldiAvailable = true;
 	} else {
-		ldiReason =
-			'The server variable local_infile is OFF, so LOAD DATA LOCAL INFILE cannot be used. Ask the administrator to enable it (SET GLOBAL local_infile = 1) or use the CSV format.';
+		ldiReason = locals.i18n.t(
+			'The server variable local_infile is OFF, so LOAD DATA LOCAL INFILE cannot be used. Ask the administrator to enable it (SET GLOBAL local_infile = 1) or use the CSV format.'
+		);
 	}
 
 	const options = Object.fromEntries(

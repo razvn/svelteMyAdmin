@@ -1,28 +1,51 @@
 /** phpMyAdmin-style result messages (client-safe, pure). */
 import { formatNumber } from '#lib/format.ts';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
-export const EMPTY_RESULT_MESSAGE = 'MySQL returned an empty result set (i.e. zero rows).';
-export const SUCCESS_MESSAGE = 'Your SQL query has been executed successfully.';
+/** What the message helpers need from `useI18n()`; defaults to English. */
+export interface MessageI18n {
+	t: Translator['t'];
+	tn: Translator['tn'];
+	fmt: { number: (v: number | string | null | undefined) => string };
+}
+const ENGLISH: MessageI18n = {
+	t: SOURCE_TRANSLATOR.t,
+	tn: SOURCE_TRANSLATOR.tn,
+	fmt: { number: (v) => formatNumber(v) }
+};
+
+/** Msgids: translate with `t()` where displayed. */
+export const EMPTY_RESULT_MESSAGE = N_('MySQL returned an empty result set (i.e. zero rows).');
+export const SUCCESS_MESSAGE = N_('Your SQL query has been executed successfully.');
 
 /** `0.0123` (PHP prints 4 decimals). */
 export const formatSeconds = (ms: number): string => (ms / 1000).toFixed(4);
 
-export const queryTook = (ms: number): string => `Query took ${formatSeconds(ms)} seconds.`;
+export const queryTook = (ms: number, i: MessageI18n = ENGLISH): string =>
+	i.t('Query took {seconds} seconds.', { seconds: formatSeconds(ms) });
 
-export function affectedRowsMessage(n: number): string {
-	return `${formatNumber(n)} ${n === 1 ? 'row' : 'rows'} affected.`;
+export function affectedRowsMessage(n: number, i: MessageI18n = ENGLISH): string {
+	return i.tn('{n} row affected.', '{n} rows affected.', n, { n: i.fmt.number(n) });
 }
 
 /** `Showing rows 0 - 24 (100 total, Query took 0.0003 seconds.)`; `from`/`to` are 0-based like LIMIT. */
-export function showingRowsMessage(o: {
-	from: number;
-	to: number;
-	total: number | null;
-	ms: number;
-}): string {
-	const range = `Showing rows ${formatNumber(o.from)} - ${formatNumber(o.to)}`;
-	const total = o.total === null ? '' : `${formatNumber(o.total)} total, `;
-	return `${range} (${total}${queryTook(o.ms)})`;
+export function showingRowsMessage(
+	o: {
+		from: number;
+		to: number;
+		total: number | null;
+		ms: number;
+	},
+	i: MessageI18n = ENGLISH
+): string {
+	const range = i.t('Showing rows {from} - {to}', {
+		from: i.fmt.number(o.from),
+		to: i.fmt.number(o.to)
+	});
+	const took = queryTook(o.ms, i);
+	return o.total === null
+		? i.t('{range} ({took})', { range, took })
+		: i.t('{range} ({total} total, {took})', { range, total: i.fmt.number(o.total), took });
 }
 
 /** `#1064 - You have an error...` */

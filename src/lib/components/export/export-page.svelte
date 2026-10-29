@@ -13,7 +13,10 @@
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { RadioGroup, RadioGroupItem } from '#lib/components/ui/radio-group/index.ts';
 	import { Textarea } from '#lib/components/ui/textarea/index.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import type { ExportOption } from '#lib/server/export/types.ts';
+
+	const { t, tn } = useI18n();
 
 	interface PluginInfo {
 		id: string;
@@ -57,9 +60,9 @@
 	let selDbs = $state<string[]>(
 		untrack(() => data.databases.filter((d) => d.checked).map((d) => d.name))
 	);
-	let selStructure = $state<string[]>(untrack(() => data.tables.map((t) => t.name)));
+	let selStructure = $state<string[]>(untrack(() => data.tables.map((tb) => tb.name)));
 	let selData = $state<string[]>(
-		untrack(() => data.tables.filter((t) => t.kind === 'table').map((t) => t.name))
+		untrack(() => data.tables.filter((tb) => tb.kind === 'table').map((tb) => tb.name))
 	);
 
 	const plugin = $derived(data.plugins.find((p) => p.id === texts.what) ?? data.plugins[0]);
@@ -71,9 +74,9 @@
 	});
 
 	const GROUP_TITLES: Record<string, string> = {
-		general: 'General options',
-		structure: 'Object creation options',
-		data: 'Data creation options'
+		general: N_('General options'),
+		structure: N_('Object creation options'),
+		data: N_('Data creation options')
 	};
 	function groups(p: PluginInfo): { title: string; options: ExportOption[] }[] {
 		const map = new SvelteMap<string, ExportOption[]>();
@@ -83,17 +86,17 @@
 			map.set(g, [...(map.get(g) ?? []), o]);
 		}
 		return [...map].map(([g, options]) => ({
-			title: GROUP_TITLES[g] ?? g.charAt(0).toUpperCase() + g.slice(1),
+			title: GROUP_TITLES[g] ? t(GROUP_TITLES[g]) : g.charAt(0).toUpperCase() + g.slice(1),
 			options
 		}));
 	}
 
 	const title = $derived(
 		data.level === 'server'
-			? 'Exporting databases from the current server'
+			? t('Exporting databases from the current server')
 			: data.level === 'database'
-				? `Exporting tables from "${data.db}" database`
-				: `Exporting rows from "${data.table}" table`
+				? t('Exporting tables from "{db}" database', { db: data.db })
+				: t('Exporting rows from "{table}" table', { table: data.table })
 	);
 
 	function toggle(list: string[], name: string, on: boolean): string[] {
@@ -146,7 +149,7 @@
 		return json;
 	}
 	async function createTemplate() {
-		if (!templateName.trim()) return toast.error('Enter a template name.');
+		if (!templateName.trim()) return toast.error(t('Enter a template name.'));
 		const r = await templateCall({ action: 'create', name: templateName.trim(), data: snapshot() });
 		if (r.ok) {
 			templateId = String(r.id);
@@ -186,7 +189,7 @@
 			});
 			if (!res.ok) {
 				const body = (await res.json().catch(() => null)) as { message?: string } | null;
-				toast.error(body?.message ?? 'Export failed.');
+				toast.error(body?.message ?? t('Export failed.'));
 			} else {
 				result = await res.json();
 			}
@@ -197,7 +200,7 @@
 </script>
 
 <svelte:head>
-	<title>Export - svelteMyAdmin</title>
+	<title>{t('Export')} - svelteMyAdmin</title>
 </svelte:head>
 
 {#snippet optionControl(p: PluginInfo, o: ExportOption)}
@@ -205,11 +208,11 @@
 	{#if o.kind === 'bool'}
 		<div class="flex items-start gap-2">
 			<Checkbox id={name} {name} value="something" bind:checked={bools[name]} class="mt-0.5" />
-			<Label for={name} class="leading-snug font-normal">{o.label}</Label>
+			<Label for={name} class="leading-snug font-normal">{t(o.label)}</Label>
 		</div>
 	{:else if o.kind === 'text' || o.kind === 'number'}
 		<div class="flex flex-col gap-1.5">
-			<Label for={name} class="font-normal">{o.label}</Label>
+			<Label for={name} class="font-normal">{t(o.label)}</Label>
 			<Input
 				id={name}
 				{name}
@@ -219,21 +222,21 @@
 		</div>
 	{:else if o.kind === 'select'}
 		<div class="flex flex-col gap-1.5">
-			<Label for={name} class="font-normal">{o.label}</Label>
+			<Label for={name} class="font-normal">{t(o.label)}</Label>
 			<NativeSelect id={name} {name} bind:value={texts[name]} class="max-w-xs">
 				{#each o.choices as c (c.value)}
-					<NativeSelectOption value={c.value}>{c.label}</NativeSelectOption>
+					<NativeSelectOption value={c.value}>{t(c.label)}</NativeSelectOption>
 				{/each}
 			</NativeSelect>
 		</div>
 	{:else}
 		<div class="flex flex-col gap-1.5">
-			<span class="text-sm">{o.label}</span>
+			<span class="text-sm">{t(o.label)}</span>
 			<RadioGroup {name} bind:value={texts[name]}>
 				{#each o.choices as c (c.value)}
 					<div class="flex items-start gap-2">
 						<RadioGroupItem value={c.value} id={`${name}_${c.value}`} class="mt-0.5" />
-						<Label for={`${name}_${c.value}`} class="leading-snug font-normal">{c.label}</Label>
+						<Label for={`${name}_${c.value}`} class="leading-snug font-normal">{t(c.label)}</Label>
 					</div>
 				{/each}
 			</RadioGroup>
@@ -247,7 +250,7 @@
 	{#if data.sqlQuery}
 		<Alert>
 			<AlertDescription>
-				Exporting the result of this query:
+				{t('Exporting the result of this query:')}
 				<code
 					class="mt-1 block font-mono text-xs break-all whitespace-pre-wrap"
 					data-testid="export-query">{data.sqlQuery}</code
@@ -258,9 +261,11 @@
 	{#if data.selectedRows.length}
 		<Alert>
 			<AlertDescription data-testid="export-selected-rows">
-				Exporting {data.selectedRows.length} selected row{data.selectedRows.length === 1
-					? ''
-					: 's'}.
+				{tn(
+					'Exporting {n} selected row.',
+					'Exporting {n} selected rows.',
+					data.selectedRows.length
+				)}
 			</AlertDescription>
 		</Alert>
 	{/if}
@@ -282,19 +287,19 @@
 		{/each}
 
 		<Card.Root>
-			<Card.Header><Card.Title>Export method</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Export method')}</Card.Title></Card.Header>
 			<Card.Content>
 				<RadioGroup name="quick_or_custom" bind:value={texts.quick_or_custom}>
 					<div class="flex items-center gap-2">
 						<RadioGroupItem value="quick" id="method_quick" />
 						<Label for="method_quick" class="font-normal"
-							>Quick - display only the minimal options</Label
+							>{t('Quick - display only the minimal options')}</Label
 						>
 					</div>
 					<div class="flex items-center gap-2">
 						<RadioGroupItem value="custom" id="method_custom" />
 						<Label for="method_custom" class="font-normal"
-							>Custom - display all possible options</Label
+							>{t('Custom - display all possible options')}</Label
 						>
 					</div>
 				</RadioGroup>
@@ -303,38 +308,38 @@
 
 		{#if templates !== null}
 			<Card.Root class={custom ? '' : 'hidden'} data-testid="export-templates">
-				<Card.Header><Card.Title>Export templates</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Export templates')}</Card.Title></Card.Header>
 				<Card.Content class="flex flex-col gap-4">
 					<div class="flex flex-wrap items-end gap-2">
 						<div class="flex flex-col gap-1.5">
-							<Label for="template_name">New template</Label>
+							<Label for="template_name">{t('New template')}</Label>
 							<Input
 								id="template_name"
 								bind:value={templateName}
-								placeholder="Template name"
+								placeholder={t('Template name')}
 								class="w-56"
 							/>
 						</div>
-						<Button type="button" variant="outline" onclick={createTemplate}>Create</Button>
+						<Button type="button" variant="outline" onclick={createTemplate}>{t('Create')}</Button>
 					</div>
 					<div class="flex flex-wrap items-end gap-2">
 						<div class="flex flex-col gap-1.5">
-							<Label for="template_select">Existing templates</Label>
+							<Label for="template_select">{t('Existing templates')}</Label>
 							<NativeSelect id="template_select" bind:value={templateId} class="w-56">
-								<NativeSelectOption value="">Select a template</NativeSelectOption>
-								{#each templates as t (t.id)}
-									<NativeSelectOption value={String(t.id)}>{t.name}</NativeSelectOption>
+								<NativeSelectOption value="">{t('Select a template')}</NativeSelectOption>
+								{#each templates as tpl (tpl.id)}
+									<NativeSelectOption value={String(tpl.id)}>{tpl.name}</NativeSelectOption>
 								{/each}
 							</NativeSelect>
 						</div>
 						<Button type="button" variant="outline" disabled={!templateId} onclick={loadTemplate}
-							>Load</Button
+							>{t('Load')}</Button
 						>
 						<Button type="button" variant="outline" disabled={!templateId} onclick={updateTemplate}
-							>Update</Button
+							>{t('Update')}</Button
 						>
 						<Button type="button" variant="outline" disabled={!templateId} onclick={deleteTemplate}
-							>Delete</Button
+							>{t('Delete')}</Button
 						>
 					</div>
 				</Card.Content>
@@ -342,16 +347,16 @@
 		{/if}
 
 		<Card.Root>
-			<Card.Header><Card.Title>Format</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Format')}</Card.Title></Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<NativeSelect
 					name="what"
-					aria-label="File format to export"
+					aria-label={t('File format to export')}
 					bind:value={texts.what}
 					class="max-w-xs"
 				>
 					{#each data.plugins as p (p.id)}
-						<NativeSelectOption value={p.id}>{p.label}</NativeSelectOption>
+						<NativeSelectOption value={p.id}>{t(p.label)}</NativeSelectOption>
 					{/each}
 				</NativeSelect>
 			</Card.Content>
@@ -359,17 +364,17 @@
 
 		{#if data.level === 'server'}
 			<Card.Root class={custom ? '' : 'hidden'}>
-				<Card.Header><Card.Title>Databases</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Databases')}</Card.Title></Card.Header>
 				<Card.Content class="flex flex-col gap-2">
 					<div class="flex gap-2">
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
-							onclick={() => (selDbs = data.databases.map((d) => d.name))}>Select all</Button
+							onclick={() => (selDbs = data.databases.map((d) => d.name))}>{t('Select all')}</Button
 						>
 						<Button type="button" variant="outline" size="sm" onclick={() => (selDbs = [])}
-							>Unselect all</Button
+							>{t('Unselect all')}</Button
 						>
 					</div>
 					{#each data.databases as d (d.name)}
@@ -388,60 +393,60 @@
 			</Card.Root>
 		{:else if data.level === 'database'}
 			<Card.Root class={custom ? '' : 'hidden'}>
-				<Card.Header><Card.Title>Tables</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Tables')}</Card.Title></Card.Header>
 				<Card.Content class="flex flex-col gap-2">
 					<div class="flex flex-wrap gap-2">
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
-							onclick={() => (selStructure = data.tables.map((t) => t.name))}
-							>Select all structure</Button
+							onclick={() => (selStructure = data.tables.map((tb) => tb.name))}
+							>{t('Select all structure')}</Button
 						>
 						<Button type="button" variant="outline" size="sm" onclick={() => (selStructure = [])}
-							>Unselect all structure</Button
+							>{t('Unselect all structure')}</Button
 						>
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
 							onclick={() =>
-								(selData = data.tables.filter((t) => t.kind === 'table').map((t) => t.name))}
-							>Select all data</Button
+								(selData = data.tables.filter((tb) => tb.kind === 'table').map((tb) => tb.name))}
+							>{t('Select all data')}</Button
 						>
 						<Button type="button" variant="outline" size="sm" onclick={() => (selData = [])}
-							>Unselect all data</Button
+							>{t('Unselect all data')}</Button
 						>
 					</div>
 					<table class="w-full text-sm" data-testid="export-tables">
 						<thead>
 							<tr class="border-b text-left text-muted-foreground">
-								<th class="py-2 font-medium">Table</th>
-								<th class="py-2 font-medium">Structure</th>
-								<th class="py-2 font-medium">Data</th>
+								<th class="py-2 font-medium">{t('Table')}</th>
+								<th class="py-2 font-medium">{t('Structure')}</th>
+								<th class="py-2 font-medium">{t('Data')}</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each data.tables as t (t.name)}
+							{#each data.tables as tb (tb.name)}
 								<tr class="border-b last:border-0">
-									<td class="py-2">{t.name}{t.kind === 'view' ? ' (view)' : ''}</td>
+									<td class="py-2">{tb.name}{tb.kind === 'view' ? ` (${t('view')})` : ''}</td>
 									<td class="py-2">
 										<Checkbox
-											aria-label={`Structure of ${t.name}`}
+											aria-label={t('Structure of {table}', { table: tb.name })}
 											name="table_structure[]"
-											value={t.name}
-											checked={selStructure.includes(t.name)}
-											onCheckedChange={(v) => (selStructure = toggle(selStructure, t.name, v))}
+											value={tb.name}
+											checked={selStructure.includes(tb.name)}
+											onCheckedChange={(v) => (selStructure = toggle(selStructure, tb.name, v))}
 										/>
 									</td>
 									<td class="py-2">
-										{#if t.kind === 'table'}
+										{#if tb.kind === 'table'}
 											<Checkbox
-												aria-label={`Data of ${t.name}`}
+												aria-label={t('Data of {table}', { table: tb.name })}
 												name="table_data[]"
-												value={t.name}
-												checked={selData.includes(t.name)}
-												onCheckedChange={(v) => (selData = toggle(selData, t.name, v))}
+												value={tb.name}
+												checked={selData.includes(tb.name)}
+												onCheckedChange={(v) => (selData = toggle(selData, tb.name, v))}
 											/>
 										{/if}
 									</td>
@@ -455,17 +460,17 @@
 
 		{#if hasRows}
 			<Card.Root class={custom ? '' : 'hidden'}>
-				<Card.Header><Card.Title>Rows</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Rows')}</Card.Title></Card.Header>
 				<Card.Content>
 					<RadioGroup name="allrows" bind:value={texts.allrows}>
 						<div class="flex items-center gap-2">
 							<RadioGroupItem value="1" id="allrows_1" />
-							<Label for="allrows_1" class="font-normal">Dump all rows</Label>
+							<Label for="allrows_1" class="font-normal">{t('Dump all rows')}</Label>
 						</div>
 						<div class="flex flex-wrap items-center gap-2">
 							<RadioGroupItem value="0" id="allrows_0" />
-							<Label for="allrows_0" class="font-normal">Dump some row(s)</Label>
-							<Label for="limit_to" class="font-normal">Number of rows:</Label>
+							<Label for="allrows_0" class="font-normal">{t('Dump some row(s)')}</Label>
+							<Label for="limit_to" class="font-normal">{t('Number of rows:')}</Label>
 							<Input
 								id="limit_to"
 								name="limit_to"
@@ -475,7 +480,7 @@
 								class="w-28"
 								onfocus={() => (texts.allrows = '0')}
 							/>
-							<Label for="limit_from" class="font-normal">Row to begin at:</Label>
+							<Label for="limit_from" class="font-normal">{t('Row to begin at:')}</Label>
 							<Input
 								id="limit_from"
 								name="limit_from"
@@ -491,20 +496,20 @@
 		{/if}
 
 		<Card.Root class={custom ? '' : 'hidden'}>
-			<Card.Header><Card.Title>Output</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Output')}</Card.Title></Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<RadioGroup name="output_format" bind:value={texts.output_format}>
 					<div class="flex items-center gap-2">
 						<RadioGroupItem value="astext" id="output_astext" disabled={plugin?.binary} />
-						<Label for="output_astext" class="font-normal">View output as text</Label>
+						<Label for="output_astext" class="font-normal">{t('View output as text')}</Label>
 					</div>
 					<div class="flex items-center gap-2">
 						<RadioGroupItem value="sendit" id="output_sendit" />
-						<Label for="output_sendit" class="font-normal">Save output to a file</Label>
+						<Label for="output_sendit" class="font-normal">{t('Save output to a file')}</Label>
 					</div>
 				</RadioGroup>
 				<div class="flex flex-col gap-1.5">
-					<Label for="filename_template">File name template</Label>
+					<Label for="filename_template">{t('File name template')}</Label>
 					<Input
 						id="filename_template"
 						name="filename_template"
@@ -512,13 +517,12 @@
 						class="max-w-md"
 					/>
 					<span class="text-xs text-muted-foreground">
-						<code>@SERVER@</code>, <code>@DATABASE@</code>, <code>@TABLE@</code> and date tokens
-						such as <code>%Y-%m-%d</code> are replaced.
+						{t('@SERVER@, @DATABASE@, @TABLE@ and date tokens such as %Y-%m-%d are replaced.')}
 					</span>
 				</div>
 				<div class="flex flex-wrap gap-6">
 					<div class="flex flex-col gap-1.5">
-						<Label for="charset">Character set of the file</Label>
+						<Label for="charset">{t('Character set of the file')}</Label>
 						<NativeSelect id="charset" name="charset" bind:value={texts.charset}>
 							{#each data.charsets as c (c)}
 								<NativeSelectOption value={c}>{c}</NativeSelectOption>
@@ -526,11 +530,11 @@
 						</NativeSelect>
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<Label for="compression">Compression</Label>
+						<Label for="compression">{t('Compression')}</Label>
 						<NativeSelect id="compression" name="compression" bind:value={texts.compression}>
-							<NativeSelectOption value="none">None</NativeSelectOption>
-							<NativeSelectOption value="zip">zipped</NativeSelectOption>
-							<NativeSelectOption value="gzip">gzipped</NativeSelectOption>
+							<NativeSelectOption value="none">{t('None')}</NativeSelectOption>
+							<NativeSelectOption value="zip">{t('zipped')}</NativeSelectOption>
+							<NativeSelectOption value="gzip">{t('gzipped')}</NativeSelectOption>
 						</NativeSelect>
 					</div>
 				</div>
@@ -541,7 +545,9 @@
 						value="something"
 						bind:checked={bools.remember_template}
 					/>
-					<Label for="remember_template" class="font-normal">Use this for future exports</Label>
+					<Label for="remember_template" class="font-normal"
+						>{t('Use this for future exports')}</Label
+					>
 				</div>
 			</Card.Content>
 		</Card.Root>
@@ -553,16 +559,16 @@
 			>
 				{#if p.supports.structure && p.supports.data && data.scope !== 'raw' && !p.fixedStructure}
 					<Card.Root>
-						<Card.Header><Card.Title>Dump table</Card.Title></Card.Header>
+						<Card.Header><Card.Title>{t('Dump table')}</Card.Title></Card.Header>
 						<Card.Content>
 							<RadioGroup
 								name={`${p.id}_structure_or_data`}
 								bind:value={texts[`${p.id}_structure_or_data`]}
 							>
-								{#each [['structure', 'structure'], ['data', 'data'], ['structure_and_data', 'structure and data']] as [v, label] (v)}
+								{#each [['structure', N_('structure')], ['data', N_('data')], ['structure_and_data', N_('structure and data')]] as [v, label] (v)}
 									<div class="flex items-center gap-2">
 										<RadioGroupItem value={v} id={`${p.id}_sod_${v}`} />
-										<Label for={`${p.id}_sod_${v}`} class="font-normal">{label}</Label>
+										<Label for={`${p.id}_sod_${v}`} class="font-normal">{t(label)}</Label>
 									</div>
 								{/each}
 							</RadioGroup>
@@ -572,7 +578,11 @@
 				{#if p.options.length}
 					{#each groups(p) as g (g.title)}
 						<Card.Root>
-							<Card.Header><Card.Title>{p.label}: {g.title}</Card.Title></Card.Header>
+							<Card.Header
+								><Card.Title
+									>{t('{format}: {title}', { format: t(p.label), title: g.title })}</Card.Title
+								></Card.Header
+							>
 							<Card.Content class="flex flex-col gap-3">
 								{#each g.options as o (o.name)}
 									{@render optionControl(p, o)}
@@ -585,18 +595,20 @@
 		{/each}
 
 		<div class="flex justify-end">
-			<Button type="submit" disabled={busy} data-testid="export-submit">Export</Button>
+			<Button type="submit" disabled={busy} data-testid="export-submit">{t('Export')}</Button>
 		</div>
 	</form>
 
 	{#if result}
 		<Card.Root data-testid="export-result-card">
-			<Card.Header><Card.Title>Output</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Output')}</Card.Title></Card.Header>
 			<Card.Content class="flex flex-col gap-3">
 				{#if result.truncated}
 					<Alert
 						><AlertDescription
-							>The output was cut after a limit; use "Save output to a file" for the full export.</AlertDescription
+							>{t(
+								'The output was cut after a limit; use "Save output to a file" for the full export.'
+							)}</AlertDescription
 						></Alert
 					>
 				{/if}

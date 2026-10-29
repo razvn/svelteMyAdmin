@@ -45,14 +45,14 @@ export async function loadExportPage(event: RequestEvent, level: ExportLevel) {
 		try {
 			sqlQuery = checkExportQuery(rawQuery);
 		} catch {
-			error(400, 'Only a single query returning rows can be exported.');
+			error(400, locals.i18n.t('Only a single query returning rows can be exported.'));
 		}
 	}
 
 	let selectedRows: { where: string; sig: string }[] = [];
 	if (level === 'table') {
 		const clauses = readSignedClauses(url, secret, db, table);
-		if (clauses === null) error(400, 'Invalid row selection.');
+		if (clauses === null) error(400, locals.i18n.t('Invalid row selection.'));
 		const sigs = url.searchParams.getAll('sig');
 		selectedRows = clauses.map((where, i) => ({ where, sig: sigs[i] }));
 	}
@@ -76,7 +76,7 @@ export async function loadExportPage(event: RequestEvent, level: ExportLevel) {
 			checked: !SYSTEM_DBS.has(name.toLowerCase())
 		}));
 	} else {
-		if (!(await dbi.databaseExists(db))) error(404, 'Database not found');
+		if (!(await dbi.databaseExists(db))) error(404, locals.i18n.t('Database not found'));
 		if (level === 'database') {
 			tables = (await dbi.listTables(db)).map((t) => ({
 				name: t.name,
@@ -84,7 +84,7 @@ export async function loadExportPage(event: RequestEvent, level: ExportLevel) {
 				rows: t.rows
 			}));
 		} else if ((await dbi.getTableType(db, table)) === null) {
-			error(404, 'Table not found');
+			error(404, locals.i18n.t('Table not found'));
 		}
 	}
 
@@ -114,7 +114,7 @@ export async function handleExportPost(event: RequestEvent, level: ExportLevel):
 	try {
 		parsed = parseExportForm(form, { level, db: params.db, table: params.table, secret });
 	} catch (e) {
-		if (e instanceof ExportInputError) error(400, e.message);
+		if (e instanceof ExportInputError) error(400, locals.i18n.t(e.message));
 		throw e;
 	}
 	const req = parsed.request;
@@ -122,9 +122,9 @@ export async function handleExportPost(event: RequestEvent, level: ExportLevel):
 
 	if (level === 'server') {
 		const known = new Set(await dbi.listDatabases());
-		if (!req.databases.every((d) => known.has(d))) error(400, 'Unknown database.');
+		if (!req.databases.every((d) => known.has(d))) error(400, locals.i18n.t('Unknown database.'));
 	} else if (!(await dbi.databaseExists(req.databases[0]))) {
-		error(404, 'Database not found');
+		error(404, locals.i18n.t('Database not found'));
 	}
 
 	const info = await dbi.getServerInfo();
@@ -183,7 +183,7 @@ export async function handleExportPost(event: RequestEvent, level: ExportLevel):
 	} catch (e) {
 		if (e && typeof e === 'object' && 'status' in e && 'body' in e) throw e;
 		const message = e instanceof Error ? e.message : 'Export failed';
-		error(400, `Export failed: ${message}`.slice(0, 500));
+		error(400, locals.i18n.t('Export failed: {message}', { message }).slice(0, 500));
 	}
 }
 
@@ -210,12 +210,13 @@ export async function handleTemplatePost(
 ): Promise<Response> {
 	const { locals } = event;
 	const parsed = templateSchema.safeParse(await event.request.json().catch(() => null));
-	if (!parsed.success) return json({ ok: false, message: 'Invalid request.' }, { status: 400 });
+	if (!parsed.success)
+		return json({ ok: false, message: locals.i18n.t('Invalid request.') }, { status: 400 });
 	const input = parsed.data;
 	const templates = await listTemplates(locals, level);
 	if (templates === null) {
 		return json(
-			{ ok: false, message: 'Export templates need the configuration storage.' },
+			{ ok: false, message: locals.i18n.t('Export templates need the configuration storage.') },
 			{ status: 409 }
 		);
 	}
@@ -227,32 +228,36 @@ export async function handleTemplatePost(
 			const created = await createTemplate(locals, level, input.name, input.data);
 			if (created === null)
 				return json(
-					{ ok: false, message: 'Could not create the template (name already used?).' },
+					{
+						ok: false,
+						message: locals.i18n.t('Could not create the template (name already used?).')
+					},
 					{ status: 409 }
 				);
 			id = created;
-			message = `Template "${input.name}" was created.`;
+			message = locals.i18n.t('Template "{name}" was created.', { name: input.name });
 			break;
 		}
 		case 'update':
 			if (!(await updateTemplate(locals, input.id, input.data))) {
-				return json({ ok: false, message: 'Template not found.' }, { status: 404 });
+				return json({ ok: false, message: locals.i18n.t('Template not found.') }, { status: 404 });
 			}
 			id = input.id;
-			message = 'Template was updated.';
+			message = locals.i18n.t('Template was updated.');
 			break;
 		case 'delete':
 			if (!(await deleteTemplate(locals, input.id))) {
-				return json({ ok: false, message: 'Template not found.' }, { status: 404 });
+				return json({ ok: false, message: locals.i18n.t('Template not found.') }, { status: 404 });
 			}
-			message = 'Template was deleted.';
+			message = locals.i18n.t('Template was deleted.');
 			break;
 		case 'load': {
 			const loaded = await loadTemplate(locals, input.id);
-			if (!loaded) return json({ ok: false, message: 'Template not found.' }, { status: 404 });
+			if (!loaded)
+				return json({ ok: false, message: locals.i18n.t('Template not found.') }, { status: 404 });
 			id = input.id;
 			data = loaded;
-			message = 'Template was loaded.';
+			message = locals.i18n.t('Template was loaded.');
 		}
 	}
 	return json({ ok: true, message, id, data, templates: await listTemplates(locals, level) });

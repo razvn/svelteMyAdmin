@@ -2,6 +2,7 @@
  * YAML export, port of libraries/classes/Plugins/Export/ExportYaml.php.
  * One YAML document; each table is a list of mappings with a `# db.table` comment.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportCell, ExportField, ExportPlugin, ExportScope } from '../types.ts';
 import { emit, isPhpNumeric, type Piece, replaceAll } from './plugin-utils.ts';
 
@@ -26,7 +27,7 @@ export function yamlLine(field: ExportField, cell: ExportCell, crlf: string): Pi
 
 const yaml: ExportPlugin = {
 	id: 'yaml',
-	label: 'YAML',
+	label: N_('YAML'),
 	extension: 'yml',
 	mimeType: 'text/yaml',
 	scopes: YAML_SCOPES,

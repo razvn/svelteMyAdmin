@@ -3,11 +3,17 @@
  * It is deliberately not a parser: phpMyAdmin lints server-side with its PHP parser, here we only
  * flag the mistakes that can be detected reliably with a single scan.
  */
+import { N_ } from '#lib/i18n/translator.ts';
+
 export interface LintIssue {
 	from: number;
 	to: number;
 	severity: 'error' | 'warning';
+	/** English text (already interpolated). */
 	message: string;
+	/** Message id to translate with `params` (the English `message` when absent). */
+	msgid?: string;
+	params?: Record<string, string>;
 }
 
 export function lintSql(sql: string): LintIssue[] {
@@ -23,7 +29,13 @@ export function lintSql(sql: string): LintIssue[] {
 		} else if (c === '/' && next === '*') {
 			const end = sql.indexOf('*/', i + 2);
 			if (end === -1) {
-				issues.push({ from: i, to: n, severity: 'error', message: 'Unterminated comment' });
+				issues.push({
+					from: i,
+					to: n,
+					severity: 'error',
+					message: 'Unterminated comment',
+					msgid: N_('Unterminated comment')
+				});
 				i = n;
 			} else i = end + 2;
 		} else if (c === "'" || c === '"' || c === '`') {
@@ -47,12 +59,16 @@ export function lintSql(sql: string): LintIssue[] {
 				i++;
 			}
 			if (!closed) {
-				const what = c === '`' ? 'identifier' : 'string';
+				const ident = c === '`';
 				issues.push({
 					from: start,
 					to: start + 1,
 					severity: 'error',
-					message: `Unterminated ${what}: missing closing ${c}`
+					message: `Unterminated ${ident ? 'identifier' : 'string'}: missing closing ${c}`,
+					msgid: ident
+						? N_('Unterminated identifier: missing closing {char}')
+						: N_('Unterminated string: missing closing {char}'),
+					params: { char: c }
 				});
 				i = n;
 			}
@@ -64,7 +80,8 @@ export function lintSql(sql: string): LintIssue[] {
 						from: i,
 						to: i + 1,
 						severity: 'error',
-						message: 'Unmatched closing parenthesis'
+						message: 'Unmatched closing parenthesis',
+						msgid: N_('Unmatched closing parenthesis')
 					});
 				else parens.pop();
 			}
@@ -72,6 +89,12 @@ export function lintSql(sql: string): LintIssue[] {
 		}
 	}
 	for (const at of parens)
-		issues.push({ from: at, to: at + 1, severity: 'error', message: 'Unclosed parenthesis' });
+		issues.push({
+			from: at,
+			to: at + 1,
+			severity: 'error',
+			message: 'Unclosed parenthesis',
+			msgid: N_('Unclosed parenthesis')
+		});
 	return issues.sort((a, b) => a.from - b.from);
 }

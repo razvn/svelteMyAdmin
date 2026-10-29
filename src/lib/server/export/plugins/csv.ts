@@ -2,6 +2,7 @@
  * CSV export, port of libraries/classes/Plugins/Export/ExportCsv.php.
  * The writer is shared with "CSV for MS Excel" (excel.ts), as in phpMyAdmin.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportCell,
 	ExportContext,
@@ -23,18 +24,18 @@ import {
 export const CSV_SCOPES: ExportScope[] = ['server', 'database', 'table', 'raw'];
 
 export const CSV_OPTIONS: ExportOption[] = [
-	{ kind: 'text', name: 'separator', label: 'Columns separated with:', default: ',' },
-	{ kind: 'text', name: 'enclosed', label: 'Columns enclosed with:', default: '"' },
-	{ kind: 'text', name: 'escaped', label: 'Columns escaped with:', default: '"' },
-	{ kind: 'text', name: 'terminated', label: 'Lines terminated with:', default: 'AUTO' },
-	{ kind: 'text', name: 'null', label: 'Replace NULL with:', default: 'NULL' },
+	{ kind: 'text', name: 'separator', label: N_('Columns separated with:'), default: ',' },
+	{ kind: 'text', name: 'enclosed', label: N_('Columns enclosed with:'), default: '"' },
+	{ kind: 'text', name: 'escaped', label: N_('Columns escaped with:'), default: '"' },
+	{ kind: 'text', name: 'terminated', label: N_('Lines terminated with:'), default: 'AUTO' },
+	{ kind: 'text', name: 'null', label: N_('Replace NULL with:'), default: 'NULL' },
 	{
 		kind: 'bool',
 		name: 'removeCRLF',
-		label: 'Remove carriage return/line feed characters within columns',
+		label: N_('Remove carriage return/line feed characters within columns'),
 		default: false
 	},
-	{ kind: 'bool', name: 'columns', label: 'Put columns names in the first row', default: true }
+	{ kind: 'bool', name: 'columns', label: N_('Put columns names in the first row'), default: true }
 ];
 
 export interface CsvSettings {
@@ -118,7 +119,7 @@ export async function writeCsv(
 
 const csv: ExportPlugin = {
 	id: 'csv',
-	label: 'CSV',
+	label: N_('CSV'),
 	extension: 'csv',
 	mimeType: 'text/comma-separated-values',
 	scopes: CSV_SCOPES,

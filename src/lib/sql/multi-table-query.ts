@@ -7,6 +7,7 @@
  * identifiers from foreign keys are escaped; tables are ordered so that related ones follow each other; BETWEEN accepts `a AND b`; ORDER BY is supported
  * (the radio buttons exist in phpMyAdmin but are never read).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import { escapeId } from './escape.ts';
 import type { QuerySchemaData } from './query-schema.ts';
 
@@ -33,8 +34,8 @@ export const MTQ_OPERATORS = [
 ] as const;
 
 export const MTQ_HINTS: Record<string, string> = {
-	'IN (...)': 'Separate the values by commas',
-	'NOT IN (...)': 'Separate the values by commas'
+	'IN (...)': N_('Separate the values by commas'),
+	'NOT IN (...)': N_('Separate the values by commas')
 };
 
 export const isOpWithoutArg = (op: string) => op === 'IS NULL' || op === 'IS NOT NULL';
@@ -224,7 +225,7 @@ export function buildMultiTableQuery(
 	foreignKeys: MtqForeignKey[]
 ): MtqResult {
 	const shown = columns.filter((c) => c.table !== '' && c.column !== '' && c.show);
-	if (shown.length === 0) return { ok: false, error: 'Nothing selected' };
+	if (shown.length === 0) return { ok: false, error: N_('Nothing selected') };
 
 	const aliases = new Map<string, string[]>();
 	for (const c of shown) {

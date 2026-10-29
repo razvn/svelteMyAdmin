@@ -3,6 +3,7 @@
  * The document is HTML that Word opens: one `<h2>` per structure or data block, tables with the
  * `print` classes phpMyAdmin uses.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportOption, ExportPlugin, ExportScope } from '../types.ts';
 import {
 	emit,
@@ -25,8 +26,8 @@ import {
 const HTMLWORD_SCOPES: ExportScope[] = ['server', 'database', 'table'];
 
 export const HTMLWORD_OPTIONS: ExportOption[] = [
-	{ kind: 'text', name: 'null', label: 'Replace NULL with:', default: 'NULL' },
-	{ kind: 'bool', name: 'columns', label: 'Put columns names in the first row', default: false }
+	{ kind: 'text', name: 'null', label: N_('Replace NULL with:'), default: 'NULL' },
+	{ kind: 'bool', name: 'columns', label: N_('Put columns names in the first row'), default: false }
 ];
 
 /** Document prologue, byte-for-byte the PHP one (charset is always UTF-8 here). */
@@ -82,7 +83,7 @@ function tableDefinition(columns: readonly ColumnInfo[], unique: readonly string
 
 const htmlword: ExportPlugin = {
 	id: 'htmlword',
-	label: 'Microsoft Word 2000',
+	label: N_('Microsoft Word 2000'),
 	extension: 'doc',
 	mimeType: 'application/vnd.ms-word',
 	scopes: HTMLWORD_SCOPES,

@@ -2,6 +2,7 @@
  * OpenDocument Spreadsheet export, mirroring libraries/classes/Plugins/Export/ExportOds.php.
  * One sheet per exported table; the whole package is built in memory and written once in `footer`.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportContext,
 	ExportData,
@@ -101,7 +102,7 @@ function typedCell(field: ExportField, value: string): string {
 
 const ods: ExportPlugin = {
 	id: 'ods',
-	label: 'OpenDocument Spreadsheet',
+	label: N_('OpenDocument Spreadsheet'),
 	extension: 'ods',
 	mimeType: ODS_MIME,
 	scopes: ['server', 'database', 'table', 'raw'],
@@ -111,14 +112,14 @@ const ods: ExportPlugin = {
 		{
 			kind: 'text',
 			name: 'null',
-			label: 'Replace NULL with:',
+			label: N_('Replace NULL with:'),
 			default: 'NULL',
 			group: 'general_opts'
 		},
 		{
 			kind: 'bool',
 			name: 'columns',
-			label: 'Put columns names in the first row',
+			label: N_('Put columns names in the first row'),
 			default: false,
 			group: 'general_opts'
 		}

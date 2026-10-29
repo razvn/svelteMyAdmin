@@ -140,7 +140,10 @@ async function csvIntoTable(ctx: DriverContext, db: string, table: string): Prom
 	for (const c of requested) {
 		if (!all.includes(c)) {
 			run.fail(
-				`Invalid column (${c}) specified! Ensure that columns names are spelled correctly, separated by commas, and not enclosed in quotes.`
+				run.tr.t(
+					'Invalid column ({column}) specified! Ensure that columns names are spelled correctly, separated by commas, and not enclosed in quotes.',
+					{ column: c }
+				)
 			);
 			return;
 		}
@@ -224,7 +227,10 @@ async function csvIntoTable(ctx: DriverContext, db: string, table: string): Prom
 					values = values.slice(0, -1);
 				} else {
 					run.seen++;
-					run.fail(`Invalid column count in CSV input on line ${row.line}.`, row.line);
+					run.fail(
+						run.tr.t('Invalid column count in CSV input on line {line}.', { line: row.line }),
+						row.line
+					);
 					return false;
 				}
 			}
@@ -291,7 +297,7 @@ async function csvAnalyze(ctx: DriverContext): Promise<void> {
 export const csvDriver: Driver = async (ctx) => {
 	const err = validateCsvOptions(csvOptions(ctx.options, { terminated: ',', escaped: '"' }));
 	if (err) {
-		ctx.run.fail(err);
+		ctx.run.fail(ctx.run.tr.t(err));
 		return;
 	}
 	if (ctx.scope.level === 'table') {
@@ -317,11 +323,11 @@ export async function localInfileEnabled(run: Pick<ImportRun, 'conn'>): Promise<
 export const ldiDriver: Driver = async (ctx) => {
 	const { run, scope, options: o } = ctx;
 	if (scope.level !== 'table') {
-		run.fail('CSV using LOAD DATA is only available for tables.');
+		run.fail(run.tr.t('CSV using LOAD DATA is only available for tables.'));
 		return;
 	}
 	if (!(await localInfileEnabled(run))) {
-		run.fail('LOAD DATA LOCAL INFILE is disabled on this server (local_infile is OFF).');
+		run.fail(run.tr.t('LOAD DATA LOCAL INFILE is disabled on this server (local_infile is OFF).'));
 		return;
 	}
 	const terminated = unescapeCsvOption(str(o, 'terminated', ';'));
@@ -388,7 +394,7 @@ export const odsDriver: Driver = async (ctx) => {
 		});
 	} catch (e) {
 		if (e instanceof OdsError) {
-			run.fail(e.message);
+			run.fail(run.tr.t(e.message));
 			return;
 		}
 		throw e;
@@ -426,7 +432,10 @@ export const mediawikiDriver: Driver = async (ctx) => {
 		wiki = parseMediaWiki(await collectText(decodeText(ctx.bytes, ctx.charset), ctx.memoryLimit));
 	} catch (e) {
 		if (e instanceof MediaWikiError) {
-			run.fail(`Invalid format of mediawiki input on line: ${e.lineText}.`, e.line);
+			run.fail(
+				run.tr.t('Invalid format of mediawiki input on line: {text}.', { text: e.lineText }),
+				e.line
+			);
 			return;
 		}
 		throw e;

@@ -2,6 +2,7 @@
  * OpenDocument Spreadsheet reader (Plugins/Import/ImportOds.php): sheets become tables, the first
  * row can name the columns, trailing empty cells are dropped, short rows are padded with NULL.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import { strFromU8, unzipSync } from 'fflate';
 import { columnAlphaName } from '../analyze.ts';
 import { elementChildren, localName, parseXml, XmlError, type XmlElement } from './xml.ts';
@@ -47,10 +48,10 @@ export function extractOdsContent(bytes: Uint8Array): string {
 			filter: (f) => f.name === 'content.xml' && f.originalSize <= MAX_CONTENT_BYTES
 		});
 	} catch {
-		throw new OdsError('The file is not a valid OpenDocument Spreadsheet (not a ZIP archive).');
+		throw new OdsError(N_('The file is not a valid OpenDocument Spreadsheet (not a ZIP archive).'));
 	}
 	const content = files['content.xml'];
-	if (!content) throw new OdsError('Could not parse OpenDocument Spreadsheet!');
+	if (!content) throw new OdsError(N_('Could not parse OpenDocument Spreadsheet!'));
 	return strFromU8(content);
 }
 
@@ -101,7 +102,7 @@ export function parseOdsContent(xml: string, options: Partial<OdsOptions> = {}):
 	}
 	const body = elementChildren(root).find((c) => c.name === 'office:body');
 	const sheetsRoot = body && elementChildren(body).find((c) => c.name === 'office:spreadsheet');
-	if (!sheetsRoot) throw new OdsError('Could not parse OpenDocument Spreadsheet!');
+	if (!sheetsRoot) throw new OdsError(N_('Could not parse OpenDocument Spreadsheet!'));
 
 	const tables: ParsedTable[] = [];
 	for (const sheet of elementChildren(sheetsRoot)) {

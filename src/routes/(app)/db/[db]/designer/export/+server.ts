@@ -8,9 +8,9 @@ import type { RequestHandler } from './$types';
 /** Schema export (PDF / SVG) of a Designer page. */
 export const GET: RequestHandler = async ({ locals, params, url }) => {
 	const parsed = exportQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-	if (!parsed.success) error(400, 'Invalid export options.');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid export options.'));
 	const dbi = await locals.dbi;
-	if (!(await dbi.databaseExists(params.db))) error(404, 'Database not found.');
+	if (!(await dbi.databaseExists(params.db))) error(404, locals.i18n.t('Database not found.'));
 	const tables = designerTables(locals.server);
 	const run = (storage: Parameters<typeof exportSchema>[4]) =>
 		exportSchema(dbi, locals.server as RelationServer, params.db, parsed.data, storage);
@@ -18,7 +18,7 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 		tables && parsed.data.page > 0
 			? await withControl(locals, (conn) => run({ conn, tables }))
 			: await run(null);
-	if (!file) error(500, 'The configuration storage is not reachable.');
+	if (!file) error(500, locals.i18n.t('The configuration storage is not reachable.'));
 	const name = `${params.db.replace(/[^\w.-]/g, '_')}.${file.extension}`;
 	const body = typeof file.body === 'string' ? file.body : new Uint8Array(file.body);
 	return new Response(body, {
