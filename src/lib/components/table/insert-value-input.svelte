@@ -13,6 +13,7 @@
 		type FormColumn,
 		type InputSettings
 	} from '#lib/sql/insert-edit.ts';
+	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
 	import FkSelect from './fk-select.svelte';
 
 	interface Props {
@@ -75,7 +76,49 @@
 	}
 </script>
 
-{#if column.protected}
+{#if column.inputTransform && !column.protected && column.inputTransform.widget !== 'default'}
+	{@const widget = column.inputTransform.widget}
+	{#if widget === 'text'}
+		<Input
+			{name}
+			bind:value={cell.value}
+			{disabled}
+			aria-label={label}
+			autocomplete="off"
+			spellcheck={false}
+			class="max-w-md font-mono"
+			data-transform={column.inputTransform.id}
+		/>
+	{:else if widget === 'file' || widget === 'image'}
+		<div
+			class="flex flex-wrap items-center gap-2 text-sm"
+			data-transform={column.inputTransform.id}
+		>
+			{#if cell.value !== ''}<input type="hidden" {name} value={cell.value} />{/if}
+			<input
+				type="file"
+				name={fileName}
+				{disabled}
+				accept={widget === 'image' ? 'image/*' : undefined}
+				aria-label="Upload {column.name}"
+				class="text-xs"
+			/>
+		</div>
+	{:else if column.inputTransform.language === 'sql'}
+		<SqlEditor bind:value={cell.value} {name} readonly={disabled} minLines={4} aria-label={label} />
+	{:else}
+		<Textarea
+			{name}
+			bind:value={cell.value}
+			{disabled}
+			aria-label={label}
+			rows={settings.textareaRows}
+			spellcheck={false}
+			class="font-mono"
+			data-transform={column.inputTransform.id}
+		/>
+	{/if}
+{:else if column.protected}
 	<div class="flex flex-wrap items-center gap-2 text-sm">
 		<span class="text-muted-foreground">
 			Binary - do not edit{size !== null ? ` (${size} B)` : ''}

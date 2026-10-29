@@ -300,6 +300,7 @@
 				actionsPosition={showActions ? data.settings.rowActionLinks : 'none'}
 				repeatCells={data.settings.repeatCells}
 				links={data.fkLinks}
+				transforms={data.transforms}
 				{downloadHref}
 				onedit={editable ? onedit : undefined}
 			>

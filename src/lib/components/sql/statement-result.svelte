@@ -255,6 +255,7 @@
 	<ResultGrid
 		columns={gridColumns(set, sortable)}
 		rows={set.rows}
+		transforms={set.transforms}
 		limitChars={settings.limitChars}
 		order={settings.order}
 		sort={sortable ? simple!.sort : null}

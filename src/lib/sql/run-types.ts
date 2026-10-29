@@ -1,6 +1,7 @@
 /** Serializable result shapes of the SQL execution engine (shared by server and UI). */
 import type { Cell } from '#lib/components/results/format.ts';
 import type { ColumnKind } from '#lib/table/column-kind.ts';
+import type { Transformed } from '#lib/transformations/types.ts';
 import type { StatementKind } from './classify.ts';
 
 export interface FieldMeta {
@@ -36,6 +37,8 @@ export interface ResultSetData {
 	keys: RowKey[] | null;
 	/** That table (set together with `keys`). */
 	source: { db: string; table: string } | null;
+	/** Browser display transformations: field index => one entry per row (null = raw cell). */
+	transforms?: Record<number, (Transformed | null)[]>;
 }
 
 export interface Warning {

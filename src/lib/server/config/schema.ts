@@ -190,6 +190,7 @@ export const configSchema = z
 		RowActionType: z.enum(['icons', 'text', 'both']).default('both'),
 		RepeatCells: z.number().int().min(0).default(100),
 		SaveCellsAtOnce: z.boolean().default(false),
+		BrowseMIME: z.boolean().default(true),
 		GridEditing: z.enum(['double-click', 'click', 'disabled']).default('double-click'),
 		RelationalDisplay: z.enum(['K', 'D']).default('K'),
 		ProtectBinary: z.union([z.enum(['blob', 'noblob', 'all']), z.literal(false)]).default('blob'),
@@ -258,6 +259,10 @@ export const configSchema = z
 			first_timestamp: 'NOW'
 		}),
 		maxRowPlotLimit: z.number().int().default(500),
+
+		/** User preferences: paths users may not set, and whether the Developer tab is offered. */
+		UserprefsDisallow: z.array(z.string()).default([]),
+		UserprefsDeveloperTab: z.boolean().default(false),
 
 		// Sub-trees (Export/Import options are modelled later with their features)
 		Export: z.record(z.string(), z.unknown()).default({}),

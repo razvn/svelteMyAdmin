@@ -18,6 +18,9 @@
 		type ColumnPlacement
 	} from '#lib/sql/alter-table.ts';
 	import type { ColumnDef, ServerCaps } from '#lib/sql/column-definition.ts';
+	import type { TransformUi } from '#lib/server/transformations/structure.ts';
+	import { emptySettings, type ColumnTransformSettings } from '#lib/transformations/ui.ts';
+	import TransformationFields from './transformation-fields.svelte';
 	import { alterEnhance } from './alter-enhance.ts';
 
 	interface Props {
@@ -31,6 +34,8 @@
 		placement?: ColumnPlacement;
 		/** Add mode: the table already has a PRIMARY KEY. */
 		hasPrimary?: boolean;
+		/** Media type / transformation fields; null when the column_info storage is unavailable. */
+		transformUi?: TransformUi | null;
 	}
 
 	let {
@@ -41,7 +46,8 @@
 		db,
 		table,
 		placement = { where: 'end' },
-		hasPrimary = false
+		hasPrimary = false,
+		transformUi = null
 	}: Props = $props();
 
 	const navState = getNavState();
@@ -54,6 +60,36 @@
 	let error = $state('');
 	let previewOpen = $state(false);
 
+	/* Transformation settings by column id; seeded from the route data like `columns`. */
+	/* svelte-ignore state_referenced_locally */
+	let transforms = $state<Record<number, ColumnTransformSettings>>({
+		...Object.fromEntries(initial.map((c) => [c.id, emptySettings()])),
+		...structuredClone($state.snapshot(transformUi?.byId ?? {}))
+	});
+	// columns added in the editor get empty settings
+	$effect(() => {
+		for (const col of columns) {
+			if (!(col.id in transforms)) transforms[col.id] = emptySettings();
+		}
+	});
+	const settingsOf = (id: number): ColumnTransformSettings => transforms[id] ?? emptySettings();
+	const transformations = $derived(
+		transformUi
+			? columns.flatMap((col, i) =>
+					col.name.trim() === ''
+						? []
+						: [
+								{
+									column: col.name,
+									...(mode === 'change' && oldNames[i] !== col.name
+										? { oldName: oldNames[i] }
+										: {}),
+									...settingsOf(col.id)
+								}
+							]
+				)
+			: undefined
+	);
 	const sql = $derived(
 		mode === 'add'
 			? buildAddColumns(db, table, columns, caps, placement, { tableHasPrimary: hasPrimary })
@@ -66,8 +102,8 @@
 	);
 	const payload = $derived(
 		mode === 'add'
-			? { columns, placement }
-			: { changes: columns.map((col, i) => ({ oldName: oldNames[i], col })) }
+			? { columns, placement, transformations }
+			: { changes: columns.map((col, i) => ({ oldName: oldNames[i], col })), transformations }
 	);
 	const structureHref = $derived(resolve(bare(tabHref('table', { db, table }, 'structure'))));
 
@@ -91,6 +127,16 @@
 		}
 	});
 </script>
+
+{#snippet extra({ col, index }: { col: ColumnDef; index: number })}
+	{#if transformUi && transforms[col.id]}
+		<TransformationFields
+			bind:value={transforms[col.id]}
+			choices={transformUi.choices}
+			n={index + 1}
+		/>
+	{/if}
+{/snippet}
 
 <form method="POST" action="?/{mode}" class="flex flex-col gap-6" use:enhance={submit}>
 	<input type="hidden" name="payload" value={JSON.stringify(payload)} />
@@ -116,9 +162,17 @@
 		</Card.Header>
 		<Card.Content>
 			{#if mode === 'add'}
-				<ColumnEditor bind:columns {caps} {collations} centralDb={db} />
+				<ColumnEditor bind:columns {caps} {collations} centralDb={db} {extra} />
 			{:else}
-				<ColumnEditor bind:columns {caps} {collations} showIndex={false} showAutoIncrement fixed />
+				<ColumnEditor
+					bind:columns
+					{caps}
+					{collations}
+					showIndex={false}
+					showAutoIncrement
+					fixed
+					{extra}
+				/>
 			{/if}
 		</Card.Content>
 	</Card.Root>

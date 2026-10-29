@@ -36,6 +36,8 @@
 		showAutoIncrement?: boolean;
 		/** Existing column being changed: no move / remove buttons. */
 		fixed?: boolean;
+		/** Extra fields rendered under the definition (e.g. media type / transformations). */
+		extra?: import('svelte').Snippet<[{ col: ColumnDef; index: number }]>;
 		onmoveup: () => void;
 		onmovedown: () => void;
 		onremove: () => void;
@@ -52,6 +54,7 @@
 		showIndex = true,
 		showAutoIncrement = showIndex,
 		fixed = false,
+		extra,
 		onmoveup,
 		onmovedown,
 		onremove,
@@ -312,6 +315,12 @@
 			</div>
 		{/snippet}
 		{@render field('Virtuality', 'col-span-2 md:col-span-4 xl:col-span-4', virtualityField)}
+	{/if}
+
+	{#if extra}
+		<div class="col-span-2 md:col-span-6 xl:col-span-12" data-testid="column-extra-{index}">
+			{@render extra({ col, index })}
+		</div>
 	{/if}
 
 	{#if !fixed}
