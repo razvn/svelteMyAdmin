@@ -30,12 +30,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		server: {
 			label: serverLabel(server),
-			connection: useSocket ? `${server.socket} via UNIX socket` : `${hostPort} via TCP/IP`,
+			connection: useSocket
+				? locals.i18n.t('{host} via UNIX socket', { host: server.socket })
+				: locals.i18n.t('{host} via TCP/IP', { host: hostPort }),
 			type: info.serverType,
 			version: `${info.version} - ${info.versionComment}`,
 			protocolVersion: info.protocolVersion,
 			user: info.connectionUser,
-			charset: info.charset === 'utf8mb4' ? 'UTF-8 Unicode (utf8mb4)' : info.charset,
+			charset: info.charset === 'utf8mb4' ? locals.i18n.t('UTF-8 Unicode (utf8mb4)') : info.charset,
 			ssl
 		},
 		kpi: {
@@ -60,13 +62,13 @@ export const actions: Actions = {
 	collation: async ({ request, cookies, url, locals }) => {
 		const parsed = collationSchema.safeParse(Object.fromEntries(await request.formData()));
 		if (!parsed.success || !isValidCollationName(parsed.data.collation_connection)) {
-			return fail(400, { collationError: 'Invalid collation.' });
+			return fail(400, { collationError: locals.i18n.t('Invalid collation.') });
 		}
 		const dbi = await locals.dbi;
 		const known = (await dbi.listCollations()).some(
 			(c) => c.name === parsed.data.collation_connection
 		);
-		if (!known) return fail(400, { collationError: 'Unknown collation.' });
+		if (!known) return fail(400, { collationError: locals.i18n.t('Unknown collation.') });
 		cookies.set(COLLATION_COOKIE, parsed.data.collation_connection, {
 			path: '/',
 			httpOnly: true,

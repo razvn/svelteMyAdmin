@@ -1,8 +1,12 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Dialog from '#lib/components/ui/dialog/index.ts';
+	import { N_ } from '#lib/i18n/index.ts';
 	import type { HiddenItem } from '#lib/nav/hidden.ts';
 	import type { NavState } from './nav-state.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -13,11 +17,11 @@
 	let { open = $bindable(false), db, navState }: Props = $props();
 
 	const TITLES: Record<HiddenItem['type'], string> = {
-		table: 'Tables',
-		view: 'Views',
-		procedure: 'Procedures',
-		function: 'Functions',
-		event: 'Events'
+		table: N_('Tables'),
+		view: N_('Views'),
+		procedure: N_('Procedures'),
+		function: N_('Functions'),
+		event: N_('Events')
 	};
 
 	let items = $state<HiddenItem[]>([]);
@@ -56,28 +60,28 @@
 <Dialog.Root bind:open>
 	<Dialog.Content data-testid="hidden-items-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Hidden items in {db}</Dialog.Title>
+			<Dialog.Title>{t('Hidden items in {db}', { db })}</Dialog.Title>
 			<Dialog.Description
-				>Unhide an item to show it in the navigation tree again.</Dialog.Description
+				>{t('Unhide an item to show it in the navigation tree again.')}</Dialog.Description
 			>
 		</Dialog.Header>
 		{#if loading && items.length === 0}
-			<p class="text-sm text-muted-foreground" role="status">Loading...</p>
+			<p class="text-sm text-muted-foreground" role="status">{t('Loading...')}</p>
 		{:else if grouped.length === 0}
-			<p class="text-sm text-muted-foreground">There are no hidden items.</p>
+			<p class="text-sm text-muted-foreground">{t('There are no hidden items.')}</p>
 		{/if}
 		<div class="grid max-h-80 gap-3 overflow-y-auto">
 			{#each grouped as g (g.type)}
 				<section class="grid gap-1">
-					<h3 class="text-xs font-semibold text-muted-foreground uppercase">{TITLES[g.type]}</h3>
+					<h3 class="text-xs font-semibold text-muted-foreground uppercase">{t(TITLES[g.type])}</h3>
 					{#each g.rows as item (item.name)}
 						<div class="flex items-center justify-between gap-2 text-sm">
 							<span class="truncate font-mono">{item.name}</span>
 							<Button
 								variant="outline"
 								size="sm"
-								aria-label="Unhide {item.name}"
-								onclick={() => void unhide(item)}>Unhide</Button
+								aria-label={t('Unhide {name}', { name: item.name })}
+								onclick={() => void unhide(item)}>{t('Unhide')}</Button
 							>
 						</div>
 					{/each}

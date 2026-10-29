@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import { goto } from '$app/navigation';
@@ -11,6 +12,8 @@
 	import { rankItems, type PaletteItem, type PaletteKind } from '#lib/nav/palette.ts';
 	import { dbTabs, serverTabs, tabHref, tableTabs } from '#lib/nav/tabs.ts';
 	import type { NavState } from './nav-state.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -42,8 +45,8 @@
 				out.push({
 					id: `tab:table:${tab.id}`,
 					kind: 'tab',
-					label: tab.label,
-					description: `Table ${currentTable}`,
+					label: t(tab.label),
+					description: t('Table {name}', { name: currentTable }),
 					href: tabHref('table', { db: currentDb, table: currentTable }, tab.path)
 				});
 			}
@@ -53,8 +56,8 @@
 				out.push({
 					id: `tab:db:${tab.id}`,
 					kind: 'tab',
-					label: tab.label,
-					description: `Database ${currentDb}`,
+					label: t(tab.label),
+					description: t('Database {name}', { name: currentDb }),
 					href: tabHref('db', { db: currentDb }, tab.path)
 				});
 			}
@@ -63,8 +66,8 @@
 			out.push({
 				id: `tab:server:${tab.id}`,
 				kind: 'tab',
-				label: tab.label,
-				description: 'Server',
+				label: t(tab.label),
+				description: t('Server'),
 				href: tabHref('server', {}, tab.path)
 			});
 		}
@@ -73,18 +76,18 @@
 				id: `db:${db}`,
 				kind: 'database',
 				label: db,
-				description: 'Database',
+				description: t('Database'),
 				href: dbHref(nav, db)
 			});
 		}
 		for (const [db, children] of Object.entries(navState.children)) {
-			for (const t of children.tables) {
+			for (const tbl of children.tables) {
 				out.push({
-					id: `table:${db}.${t}`,
+					id: `table:${db}.${tbl}`,
 					kind: 'table',
-					label: t,
-					description: `Table in ${db}`,
-					href: tableHref(nav, db, t)
+					label: tbl,
+					description: t('Table in {db}', { db }),
+					href: tableHref(nav, db, tbl)
 				});
 			}
 			for (const v of children.views) {
@@ -92,7 +95,7 @@
 					id: `view:${db}.${v}`,
 					kind: 'view',
 					label: v,
-					description: `View in ${db}`,
+					description: t('View in {db}', { db }),
 					href: tableHref(nav, db, v)
 				});
 			}
@@ -129,12 +132,12 @@
 <Command.Dialog
 	bind:open
 	shouldFilter={false}
-	title="Command palette"
-	description="Jump to a database, table or page"
+	title={t('Command palette')}
+	description={t('Jump to a database, table or page')}
 >
-	<Command.Input placeholder="Jump to a database, table or page..." bind:value={query} />
+	<Command.Input placeholder={t('Jump to a database, table or page...')} bind:value={query} />
 	<Command.List>
-		<Command.Empty>No results found.</Command.Empty>
+		<Command.Empty>{t('No results found.')}</Command.Empty>
 		{#each results as item (item.id)}
 			{@const Icon = ICONS[item.kind]}
 			<Command.Item value={item.id} onSelect={() => choose(item.href)}>

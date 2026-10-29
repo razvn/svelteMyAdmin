@@ -13,10 +13,10 @@ const body = z.object({
 /** Add or remove a favorite table (Database\Structure\FavoriteTableController). */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const parsed = body.safeParse(await request.json().catch(() => null));
-	if (!parsed.success) error(400, 'Invalid request');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid request'));
 	const { db, table, favorite } = parsed.data;
 	const dbi = await locals.dbi;
-	if ((await dbi.getTableType(db, table)) === null) error(404, 'Table not found');
+	if ((await dbi.getTableType(db, table)) === null) error(404, locals.i18n.t('Table not found'));
 	const result = await toggleFavorite(locals, { db, table }, favorite);
 	const { tables } = await getTableList(locals, 'favorite');
 	return Response.json(
@@ -25,7 +25,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			favorites: tables,
 			message:
 				result === 'full'
-					? `You cannot add more than ${locals.config.NumFavoriteTables} favorite tables.`
+					? locals.i18n.t('You cannot add more than {count} favorite tables.', {
+							count: locals.config.NumFavoriteTables
+						})
 					: undefined
 		},
 		{ headers: { 'cache-control': 'no-store' } }

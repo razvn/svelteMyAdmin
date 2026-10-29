@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
+	import { N_ } from '#lib/i18n/index.ts';
 	import { bare } from '#lib/nav/paths.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -9,6 +11,8 @@
 	import type { TableRef } from '#lib/nav/recent.ts';
 	import { cn } from '#lib/utils.ts';
 	import type { QuickAccess } from './quick-access.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		quick: QuickAccess;
@@ -26,22 +30,28 @@
 	});
 
 	const sections = $derived([
-		{ id: 'recent', title: 'Recent', icon: Clock, items: quick.recent, empty: 'No recent tables' },
+		{
+			id: 'recent',
+			title: N_('Recent'),
+			icon: Clock,
+			items: quick.recent,
+			empty: N_('No recent tables')
+		},
 		{
 			id: 'favorites',
-			title: 'Favorites',
+			title: N_('Favorites'),
 			icon: Star,
 			items: quick.favorites,
-			empty: 'No favorite tables'
+			empty: N_('No favorite tables')
 		}
 	]);
 	let open = $state<Record<string, boolean>>({});
-	const label = (t: TableRef) => `${t.db}.${t.table}`;
+	const label = (ref: TableRef) => `${ref.db}.${ref.table}`;
 </script>
 
 <Sidebar.Group class="gap-1 px-3 py-1">
 	<Sidebar.GroupContent>
-		<Sidebar.Menu aria-label="Recent and favorite tables">
+		<Sidebar.Menu aria-label={t('Recent and favorite tables')}>
 			{#each sections as s (s.id)}
 				{@const isOpen = open[s.id] === true}
 				{@const regionId = `quick-${s.id}`}
@@ -60,7 +70,7 @@
 							)}
 						/>
 						<s.icon class="size-4 shrink-0" />
-						<span class="truncate">{s.title}</span>
+						<span class="truncate">{t(s.title)}</span>
 						<span
 							class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium text-muted-foreground tabular-nums"
 							data-testid="count">{s.items.length}</span
@@ -68,23 +78,23 @@
 					</button>
 					{#if isOpen}
 						<Sidebar.MenuSub id={regionId}>
-							{#each s.items as t (label(t))}
+							{#each s.items as ref (label(ref))}
 								<Sidebar.MenuSubItem>
 									<Sidebar.MenuSubButton size="sm">
 										{#snippet child({ props })}
 											<a
 												{...props}
-												href={resolve(bare(tableHref(nav, t.db, t.table)))}
-												title={label(t)}
+												href={resolve(bare(tableHref(nav, ref.db, ref.table)))}
+												title={label(ref)}
 											>
-												<span>{label(t)}</span>
+												<span>{label(ref)}</span>
 											</a>
 										{/snippet}
 									</Sidebar.MenuSubButton>
 								</Sidebar.MenuSubItem>
 							{:else}
 								<Sidebar.MenuSubItem>
-									<span class="px-2 text-xs text-muted-foreground">{s.empty}</span>
+									<span class="px-2 text-xs text-muted-foreground">{t(s.empty)}</span>
 								</Sidebar.MenuSubItem>
 							{/each}
 						</Sidebar.MenuSub>
