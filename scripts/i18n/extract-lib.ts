@@ -5,6 +5,7 @@ import {
 	AREAS,
 	ROOT,
 	SOURCE_LANG,
+	catalogFile,
 	emptyFor,
 	isEmptyMessage,
 	localeDirs,
@@ -123,7 +124,7 @@ export function syncCatalogs(
 				}
 			}
 			if (opts.dryRun) continue;
-			if (writeCatalog(lang, area, next, root)) stats.changedFiles.push(`${lang}/${area}.json`);
+			if (writeCatalog(lang, area, next, root)) stats.changedFiles.push(`${lang}/${catalogFile(area)}`);
 		}
 	}
 	return stats;
