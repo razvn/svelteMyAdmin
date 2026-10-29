@@ -12,8 +12,8 @@
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { Progress } from '#lib/components/ui/progress/index.ts';
-	import { formatBytes, formatNumber } from '#lib/format.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { startImport, type ImportHandle } from '#lib/import/client.ts';
 	import { parseFileName } from '#lib/import/filename.ts';
 	import { FILE_CHARSETS } from '#lib/import/options.ts';
@@ -28,6 +28,7 @@
 	import ImportResultView from './import-result.svelte';
 
 	let { data }: { data: ImportPageData } = $props();
+	const { t, tn, fmt } = useI18n();
 
 	const navState = getNavState();
 	const scope = $derived(data.scope);
@@ -62,10 +63,10 @@
 
 	const title = $derived(
 		scope.level === 'server'
-			? 'Importing into the current server'
+			? t('Importing into the current server')
 			: scope.level === 'db'
-				? `Importing into the database "${scope.db}"`
-				: `Importing into the table "${scope.table}"`
+				? t('Importing into the database "{db}"', { db: scope.db })
+				: t('Importing into the table "{table}"', { table: scope.table })
 	);
 	const uploadPercent = $derived(
 		file && file.size > 0 ? Math.min(100, Math.round((uploaded / file.size) * 100)) : 0
@@ -131,7 +132,7 @@
 				await refreshAll();
 			}
 		} catch (e) {
-			failure = e instanceof Error ? e.message : 'The import failed.';
+			failure = e instanceof Error ? t(e.message) /* i18n-ignore */ : t('The import failed.');
 		} finally {
 			phase = 'idle';
 			handle = null;
@@ -144,7 +145,7 @@
 	}
 
 	const maxSizeLabel = $derived(
-		data.maxUploadBytes ? `(Max: ${formatBytes(data.maxUploadBytes)})` : ''
+		data.maxUploadBytes ? t('(Max: {size})', { size: fmt.bytes(data.maxUploadBytes) }) : ''
 	);
 	const tooBig = $derived(
 		file !== null && data.maxUploadBytes !== null && file.size > data.maxUploadBytes
@@ -152,23 +153,22 @@
 </script>
 
 <div class="grid gap-6">
-	<PageHeader icon={FileUp} title="Import" description={title} />
+	<PageHeader icon={FileUp} title={t('Import')} description={title} />
 
 	<form class="grid gap-4" onsubmit={onSubmit} data-testid="import-form">
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">File to import</Card.Title>
+				<Card.Title class="text-base">{t('File to import')}</Card.Title>
 				<Card.Description>
-					File may be compressed (gzip, zip) or uncompressed. A compressed file's name must end in <strong
-						>.[format].[compression]</strong
-					>. Example: <strong>.sql.zip</strong>. bzip2 files are not supported; decompress them
-					first.
+					{t(
+						"File may be compressed (gzip, zip) or uncompressed. A compressed file's name must end in .[format].[compression]. Example: .sql.zip. bzip2 files are not supported; decompress them first."
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
 				<div
 					role="group"
-					aria-label="Drop a file to import"
+					aria-label={t('Drop a file to import')}
 					class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-colors {dragging
 						? 'border-primary bg-primary-soft'
 						: 'border-input bg-muted/40'}"
@@ -182,7 +182,7 @@
 				>
 					<Upload class="size-6 text-muted-foreground" aria-hidden="true" />
 					<Label for="import-file"
-						>Browse your computer or drag and drop a file here {maxSizeLabel}</Label
+						>{t('Browse your computer or drag and drop a file here')} {maxSizeLabel}</Label
 					>
 					<Input
 						id="import-file"
@@ -195,20 +195,20 @@
 					{#if file}
 						<p class="text-sm" data-testid="import-file-info">
 							<span class="font-medium">{file.name}</span>
-							<span class="text-muted-foreground">({formatBytes(file.size)})</span>
+							<span class="text-muted-foreground">({fmt.bytes(file.size)})</span>
 						</p>
 					{/if}
 					{#if tooBig}
 						<p class="text-sm text-destructive" role="alert">
-							This file is larger than the maximum upload size of {formatBytes(
-								data.maxUploadBytes
-							)}.
+							{t('This file is larger than the maximum upload size of {size}.', {
+								size: fmt.bytes(data.maxUploadBytes)
+							})}
 						</p>
 					{/if}
 				</div>
 
 				<div class="grid gap-1.5">
-					<Label for="charset_of_file">Character set of the file:</Label>
+					<Label for="charset_of_file">{t('Character set of the file:')}</Label>
 					<NativeSelect id="charset_of_file" name="charset_of_file" bind:value={charset}>
 						{#each FILE_CHARSETS as c (c.value)}
 							<NativeSelectOption value={c.value}>{c.label}</NativeSelectOption>
@@ -219,29 +219,36 @@
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title class="text-base">Partial import</Card.Title></Card.Header>
+			<Card.Header><Card.Title class="text-base">{t('Partial import')}</Card.Title></Card.Header>
 			<Card.Content class="grid gap-4">
 				<div class="flex items-start gap-2">
 					<Checkbox id="allow_interrupt" name="allow_interrupt" bind:checked={allowInterrupt} />
 					<div class="grid gap-1">
 						<Label for="allow_interrupt" class="leading-snug font-normal">
-							Allow the interruption of an import in case it gets close to the execution time limit.
+							{t(
+								'Allow the interruption of an import in case it gets close to the execution time limit.'
+							)}
 						</Label>
 						<p class="text-xs text-muted-foreground">
-							This might be a good way to import large files, however it can break transactions.
+							{t(
+								'This might be a good way to import large files, however it can break transactions.'
+							)}
 							{#if data.timeBudgetSeconds > 0}
-								An import is interrupted after about {data.timeBudgetSeconds} seconds (ExecTimeLimit)
-								and can then be continued.
+								{t(
+									'An import is interrupted after about {seconds} seconds (ExecTimeLimit) and can then be continued.',
+									{ seconds: data.timeBudgetSeconds }
+								)}
 							{:else}
-								ExecTimeLimit is 0: imports are never interrupted.
+								{t('ExecTimeLimit is 0: imports are never interrupted.')}
 							{/if}
 						</p>
 					</div>
 				</div>
 				<div class="grid gap-1.5">
 					<Label for="skip_queries">
-						Skip this number of queries (for SQL) or lines (for other formats), starting from the
-						first one:
+						{t(
+							'Skip this number of queries (for SQL) or lines (for other formats), starting from the first one:'
+						)}
 					</Label>
 					<Input
 						id="skip_queries"
@@ -256,22 +263,22 @@
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title class="text-base">Other options</Card.Title></Card.Header>
+			<Card.Header><Card.Title class="text-base">{t('Other options')}</Card.Title></Card.Header>
 			<Card.Content>
 				<div class="flex items-center gap-2">
 					<Checkbox id="fk_checks" name="fk_checks" bind:checked={fkChecks} />
-					<Label for="fk_checks" class="font-normal">Enable foreign key checks</Label>
+					<Label for="fk_checks" class="font-normal">{t('Enable foreign key checks')}</Label>
 				</div>
 			</Card.Content>
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title class="text-base">Format</Card.Title></Card.Header>
+			<Card.Header><Card.Title class="text-base">{t('Format')}</Card.Title></Card.Header>
 			<Card.Content class="grid gap-4">
-				<NativeSelect id="format" name="format" aria-label="Format" bind:value={format}>
+				<NativeSelect id="format" name="format" aria-label={t('Format')} bind:value={format}>
 					{#each formatChoices as f (f)}
 						<NativeSelectOption value={f} disabled={f === 'ldi' && !data.ldiAvailable}>
-							{FORMAT_LABELS[f]}
+							{t(FORMAT_LABELS[f])}
 						</NativeSelectOption>
 					{/each}
 				</NativeSelect>
@@ -286,7 +293,9 @@
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title class="text-base">Format-specific options</Card.Title></Card.Header>
+			<Card.Header
+				><Card.Title class="text-base">{t('Format-specific options')}</Card.Title></Card.Header
+			>
 			<Card.Content>
 				<FormatOptions
 					{format}
@@ -303,7 +312,7 @@
 				disabled={!hydration.ready || !file || busy || tooBig}
 				data-testid="import-go"
 			>
-				Import
+				{t('Import')}
 			</Button>
 			{#if busy}
 				<Button
@@ -312,7 +321,7 @@
 					onclick={() => handle?.abort()}
 					data-testid="import-cancel"
 				>
-					Cancel
+					{t('Cancel')}
 				</Button>
 			{/if}
 		</div>
@@ -323,19 +332,38 @@
 			<Card.Content class="grid gap-2 py-1">
 				{#if phase === 'uploading'}
 					<p class="text-sm">
-						Uploading {file?.name}: {formatBytes(uploaded)} of {formatBytes(file?.size ?? 0)}
+						{t('Uploading {file}: {done} of {total}', {
+							file: file?.name ?? '',
+							done: fmt.bytes(uploaded),
+							total: fmt.bytes(file?.size ?? 0)
+						})}
 					</p>
-					<Progress value={uploadPercent} aria-label="Upload progress" />
+					<Progress value={uploadPercent} aria-label={t('Upload progress')} />
 				{:else}
 					<p class="text-sm">
-						Importing {file?.name}: {formatNumber(serverProgress.queries)} queries executed
-						{#if serverProgress.ms > 0}in {(serverProgress.ms / 1000).toFixed(1)} s{/if}
+						{serverProgress.ms > 0
+							? tn(
+									'Importing {file}: {count} query executed in {seconds} s',
+									'Importing {file}: {count} queries executed in {seconds} s',
+									serverProgress.queries,
+									{
+										file: file?.name ?? '',
+										count: fmt.number(serverProgress.queries),
+										seconds: (serverProgress.ms / 1000).toFixed(1)
+									}
+								)
+							: tn(
+									'Importing {file}: {count} query executed',
+									'Importing {file}: {count} queries executed',
+									serverProgress.queries,
+									{ file: file?.name ?? '', count: fmt.number(serverProgress.queries) }
+								)}
 					</p>
 					<Progress
 						value={file && file.size > 0
 							? Math.min(100, (serverProgress.bytes / file.size) * 100)
 							: 0}
-						aria-label="Import progress"
+						aria-label={t('Import progress')}
 					/>
 				{/if}
 			</Card.Content>

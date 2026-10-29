@@ -3,6 +3,7 @@
  * Not offered: the "media types" column (needs the pmadb browser-transformation feature, which
  * phpMyAdmin hides without it too).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportContext,
 	ExportData,
@@ -44,7 +45,7 @@ function row(cells: string[]): string {
 
 const odt: ExportPlugin = {
 	id: 'odt',
-	label: 'OpenDocument Text',
+	label: N_('OpenDocument Text'),
 	extension: 'odt',
 	mimeType: ODT_MIME,
 	scopes: ['server', 'database', 'table', 'raw'],
@@ -54,37 +55,37 @@ const odt: ExportPlugin = {
 		{
 			kind: 'radio',
 			name: 'structure_or_data',
-			label: 'Dump table',
+			label: N_('Dump table'),
 			default: 'structure_and_data',
 			choices: [
-				{ value: 'structure', label: 'structure' },
-				{ value: 'data', label: 'data' },
-				{ value: 'structure_and_data', label: 'structure and data' }
+				{ value: 'structure', label: N_('structure') },
+				{ value: 'data', label: N_('data') },
+				{ value: 'structure_and_data', label: N_('structure and data') }
 			],
 			group: 'general_opts'
 		},
 		{
 			kind: 'bool',
 			name: 'relation',
-			label: 'Display foreign key relationships',
+			label: N_('Display foreign key relationships'),
 			default: true,
 			group: 'structure'
 		},
 		{
 			kind: 'bool',
 			name: 'comments',
-			label: 'Display comments',
+			label: N_('Display comments'),
 			default: true,
 			group: 'structure'
 		},
 		{
 			kind: 'bool',
 			name: 'columns',
-			label: 'Put columns names in the first row',
+			label: N_('Put columns names in the first row'),
 			default: true,
 			group: 'data'
 		},
-		{ kind: 'text', name: 'null', label: 'Replace NULL with:', default: 'NULL', group: 'data' }
+		{ kind: 'text', name: 'null', label: N_('Replace NULL with:'), default: 'NULL', group: 'data' }
 	],
 
 	async header(ctx) {

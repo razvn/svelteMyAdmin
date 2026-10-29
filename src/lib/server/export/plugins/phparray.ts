@@ -2,6 +2,7 @@
  * PHP array export, port of libraries/classes/Plugins/Export/ExportPhparray.php.
  * Each table becomes `$table = array(array('col' => 'value', ...), ...);`.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportCell, ExportPlugin, ExportScope } from '../types.ts';
 import { backquote, emit, type Piece, replaceAll } from './plugin-utils.ts';
 
@@ -34,7 +35,7 @@ export function phpVariableName(table: string): string {
 
 const phparray: ExportPlugin = {
 	id: 'phparray',
-	label: 'PHP array',
+	label: N_('PHP array'),
 	extension: 'php',
 	mimeType: 'text/plain',
 	scopes: PHPARRAY_SCOPES,

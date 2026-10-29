@@ -2,6 +2,7 @@
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { filterHistory, type HistoryEntry } from '#lib/sql/history.ts';
 
 	interface Props {
@@ -14,6 +15,7 @@
 
 	let { onload, refreshKey = 0, class: className }: Props = $props();
 
+	const { t } = useI18n();
 	let entries = $state.raw<HistoryEntry[]>([]);
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -51,8 +53,8 @@
 		<Input
 			type="search"
 			class="h-8"
-			placeholder="Search history"
-			aria-label="Search history"
+			placeholder={t('Search history')}
+			aria-label={t('Search history')}
 			bind:value={term}
 		/>
 		<Button
@@ -61,16 +63,16 @@
 			size="sm"
 			disabled={entries.length === 0}
 			onclick={clear}
-			aria-label="Clear history"
+			aria-label={t('Clear history')}
 		>
-			<Trash2 class="size-4" aria-hidden="true" />Clear
+			<Trash2 class="size-4" aria-hidden="true" />{t('Clear')}
 		</Button>
 	</div>
 	{#if failed}
-		<p class="text-sm text-destructive">The history could not be loaded.</p>
+		<p class="text-sm text-destructive">{t('The history could not be loaded.')}</p>
 	{:else if loaded && shown.length === 0}
 		<p class="text-sm text-muted-foreground" data-testid="history-empty">
-			{entries.length ? 'No matching queries.' : 'No queries have been run yet.'}
+			{entries.length ? t('No matching queries.') : t('No queries have been run yet.')}
 		</p>
 	{:else}
 		<ul class="flex max-h-64 flex-col gap-1 overflow-auto">
@@ -79,8 +81,8 @@
 					<button
 						type="button"
 						class="block w-full rounded-lg border border-transparent px-2.5 py-1.5 text-start hover:border-border hover:bg-muted"
-						title="Load this query"
-						aria-label="Load query {i + 1} into the editor"
+						title={t('Load this query')}
+						aria-label={t('Load query {n} into the editor', { n: i + 1 })}
 						data-testid="history-item"
 						onclick={() => onload(e.sqlquery)}
 					>

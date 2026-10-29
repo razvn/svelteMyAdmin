@@ -17,7 +17,8 @@ const body = z.object({
 /** SQL console: run a script in the context of the current route, JSON in and out. */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const parsed = body.safeParse(await request.json().catch(() => null));
-	if (!parsed.success || parsed.data.sql.trim() === '') error(400, 'Invalid request');
+	if (!parsed.success || parsed.data.sql.trim() === '')
+		error(400, locals.i18n.t('Invalid request'));
 	const { sql, db, table } = parsed.data;
 	const config = locals.config;
 	const dbi = await locals.dbi;

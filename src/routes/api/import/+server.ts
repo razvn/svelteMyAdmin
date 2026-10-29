@@ -16,7 +16,8 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	const scope = parseScope(url.searchParams);
 	const fileName = parseFileName(request.headers.get('x-import-name'));
 	const options = parseRequestOptions(request.headers.get('x-import-options'));
-	if (!scope || !fileName || !options || !request.body) error(400, 'Invalid request');
+	if (!scope || !fileName || !options || !request.body)
+		error(400, locals.i18n.t('Invalid request'));
 
 	const conn = await locals.db;
 	const config = locals.config;
@@ -35,12 +36,13 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 					request: options,
 					timeBudgetMs: timeBudgetMs(config.ExecTimeLimit),
 					memoryLimit: memoryLimitBytes(config.MemoryLimit),
+					i18n: locals.i18n,
 					onProgress: (p) => send({ t: 'progress', ...p })
 				});
 				send({ t: 'done', result });
 			} catch (e) {
 				console.error('Import request failed', e);
-				send({ t: 'error', message: 'The import failed unexpectedly.' });
+				send({ t: 'error', message: locals.i18n.t('The import failed unexpectedly.') });
 			} finally {
 				controller.close();
 			}

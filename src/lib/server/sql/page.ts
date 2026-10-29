@@ -135,9 +135,10 @@ export async function runSqlAction(
 	const entries = Object.fromEntries([...raw.entries()].map(([k, v]) => [k, String(v)]));
 	// Unchecked checkboxes are absent from a native form post; re-runs send every option explicitly.
 	const parsed = runForm.safeParse(entries);
-	if (!parsed.success) return fail(400, { error: 'Invalid request.' });
+	if (!parsed.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
 	const f = parsed.data;
-	if (f.sql_query.trim() === '') return fail(400, { error: 'No SQL query was provided.' });
+	if (f.sql_query.trim() === '')
+		return fail(400, { error: locals.i18n.t('No SQL query was provided.') });
 
 	const config = locals.config;
 	const dbi = await locals.dbi;

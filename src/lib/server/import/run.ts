@@ -3,6 +3,7 @@
  * executed_queries, timeout_passed, error, ...): runs statements on the user's connection one by
  * one, stops at the first error, honours the skip count and the time budget.
  */
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import type { Readable } from 'node:stream';
 import type { Connection } from 'mysql2/promise';
 import type { ImportErrorInfo, ImportStatementInfo, ImportWarningInfo } from '#lib/import/types.ts';
@@ -54,6 +55,8 @@ export class ImportRun {
 	readonly created = new Map<string, Set<string>>();
 	private readonly started = Date.now();
 	private lastProgress = 0;
+	/** Translator for the messages stored in the result (set by the orchestrator). */
+	tr: Translator = SOURCE_TRANSLATOR;
 
 	get skip(): number {
 		return this.opts.skip;

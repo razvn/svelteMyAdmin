@@ -2,6 +2,7 @@
  * Format specific import options (the `getProperties()` of libraries/classes/Plugins/Import/*) and the
  * `$cfg['Import']` defaults. Shared by the page (rendering) and the server (parsing).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ImportFormat, ImportOptionValues } from './types.ts';
 
 export type ImportLevel = 'server' | 'db' | 'table';
@@ -40,34 +41,51 @@ export const sqlCompatibilities = (mysql8: boolean): string[] =>
 const csvCommon = (prefix: 'csv' | 'ldi'): OptionDef[] => [
 	{
 		name: 'replace',
-		label: 'Update data when duplicate keys found on import (add ON DUPLICATE KEY UPDATE)',
+		label: N_('Update data when duplicate keys found on import (add ON DUPLICATE KEY UPDATE)'),
 		kind: 'bool',
 		default: false
 	},
 	{
 		name: 'terminated',
-		label: 'Columns separated with:',
+		label: N_('Columns separated with:'),
 		kind: 'text',
 		default: prefix === 'csv' ? ',' : ';',
 		short: true
 	},
-	{ name: 'enclosed', label: 'Columns enclosed with:', kind: 'text', default: '"', short: true },
+	{
+		name: 'enclosed',
+		label: N_('Columns enclosed with:'),
+		kind: 'text',
+		default: '"',
+		short: true
+	},
 	{
 		name: 'escaped',
-		label: 'Columns escaped with:',
+		label: N_('Columns escaped with:'),
 		kind: 'text',
 		default: prefix === 'csv' ? '"' : '\\',
 		short: true
 	},
-	{ name: 'new_line', label: 'Lines terminated with:', kind: 'text', default: 'auto', short: true }
+	{
+		name: 'new_line',
+		label: N_('Lines terminated with:'),
+		kind: 'text',
+		default: 'auto',
+		short: true
+	}
 ];
 
 export const FORMAT_OPTIONS: Record<ImportFormat, OptionDef[]> = {
 	sql: [
-		{ name: 'compatibility', label: 'SQL compatibility mode:', kind: 'select', default: 'NONE' },
+		{
+			name: 'compatibility',
+			label: N_('SQL compatibility mode:'),
+			kind: 'select',
+			default: 'NONE'
+		},
 		{
 			name: 'no_auto_value_on_zero',
-			label: 'Do not use AUTO_INCREMENT for zero values',
+			label: N_('Do not use AUTO_INCREMENT for zero values'),
 			kind: 'bool',
 			default: true
 		}
@@ -75,7 +93,7 @@ export const FORMAT_OPTIONS: Record<ImportFormat, OptionDef[]> = {
 	csv: [
 		{
 			name: 'truncate',
-			label: 'Replace table data with file (TRUNCATE the table first)',
+			label: N_('Replace table data with file (TRUNCATE the table first)'),
 			kind: 'bool',
 			default: false,
 			levels: ['table']
@@ -83,42 +101,45 @@ export const FORMAT_OPTIONS: Record<ImportFormat, OptionDef[]> = {
 		...csvCommon('csv'),
 		{
 			name: 'new_db_name',
-			label: 'Name of the new database (optional):',
+			label: N_('Name of the new database (optional):'),
 			kind: 'text',
 			default: '',
 			levels: ['server']
 		},
 		{
 			name: 'new_tbl_name',
-			label: 'Name of the new table (optional):',
+			label: N_('Name of the new table (optional):'),
 			kind: 'text',
 			default: '',
 			levels: ['server', 'db']
 		},
 		{
 			name: 'partial_import',
-			label: 'Import these many number of rows (optional):',
+			label: N_('Import these many number of rows (optional):'),
 			kind: 'number',
 			default: 0
 		},
 		{
 			name: 'col_names',
-			label:
-				'The first line of the file contains the table column names (if this is unchecked, the first line will become part of the data)',
+			label: N_(
+				'The first line of the file contains the table column names (if this is unchecked, the first line will become part of the data)'
+			),
 			kind: 'bool',
 			default: false
 		},
 		{
 			name: 'columns',
-			label: 'Column names:',
+			label: N_('Column names:'),
 			kind: 'text',
 			default: '',
 			levels: ['table'],
-			help: 'If the data in each row of the file is not in the same order as in the database, list the corresponding column names here. Column names must be separated by commas and not enclosed in quotations.'
+			help: N_(
+				'If the data in each row of the file is not in the same order as in the database, list the corresponding column names here. Column names must be separated by commas and not enclosed in quotations.'
+			)
 		},
 		{
 			name: 'ignore',
-			label: 'Do not abort on INSERT error',
+			label: N_('Do not abort on INSERT error'),
 			kind: 'bool',
 			default: false,
 			levels: ['table']
@@ -126,28 +147,29 @@ export const FORMAT_OPTIONS: Record<ImportFormat, OptionDef[]> = {
 	],
 	ldi: [
 		...csvCommon('ldi'),
-		{ name: 'columns', label: 'Column names:', kind: 'text', default: '' },
-		{ name: 'ignore', label: 'Do not abort on INSERT error', kind: 'bool', default: false },
-		{ name: 'local_option', label: 'Use LOCAL keyword', kind: 'bool', default: false }
+		{ name: 'columns', label: N_('Column names:'), kind: 'text', default: '' },
+		{ name: 'ignore', label: N_('Do not abort on INSERT error'), kind: 'bool', default: false },
+		{ name: 'local_option', label: N_('Use LOCAL keyword'), kind: 'bool', default: false }
 	],
 	ods: [
 		{
 			name: 'col_names',
-			label:
-				'The first line of the file contains the table column names (if this is unchecked, the first line will become part of the data)',
+			label: N_(
+				'The first line of the file contains the table column names (if this is unchecked, the first line will become part of the data)'
+			),
 			kind: 'bool',
 			default: false
 		},
-		{ name: 'empty_rows', label: 'Do not import empty rows', kind: 'bool', default: true },
+		{ name: 'empty_rows', label: N_('Do not import empty rows'), kind: 'bool', default: true },
 		{
 			name: 'recognize_percentages',
-			label: 'Import percentages as proper decimals (ex. 12.00% to .12)',
+			label: N_('Import percentages as proper decimals (ex. 12.00% to .12)'),
 			kind: 'bool',
 			default: true
 		},
 		{
 			name: 'recognize_currency',
-			label: 'Import currencies (ex. $5.00 to 5.00)',
+			label: N_('Import currencies (ex. $5.00 to 5.00)'),
 			kind: 'bool',
 			default: true
 		}

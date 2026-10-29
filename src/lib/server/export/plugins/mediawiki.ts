@@ -2,6 +2,7 @@
  * MediaWiki table export, port of libraries/classes/Plugins/Export/ExportMediawiki.php.
  * Output always uses LF (MediaWiki expects "\n", whatever the context line ending is).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportOption, ExportPlugin, ExportScope } from '../types.ts';
 import {
 	backquote,
@@ -16,8 +17,8 @@ import { loadColumns } from './table-info.ts';
 const MEDIAWIKI_SCOPES: ExportScope[] = ['server', 'database', 'table', 'raw'];
 
 export const MEDIAWIKI_OPTIONS: ExportOption[] = [
-	{ kind: 'bool', name: 'caption', label: 'Export table names', default: true },
-	{ kind: 'bool', name: 'headers', label: 'Export table headers', default: true }
+	{ kind: 'bool', name: 'caption', label: N_('Export table names'), default: true },
+	{ kind: 'bool', name: 'headers', label: N_('Export table headers'), default: true }
 ];
 
 const LF = '\n';
@@ -29,7 +30,7 @@ function comment(text: string): string {
 
 const mediawiki: ExportPlugin = {
 	id: 'mediawiki',
-	label: 'MediaWiki Table',
+	label: N_('MediaWiki Table'),
 	extension: 'mediawiki',
 	mimeType: 'text/plain',
 	scopes: MEDIAWIKI_SCOPES,

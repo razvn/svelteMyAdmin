@@ -18,6 +18,7 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { callAction } from '#lib/forms/call-action.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import {
 		EMPTY_RESULT_MESSAGE,
 		SUCCESS_MESSAGE,
@@ -53,6 +54,8 @@
 	}
 
 	let { statement, scope, settings, onedit, exec, onreplace, busy = false }: Props = $props();
+	const i18n = useI18n();
+	const { t, tn } = i18n;
 
 	const enc = encodeURIComponent;
 	const base = $derived(
@@ -146,7 +149,7 @@
 	}
 
 	async function viewCreated(name: string) {
-		toast.success(`View ${name} has been created`);
+		toast.success(t('View {name} has been created', { name }));
 		await refreshAll();
 		await navState?.reload();
 	}
@@ -185,11 +188,11 @@
 		});
 		deleteBusy = false;
 		if (!res.ok) {
-			deleteError = res.message ?? 'Delete failed.';
+			deleteError = res.message ?? t('Delete failed.');
 			return;
 		}
 		deleting = null;
-		toast.success('Row deleted');
+		toast.success(t('Row deleted'));
 		await refresh();
 		void refreshAll();
 	}
@@ -203,18 +206,18 @@
 
 {#snippet pager(p: NonNullable<Extract<StatementResult, { ok: true }>['pagination']>)}
 	{@const last = p.total === null ? null : Math.max(0, Math.floor((p.total - 1) / p.size) * p.size)}
-	<div class="flex items-center gap-1" role="navigation" aria-label="Pagination">
+	<div class="flex items-center gap-1" role="navigation" aria-label={t('Pagination')}>
 		<Button
 			variant="outline"
 			size="icon-sm"
-			aria-label="First page"
+			aria-label={t('First page')}
 			disabled={busy || p.pos === 0}
 			onclick={() => goTo(0)}><ChevronsLeft class="size-4" aria-hidden="true" /></Button
 		>
 		<Button
 			variant="outline"
 			size="icon-sm"
-			aria-label="Previous page"
+			aria-label={t('Previous page')}
 			disabled={busy || p.pos === 0}
 			onclick={() => goTo(Math.max(0, p.pos - p.size))}
 			><ChevronLeft class="size-4" aria-hidden="true" /></Button
@@ -222,7 +225,7 @@
 		<Button
 			variant="outline"
 			size="icon-sm"
-			aria-label="Next page"
+			aria-label={t('Next page')}
 			disabled={busy || !p.hasMore}
 			onclick={() => goTo(p.pos + p.size)}
 			><ChevronRight class="size-4" aria-hidden="true" /></Button
@@ -230,7 +233,7 @@
 		<Button
 			variant="outline"
 			size="icon-sm"
-			aria-label="Last page"
+			aria-label={t('Last page')}
 			disabled={busy || last === null || !p.hasMore}
 			onclick={() => goTo(last ?? 0)}><ChevronsRight class="size-4" aria-hidden="true" /></Button
 		>
@@ -244,21 +247,21 @@
 			variant="ghost"
 			size="sm"
 			href="{tableBase(set)}/insert?{rowQuery(set, row)}"
-			aria-label="Edit row {row + 1}"
+			aria-label={t('Edit row {n}', { n: row + 1 })}
 		>
-			<Pencil class="size-4" aria-hidden="true" />Edit
+			<Pencil class="size-4" aria-hidden="true" />{t('Edit')}
 		</Button>
 		<Button
 			variant="ghost"
 			size="sm"
 			class="text-destructive hover:text-destructive"
-			aria-label="Delete row {row + 1}"
+			aria-label={t('Delete row {n}', { n: row + 1 })}
 			onclick={() => {
 				deleteError = '';
 				deleting = { set, row };
 			}}
 		>
-			<Trash2 class="size-4" aria-hidden="true" />Delete
+			<Trash2 class="size-4" aria-hidden="true" />{t('Delete')}
 		</Button>
 	{/snippet}
 	<ResultGrid
@@ -273,7 +276,7 @@
 		actionsPosition="left"
 	>
 		{#snippet empty()}
-			<p class="p-4 text-sm text-muted-foreground">{EMPTY_RESULT_MESSAGE}</p>
+			<p class="p-4 text-sm text-muted-foreground">{t(EMPTY_RESULT_MESSAGE)}</p>
 		{/snippet}
 	</ResultGrid>
 {/snippet}
@@ -286,32 +289,39 @@
 				<AlertDescription>
 					{#if first}
 						{#if first.rows.length === 0}
-							{EMPTY_RESULT_MESSAGE} ({queryTook(statement.durationMs)})
+							{t(EMPTY_RESULT_MESSAGE)} ({queryTook(statement.durationMs, i18n)})
 						{:else}
 							{@const from = statement.pagination?.pos ?? 0}
-							{showingRowsMessage({
-								from,
-								to: from + first.rows.length - 1,
-								total:
-									statement.pagination?.total ?? (statement.pagination ? null : first.rows.length),
-								ms: statement.durationMs
-							})}
+							{showingRowsMessage(
+								{
+									from,
+									to: from + first.rows.length - 1,
+									total:
+										statement.pagination?.total ??
+										(statement.pagination ? null : first.rows.length),
+									ms: statement.durationMs
+								},
+								i18n
+							)}
 						{/if}
 						{#if first.truncated}
-							<Badge variant="warning" class="ms-2">Result truncated</Badge>
+							<Badge variant="warning" class="ms-2">{t('Result truncated')}</Badge>
 						{/if}
 					{:else if statement.kind === 'dml' || statement.affectedRows > 0}
-						{affectedRowsMessage(statement.affectedRows)} ({queryTook(statement.durationMs)})
-						{#if statement.insertId}Inserted row id: {statement.insertId}{/if}
+						{affectedRowsMessage(statement.affectedRows, i18n)} ({queryTook(
+							statement.durationMs,
+							i18n
+						)})
+						{#if statement.insertId}{t('Inserted row id: {id}', { id: statement.insertId })}{/if}
 					{:else}
-						{SUCCESS_MESSAGE} ({queryTook(statement.durationMs)})
+						{t(SUCCESS_MESSAGE)} ({queryTook(statement.durationMs, i18n)})
 					{/if}
 				</AlertDescription>
 			</Alert>
 		{:else}
 			<Alert variant="destructive" data-testid="statement-error">
 				<AlertDescription>
-					<strong>Error</strong>
+					<strong>{t('Error')}</strong>
 					{errorMessage(statement.error.errno, statement.error.message)}
 				</AlertDescription>
 			</Alert>
@@ -330,7 +340,7 @@
 						class="mt-1 text-xs text-primary hover:underline"
 						onclick={() => (expandedSql = !expandedSql)}
 					>
-						{expandedSql ? 'Show less' : 'Show full query'}
+						{expandedSql ? t('Show less') : t('Show full query')}
 					</button>
 				{/if}
 			</div>
@@ -339,17 +349,17 @@
 		<div class="flex flex-wrap items-center gap-2 text-sm" data-testid="statement-actions">
 			{#if settings.sqlQuery.Edit}
 				<Button variant="outline" size="sm" onclick={() => onedit(statement.sql)}>
-					<Pencil class="size-4" aria-hidden="true" />Edit
+					<Pencil class="size-4" aria-hidden="true" />{t('Edit')}
 				</Button>
 			{/if}
 			{#if statement.ok && (statement.kind === 'select' || statement.kind === 'dml') && settings.sqlQuery.Explain}
 				<Button variant="outline" size="sm" disabled={busy} onclick={() => explain('traditional')}>
-					Explain SQL
+					{t('Explain SQL')}
 				</Button>
 			{/if}
 			{#if settings.sqlQuery.Refresh && statement.ok && statement.resultSets.length > 0}
 				<Button variant="outline" size="sm" disabled={busy} onclick={() => refresh()}>
-					Refresh
+					{t('Refresh')}
 				</Button>
 			{/if}
 			{#if statement.ok && settings.profilingAvailable && !statement.profile}
@@ -357,21 +367,23 @@
 					variant="outline"
 					size="sm"
 					disabled={busy}
-					onclick={() => refresh({ profiling: true })}>Profiling</Button
+					onclick={() => refresh({ profiling: true })}>{t('Profiling')}</Button
 				>
 			{/if}
 			{#if statement.ok && statement.kind === 'select'}
-				<Button variant="outline" size="sm" href={exportHref}>Export</Button>
+				<Button variant="outline" size="sm" href={exportHref}>{t('Export')}</Button>
 				{#if scope.level !== 'server'}
-					<Button variant="outline" size="sm" onclick={() => (viewOpen = true)}>Create view</Button>
+					<Button variant="outline" size="sm" onclick={() => (viewOpen = true)}
+						>{t('Create view')}</Button
+					>
 				{/if}
 			{/if}
 			{#if gisHref}
-				<Button variant="outline" size="sm" href={gisHref}>Visualize GIS data</Button>
+				<Button variant="outline" size="sm" href={gisHref}>{t('Visualize GIS data')}</Button>
 			{/if}
 			{#if chartSet}
 				<Button variant="outline" size="sm" onclick={() => (chartOpen = true)}>
-					<ChartColumn class="size-4" aria-hidden="true" />Display chart
+					<ChartColumn class="size-4" aria-hidden="true" />{t('Display chart')}
 				</Button>
 			{/if}
 		</div>
@@ -379,10 +391,8 @@
 		{#if statement.ok && statement.warnings.length}
 			<div data-testid="statement-warnings" class="rounded-lg border p-3 text-sm">
 				<p class="mb-1 font-medium">
-					<Badge variant="warning">{statement.warnings.length}</Badge> warning{statement.warnings
-						.length === 1
-						? ''
-						: 's'}
+					<Badge variant="warning">{statement.warnings.length}</Badge>
+					{tn('warning', 'warnings', statement.warnings.length)}
 				</p>
 				<ul class="space-y-0.5 text-muted-foreground">
 					{#each statement.warnings as w, i (i)}
@@ -397,8 +407,8 @@
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Status</Table.Head>
-							<Table.Head class="text-end">Time (s)</Table.Head>
+							<Table.Head>{t('Status')}</Table.Head>
+							<Table.Head class="text-end">{t('Time (s)')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -416,21 +426,21 @@
 		{#if explained}
 			<div class="rounded-lg border" data-testid="statement-explain">
 				<div class="flex items-center gap-2 border-b p-2 text-sm">
-					<span class="font-medium">Explain</span>
+					<span class="font-medium">{t('Explain')}</span>
 					<Button
 						variant={explained.format === 'traditional' ? 'secondary' : 'ghost'}
 						size="sm"
-						onclick={() => explain('traditional')}>Table</Button
+						onclick={() => explain('traditional')}>{t('Table')}</Button
 					>
 					{#if settings.explainTree}
 						<Button
 							variant={explained.format === 'tree' ? 'secondary' : 'ghost'}
 							size="sm"
-							onclick={() => explain('tree')}>Tree</Button
+							onclick={() => explain('tree')}>{t('Tree')}</Button
 						>
 					{/if}
 					<Button variant="ghost" size="sm" class="ms-auto" onclick={() => (explained = null)}
-						>Close</Button
+						>{t('Close')}</Button
 					>
 				</div>
 				{#if explained.result.ok}
@@ -455,9 +465,9 @@
 			<div class="border-t" data-testid="result-set">
 				{#if statement.resultSets.length > 1}
 					<p class="px-4 pt-3 text-sm font-medium">
-						Result set {k + 1}
+						{t('Result set {n}', { n: k + 1 })}
 						<span class="font-normal text-muted-foreground"
-							>({set.rows.length} row{set.rows.length === 1 ? '' : 's'})</span
+							>({tn('{n} row', '{n} rows', set.rows.length)})</span
 						>
 					</p>
 				{/if}
@@ -483,23 +493,25 @@
 >
 	<AlertDialog.Content class="sm:max-w-xl">
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete this row?</AlertDialog.Title>
+			<AlertDialog.Title>{t('Delete this row?')}</AlertDialog.Title>
 			<AlertDialog.Description
-				>The following query will be executed. This cannot be undone.</AlertDialog.Description
+				>{t(
+					'The following query will be executed. This cannot be undone.'
+				)}</AlertDialog.Description
 			>
 		</AlertDialog.Header>
 		<pre
 			class="max-h-60 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap">{deleteSql}</pre>
 		{#if deleteError}<p class="text-sm text-destructive" role="alert">{deleteError}</p>{/if}
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={deleteBusy}
 				onclick={(e: MouseEvent) => {
 					e.preventDefault();
 					void confirmDelete();
-				}}>Delete</AlertDialog.Action
+				}}>{t('Delete')}</AlertDialog.Action
 			>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

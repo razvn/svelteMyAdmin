@@ -10,6 +10,7 @@
  * - Like PHP, the structure is controlled by the object options (`export_*`), not by
  *   structure_or_data (hidden for XML), so the framework should call `structure()` regardless.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportContext,
 	ExportData,
@@ -38,13 +39,13 @@ import {
 const XML_SCOPES: ExportScope[] = ['database', 'table'];
 
 export const XML_OPTIONS: ExportOption[] = [
-	{ kind: 'bool', name: 'export_events', label: 'Events', default: true },
-	{ kind: 'bool', name: 'export_functions', label: 'Functions', default: true },
-	{ kind: 'bool', name: 'export_procedures', label: 'Procedures', default: true },
-	{ kind: 'bool', name: 'export_tables', label: 'Tables', default: true },
-	{ kind: 'bool', name: 'export_triggers', label: 'Triggers', default: true },
-	{ kind: 'bool', name: 'export_views', label: 'Views', default: true },
-	{ kind: 'bool', name: 'export_contents', label: 'Export contents', default: true }
+	{ kind: 'bool', name: 'export_events', label: N_('Events'), default: true },
+	{ kind: 'bool', name: 'export_functions', label: N_('Functions'), default: true },
+	{ kind: 'bool', name: 'export_procedures', label: N_('Procedures'), default: true },
+	{ kind: 'bool', name: 'export_tables', label: N_('Tables'), default: true },
+	{ kind: 'bool', name: 'export_triggers', label: N_('Triggers'), default: true },
+	{ kind: 'bool', name: 'export_views', label: N_('Views'), default: true },
+	{ kind: 'bool', name: 'export_contents', label: N_('Export contents'), default: true }
 ];
 
 /** Indentation applied to every line of a multi-line definition (PHP `str_replace("\n", ...)`). */
@@ -100,7 +101,7 @@ function definitionBlock(crlf: string, type: string, name: string, definition: s
 
 const xml: ExportPlugin = {
 	id: 'xml',
-	label: 'XML',
+	label: N_('XML'),
 	extension: 'xml',
 	mimeType: 'text/xml',
 	scopes: XML_SCOPES,

@@ -4,6 +4,7 @@
  * page, column widths fitted to the content). Rendered with pdfkit and an embedded DejaVu Sans so
  * Latin Extended / Cyrillic / Greek text renders; all pages are built in memory in `footer`.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import PDFDocument from 'pdfkit';
@@ -217,7 +218,7 @@ function render(ctx: ExportContext): Promise<Buffer> {
 
 const pdf: ExportPlugin = {
 	id: 'pdf',
-	label: 'PDF',
+	label: N_('PDF'),
 	extension: 'pdf',
 	mimeType: 'application/pdf',
 	scopes: ['server', 'database', 'table', 'raw'],
@@ -227,19 +228,19 @@ const pdf: ExportPlugin = {
 		{
 			kind: 'text',
 			name: 'report_title',
-			label: 'Report title:',
+			label: N_('Report title:'),
 			default: '',
 			group: 'general_opts'
 		},
 		{
 			kind: 'radio',
 			name: 'structure_or_data',
-			label: 'Dump table',
+			label: N_('Dump table'),
 			default: 'data',
 			choices: [
-				{ value: 'structure', label: 'structure' },
-				{ value: 'data', label: 'data' },
-				{ value: 'structure_and_data', label: 'structure and data' }
+				{ value: 'structure', label: N_('structure') },
+				{ value: 'data', label: N_('data') },
+				{ value: 'structure_and_data', label: N_('structure and data') }
 			],
 			group: 'dump_what'
 		}

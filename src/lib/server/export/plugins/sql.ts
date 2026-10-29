@@ -7,6 +7,7 @@
  * bodies come straight from SHOW CREATE (no parser re-build) and view bodies only get their clause
  * keywords upper-cased.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportContext,
 	ExportData,
@@ -52,69 +53,76 @@ const bool = (name: string, label: string, def: boolean, group: string): ExportO
 export const sqlOptions: ExportOption[] = [
 	bool(
 		'include_comments',
-		'Display comments (includes info such as export timestamp, server version)',
+		N_('Display comments (includes info such as export timestamp, server version)'),
 		true,
 		GENERAL
 	),
 	{
 		kind: 'text',
 		name: 'header_comment',
-		label: 'Additional custom header comment (\\n splits lines)',
+		label: N_('Additional custom header comment (\\n splits lines)'),
 		default: '',
 		group: GENERAL
 	},
 	bool(
 		'dates',
-		'Include a timestamp of when databases were created, last updated, and last checked',
+		N_('Include a timestamp of when databases were created, last updated, and last checked'),
 		false,
 		GENERAL
 	),
-	bool('use_transaction', 'Enclose export in a transaction', true, GENERAL),
-	bool('disable_fk', 'Disable foreign key checks', false, GENERAL),
-	bool('views_as_tables', 'Export views as tables', false, GENERAL),
+	bool('use_transaction', N_('Enclose export in a transaction'), true, GENERAL),
+	bool('disable_fk', N_('Disable foreign key checks'), false, GENERAL),
+	bool('views_as_tables', N_('Export views as tables'), false, GENERAL),
 	{
 		kind: 'select',
 		name: 'compatibility',
-		label: 'Database system or older MySQL server to maximize output compatibility with',
+		label: N_('Database system or older MySQL server to maximize output compatibility with'),
 		default: 'NONE',
 		choices: COMPATIBILITIES.map((v) => ({ value: v, label: v })),
 		group: GENERAL
 	},
-	bool('drop_database', 'Add DROP DATABASE IF EXISTS statement', false, STRUCTURE),
-	bool('create_database', 'Add CREATE DATABASE / USE statement', false, STRUCTURE),
+	bool('drop_database', N_('Add DROP DATABASE IF EXISTS statement'), false, STRUCTURE),
+	bool('create_database', N_('Add CREATE DATABASE / USE statement'), false, STRUCTURE),
 	bool(
 		'drop_table',
-		'Add DROP TABLE / VIEW / PROCEDURE / FUNCTION / EVENT / TRIGGER statement',
+		N_('Add DROP TABLE / VIEW / PROCEDURE / FUNCTION / EVENT / TRIGGER statement'),
 		false,
 		STRUCTURE
 	),
-	bool('create_table', 'Add CREATE TABLE statement', true, STRUCTURE),
+	bool('create_table', N_('Add CREATE TABLE statement'), true, STRUCTURE),
 	bool(
 		'if_not_exists',
-		'IF NOT EXISTS (less efficient as indexes will be generated during table creation)',
+		N_('IF NOT EXISTS (less efficient as indexes will be generated during table creation)'),
 		false,
 		STRUCTURE
 	),
-	bool('auto_increment', 'AUTO_INCREMENT value', true, STRUCTURE),
-	bool('create_view', 'Add CREATE VIEW statement', true, STRUCTURE),
-	bool('simple_view_export', 'Use simple view export', false, STRUCTURE),
-	bool('view_current_user', 'Exclude definition of current user', false, STRUCTURE),
-	bool('or_replace_view', 'OR REPLACE view', false, STRUCTURE),
-	bool('procedure_function', 'Add CREATE PROCEDURE / FUNCTION / EVENT statement', true, STRUCTURE),
-	bool('create_trigger', 'Add CREATE TRIGGER statement', true, STRUCTURE),
+	bool('auto_increment', N_('AUTO_INCREMENT value'), true, STRUCTURE),
+	bool('create_view', N_('Add CREATE VIEW statement'), true, STRUCTURE),
+	bool('simple_view_export', N_('Use simple view export'), false, STRUCTURE),
+	bool('view_current_user', N_('Exclude definition of current user'), false, STRUCTURE),
+	bool('or_replace_view', N_('OR REPLACE view'), false, STRUCTURE),
 	bool(
-		'backquotes',
-		'Enclose table and column names with backquotes (protects names with special characters or keywords)',
+		'procedure_function',
+		N_('Add CREATE PROCEDURE / FUNCTION / EVENT statement'),
 		true,
 		STRUCTURE
 	),
-	bool('truncate', 'Truncate table before insert', false, DATA),
-	bool('delayed', 'INSERT DELAYED statements', false, DATA),
-	bool('ignore', 'INSERT IGNORE statements', false, DATA),
+	bool('create_trigger', N_('Add CREATE TRIGGER statement'), true, STRUCTURE),
+	bool(
+		'backquotes',
+		N_(
+			'Enclose table and column names with backquotes (protects names with special characters or keywords)'
+		),
+		true,
+		STRUCTURE
+	),
+	bool('truncate', N_('Truncate table before insert'), false, DATA),
+	bool('delayed', N_('INSERT DELAYED statements'), false, DATA),
+	bool('ignore', N_('INSERT IGNORE statements'), false, DATA),
 	{
 		kind: 'select',
 		name: 'type',
-		label: 'Function to use when dumping data',
+		label: N_('Function to use when dumping data'),
 		default: 'INSERT',
 		choices: ['INSERT', 'UPDATE', 'REPLACE'].map((v) => ({ value: v, label: v })),
 		group: DATA
@@ -122,27 +130,30 @@ export const sqlOptions: ExportOption[] = [
 	{
 		kind: 'radio',
 		name: 'insert_syntax',
-		label: 'Syntax to use when inserting data',
+		label: N_('Syntax to use when inserting data'),
 		default: 'both',
 		choices: [
 			{
 				value: 'complete',
-				label:
+				label: N_(
 					'include column names in every INSERT statement: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3)'
+				)
 			},
 			{
 				value: 'extended',
-				label:
+				label: N_(
 					'insert multiple rows in every INSERT statement: INSERT INTO tbl_name VALUES (1,2,3), (4,5,6), (7,8,9)'
+				)
 			},
 			{
 				value: 'both',
-				label:
+				label: N_(
 					'both of the above: INSERT INTO tbl_name (col_A,col_B,col_C) VALUES (1,2,3), (4,5,6), (7,8,9)'
+				)
 			},
 			{
 				value: 'none',
-				label: 'neither of the above: INSERT INTO tbl_name VALUES (1,2,3)'
+				label: N_('neither of the above: INSERT INTO tbl_name VALUES (1,2,3)')
 			}
 		],
 		group: DATA
@@ -150,19 +161,21 @@ export const sqlOptions: ExportOption[] = [
 	{
 		kind: 'number',
 		name: 'max_query_size',
-		label: 'Maximal length of created query',
+		label: N_('Maximal length of created query'),
 		default: 50000,
 		group: DATA
 	},
 	bool(
 		'hex_for_binary',
-		'Dump binary columns in hexadecimal notation (for example, "abc" becomes 0x616263)',
+		N_('Dump binary columns in hexadecimal notation (for example, "abc" becomes 0x616263)'),
 		true,
 		DATA
 	),
 	bool(
 		'utc_time',
-		'Dump TIMESTAMP columns in UTC (enables TIMESTAMP columns to be dumped and reloaded between servers in different time zones)',
+		N_(
+			'Dump TIMESTAMP columns in UTC (enables TIMESTAMP columns to be dumped and reloaded between servers in different time zones)'
+		),
 		true,
 		DATA
 	)
@@ -818,7 +831,7 @@ async function triggers(ctx: ExportContext, ref: ExportTableRef): Promise<void> 
 
 const plugin: ExportPlugin = {
 	id: 'sql',
-	label: 'SQL',
+	label: N_('SQL'),
 	extension: 'sql',
 	mimeType: 'text/x-sql',
 	scopes: ['server', 'database', 'table', 'raw'],
