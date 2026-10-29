@@ -25,6 +25,8 @@
 	import ConfirmDrop from './confirm-drop.svelte';
 	import SelectField from './select-field.svelte';
 	import SqlDialog from './sql-dialog.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface TriggerRow {
 		name: string;
@@ -55,7 +57,9 @@
 
 	let filter = $state('');
 	const visible = $derived(
-		triggers.filter((t) => matchesFilter(filter, t.name, t.table, t.event, t.timing, t.definer))
+		triggers.filter((trg) =>
+			matchesFilter(filter, trg.name, trg.table, trg.event, trg.timing, trg.definer)
+		)
 	);
 
 	let editorOpen = $state(false);
@@ -80,7 +84,8 @@
 
 	async function openEdit(name: string) {
 		const res = await callAction<{ trigger: TriggerDef }>(page.url.pathname, 'get', { name });
-		if (!res.ok || !res.data?.trigger) return void toast.error(res.message ?? 'Trigger not found.');
+		if (!res.ok || !res.data?.trigger)
+			return void toast.error(res.message ?? t('Trigger not found.'));
 		def = res.data.trigger;
 		original = name;
 		errors = [];
@@ -89,8 +94,8 @@
 
 	async function openExport(name: string) {
 		const res = await callAction<{ sql: string }>(page.url.pathname, 'export', { name });
-		if (!res.ok || !res.data?.sql) return void toast.error(res.message ?? 'Export failed.');
-		exportTitle = `Export of trigger ${name}`;
+		if (!res.ok || !res.data?.sql) return void toast.error(res.message ?? t('Export failed.'));
+		exportTitle = t('Export of trigger {name}', { name });
 		exportSql = res.data.sql;
 		exportOpen = true;
 	}
@@ -106,10 +111,10 @@
 		saving = false;
 		if (res.ok) {
 			editorOpen = false;
-			toast.success(`Trigger ${def.name} has been saved.`);
+			toast.success(t('Trigger {name} has been saved.', { name: def.name }));
 			await refreshAll();
 		} else {
-			errors = res.data?.errors ?? [res.message ?? 'Saving the trigger failed.'];
+			errors = res.data?.errors ?? [res.message ?? t('Saving the trigger failed.')];
 		}
 	}
 
@@ -118,21 +123,23 @@
 		const res = await callAction(page.url.pathname, 'drop', { name: dropName });
 		dropping = false;
 		if (res.ok) {
-			toast.success(`Trigger ${dropName} has been dropped.`);
+			toast.success(t('Trigger {name} has been dropped.', { name: dropName }));
 			dropOpen = false;
 			await refreshAll();
-		} else toast.error(res.message ?? 'Drop failed.');
+		} else toast.error(res.message ?? t('Drop failed.'));
 	}
 </script>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Zap}
-		title="Triggers"
-		description={fixedTable ? `Triggers on ${fixedTable}.` : `Triggers of ${page.params.db}.`}
+		title={t('Triggers')}
+		description={fixedTable
+			? t('Triggers on {table}.', { table: fixedTable })
+			: t('Triggers of {db}.', { db: page.params.db ?? '' })}
 	>
 		{#snippet actions()}
-			<Button onclick={openAdd} data-testid="trigger-add"><Plus /> Add trigger</Button>
+			<Button onclick={openAdd} data-testid="trigger-add"><Plus /> {t('Add trigger')}</Button>
 		{/snippet}
 	</PageHeader>
 
@@ -143,14 +150,14 @@
 				<Input
 					type="search"
 					class="ps-8"
-					placeholder="Filter triggers"
-					aria-label="Filter triggers"
+					placeholder={t('Filter triggers')}
+					aria-label={t('Filter triggers')}
 					data-testid="triggers-filter"
 					bind:value={filter}
 				/>
 			</div>
 			<p class="text-sm text-muted-foreground" data-testid="triggers-count">
-				{visible.length} of {triggers.length} triggers shown
+				{t('{shown} of {total} triggers shown', { shown: visible.length, total: triggers.length })}
 			</p>
 		</div>
 		<Card.Content class="px-0">
@@ -158,46 +165,46 @@
 				<Table.Root data-testid="triggers-table">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Name</Table.Head>
-							<Table.Head>Table</Table.Head>
-							<Table.Head>Time</Table.Head>
-							<Table.Head>Event</Table.Head>
-							<Table.Head>Definer</Table.Head>
-							<Table.Head class="text-end">Actions</Table.Head>
+							<Table.Head>{t('Name')}</Table.Head>
+							<Table.Head>{t('Table')}</Table.Head>
+							<Table.Head>{t('Time')}</Table.Head>
+							<Table.Head>{t('Event')}</Table.Head>
+							<Table.Head>{t('Definer')}</Table.Head>
+							<Table.Head class="text-end">{t('Actions')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each visible as t (t.name)}
-							<Table.Row data-testid="trigger-row" data-trigger={t.name}>
-								<Table.Cell class="font-mono font-medium">{t.name}</Table.Cell>
-								<Table.Cell class="font-mono">{t.table}</Table.Cell>
-								<Table.Cell><Badge variant="info">{t.timing}</Badge></Table.Cell>
-								<Table.Cell><Badge variant="primary">{t.event}</Badge></Table.Cell>
-								<Table.Cell>{t.definer}</Table.Cell>
+						{#each visible as trg (trg.name)}
+							<Table.Row data-testid="trigger-row" data-trigger={trg.name}>
+								<Table.Cell class="font-mono font-medium">{trg.name}</Table.Cell>
+								<Table.Cell class="font-mono">{trg.table}</Table.Cell>
+								<Table.Cell><Badge variant="info">{trg.timing}</Badge></Table.Cell>
+								<Table.Cell><Badge variant="primary">{trg.event}</Badge></Table.Cell>
+								<Table.Cell>{trg.definer}</Table.Cell>
 								<Table.Cell>
 									<div class="flex justify-end gap-1">
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Edit {t.name}"
-											onclick={() => openEdit(t.name)}
+											aria-label={t('Edit {name}', { name: trg.name })}
+											onclick={() => openEdit(trg.name)}
 										>
 											<Pencil />
 										</Button>
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Export {t.name}"
-											onclick={() => openExport(t.name)}
+											aria-label={t('Export {name}', { name: trg.name })}
+											onclick={() => openExport(trg.name)}
 										>
 											<Download />
 										</Button>
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Drop {t.name}"
+											aria-label={t('Drop {name}', { name: trg.name })}
 											onclick={() => {
-												dropName = t.name;
+												dropName = trg.name;
 												dropOpen = true;
 											}}
 										>
@@ -209,7 +216,9 @@
 						{:else}
 							<Table.Row>
 								<Table.Cell colspan={6} class="py-8 text-center text-muted-foreground">
-									{triggers.length === 0 ? 'No triggers found.' : 'No triggers match the filter.'}
+									{triggers.length === 0
+										? t('No triggers found.')
+										: t('No triggers match the filter.')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -223,9 +232,11 @@
 <Dialog.Root bind:open={editorOpen}>
 	<Dialog.Content class="max-h-[92vh] overflow-y-auto sm:max-w-2xl" data-testid="trigger-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? `Edit trigger ${original}` : 'Add trigger'}</Dialog.Title>
+			<Dialog.Title
+				>{original ? t('Edit trigger {name}', { name: original }) : t('Add trigger')}</Dialog.Title
+			>
 			<Dialog.Description>
-				Editing drops and re-creates the trigger; the original is restored if creation fails.
+				{t('Editing drops and re-creates the trigger; the original is restored if creation fails.')}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form class="grid gap-4" onsubmit={save}>
@@ -238,13 +249,13 @@
 			{/if}
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div class="grid gap-1.5">
-					<Label for="trigger-name">Trigger name</Label>
+					<Label for="trigger-name">{t('Trigger name')}</Label>
 					<Input id="trigger-name" bind:value={def.name} autocomplete="off" />
 				</div>
 				<div class="grid gap-1.5">
-					<Label>Table</Label>
+					<Label>{t('Table')}</Label>
 					<SelectField
-						label="Table"
+						label={t('Table')}
 						bind:value={def.table}
 						options={tables}
 						disabled={fixedTable !== null}
@@ -252,31 +263,33 @@
 					/>
 				</div>
 				<div class="grid gap-1.5">
-					<Label>Time</Label>
-					<SelectField label="Time" bind:value={def.timing} options={TRIGGER_TIMINGS} />
+					<Label>{t('Time')}</Label>
+					<SelectField label={t('Time')} bind:value={def.timing} options={TRIGGER_TIMINGS} />
 				</div>
 				<div class="grid gap-1.5">
-					<Label>Event</Label>
-					<SelectField label="Event" bind:value={def.event} options={TRIGGER_EVENTS} />
+					<Label>{t('Event')}</Label>
+					<SelectField label={t('Event')} bind:value={def.event} options={TRIGGER_EVENTS} />
 				</div>
 			</div>
 			<div class="grid gap-1.5">
-				<Label>Definition</Label>
+				<Label>{t('Definition')}</Label>
 				<SqlEditor
 					id="trigger-definition"
-					aria-label="Definition"
+					aria-label={t('Definition')}
 					minLines={6}
 					bind:value={def.definition}
 				/>
 			</div>
 			<div class="grid gap-1.5">
-				<Label for="trigger-definer">Definer (user@host)</Label>
+				<Label for="trigger-definer">{t('Definer (user@host)')}</Label>
 				<Input id="trigger-definer" bind:value={def.definer} placeholder="root@localhost" />
 			</div>
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (editorOpen = false)}>Cancel</Button>
+				<Button type="button" variant="outline" onclick={() => (editorOpen = false)}
+					>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={saving} data-testid="trigger-save">
-					{saving ? 'Saving...' : 'Save'}
+					{saving ? t('Saving...') : t('Save')}
 				</Button>
 			</Dialog.Footer>
 		</form>
@@ -285,7 +298,7 @@
 <SqlDialog bind:open={exportOpen} title={exportTitle} sql={exportSql} />
 <ConfirmDrop
 	bind:open={dropOpen}
-	subject="trigger {dropName}"
+	title={t('Drop trigger {name}?', { name: dropName })}
 	busy={dropping}
 	onconfirm={confirmDrop}
 />

@@ -15,6 +15,8 @@
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { newColumn, type ColumnDef } from '#lib/sql/column-definition.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -50,13 +52,13 @@
 	const error = $derived(form && 'error' in form ? String(form.error) : '');
 </script>
 
-<svelte:head><title>Central columns - {data.db}</title></svelte:head>
+<svelte:head><title>{t('Central columns')} - {data.db}</title></svelte:head>
 
 <div class="flex flex-col gap-6" data-testid="central-columns">
 	<PageHeader
 		icon={Columns3}
-		title="Central columns"
-		description="Reusable column definitions of database {data.db}."
+		title={t('Central columns')}
+		description={t('Reusable column definitions of database {db}.', { db: data.db })}
 	/>
 
 	{#if message}
@@ -72,27 +74,29 @@
 
 	{#if !data.available}
 		<Alert.Root role="status" data-testid="central-disabled">
-			<Alert.Title>The central list of columns is not available</Alert.Title>
+			<Alert.Title>{t('The central list of columns is not available')}</Alert.Title>
 			<Alert.Description>
-				The <code>central_columns</code> table of the configuration storage is not configured or not reachable.
+				{t(
+					'The central_columns table of the configuration storage is not configured or not reachable.'
+				)}
 			</Alert.Description>
 		</Alert.Root>
 	{:else}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Columns in the central list</Card.Title>
-				<Card.Description>{data.total} column(s)</Card.Description>
+				<Card.Title>{t('Columns in the central list')}</Card.Title>
+				<Card.Description>{t('{n} column(s)', { n: data.total })}</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<form method="GET" action={base} class="flex items-center gap-2">
 					<Input
 						name="q"
 						value={data.filter}
-						placeholder="Filter by column name"
-						aria-label="Filter central columns"
+						placeholder={t('Filter by column name')}
+						aria-label={t('Filter central columns')}
 						class="max-w-xs"
 					/>
-					<Button type="submit" variant="outline">Filter</Button>
+					<Button type="submit" variant="outline">{t('Filter')}</Button>
 				</form>
 
 				<form
@@ -112,13 +116,13 @@
 						<Table.Header>
 							<Table.Row>
 								<Table.Head class="w-8"></Table.Head>
-								<Table.Head>Name</Table.Head>
-								<Table.Head>Type</Table.Head>
-								<Table.Head>Length/Values</Table.Head>
-								<Table.Head>Collation</Table.Head>
-								<Table.Head>Null</Table.Head>
-								<Table.Head>Extra</Table.Head>
-								<Table.Head>Default</Table.Head>
+								<Table.Head>{t('Name')}</Table.Head>
+								<Table.Head>{t('Type')}</Table.Head>
+								<Table.Head>{t('Length/Values')}</Table.Head>
+								<Table.Head>{t('Collation')}</Table.Head>
+								<Table.Head>{t('Null')}</Table.Head>
+								<Table.Head>{t('Extra')}</Table.Head>
+								<Table.Head>{t('Default')}</Table.Head>
 								<Table.Head class="w-12"></Table.Head>
 							</Table.Row>
 						</Table.Header>
@@ -127,7 +131,7 @@
 								<Table.Row data-testid="central-row-{c.name}">
 									<Table.Cell>
 										<Checkbox
-											aria-label="Select {c.name}"
+											aria-label={t('Select {name}', { name: c.name })}
 											checked={selected.includes(c.name)}
 											onCheckedChange={(v) => (selected = toggle(selected, c.name, v === true))}
 										/>
@@ -138,7 +142,7 @@
 									</Table.Cell>
 									<Table.Cell class="font-mono">{c.length}</Table.Cell>
 									<Table.Cell>{c.collation}</Table.Cell>
-									<Table.Cell>{c.isNull ? 'Yes' : 'No'}</Table.Cell>
+									<Table.Cell>{c.isNull ? t('Yes') : t('No')}</Table.Cell>
 									<Table.Cell>{c.extra}</Table.Cell>
 									<Table.Cell class="font-mono">{c.default}</Table.Cell>
 									<Table.Cell>
@@ -146,7 +150,7 @@
 											type="button"
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Edit {c.name}"
+											aria-label={t('Edit {name}', { name: c.name })}
 											onclick={() => edit(i)}
 										>
 											<Pencil />
@@ -156,7 +160,7 @@
 							{:else}
 								<Table.Row>
 									<Table.Cell colspan={9} class="text-center text-muted-foreground">
-										No columns in the central list.
+										{t('No columns in the central list.')}
 									</Table.Cell>
 								</Table.Row>
 							{/each}
@@ -168,7 +172,7 @@
 							variant="destructive"
 							disabled={!hydration.ready || selected.length === 0}
 						>
-							Delete selected
+							{t('Delete selected')}
 						</Button>
 						<div class="flex items-center gap-2 text-sm text-muted-foreground">
 							{#if data.pos > 0}
@@ -177,16 +181,19 @@
 									size="sm"
 									href={pageHref(Math.max(0, data.pos - data.size))}
 								>
-									Previous
+									{t('Previous')}
 								</Button>
 							{/if}
 							<span>
-								{data.total === 0 ? 0 : data.pos + 1}-{Math.min(data.total, data.pos + data.size)} of
-								{data.total}
+								{t('{from}-{to} of {total}', {
+									from: data.total === 0 ? 0 : data.pos + 1,
+									to: Math.min(data.total, data.pos + data.size),
+									total: data.total
+								})}
 							</span>
 							{#if data.pos + data.size < data.total}
 								<Button variant="outline" size="sm" href={pageHref(data.pos + data.size)}
-									>Next</Button
+									>{t('Next')}</Button
 								>
 							{/if}
 						</div>
@@ -197,7 +204,10 @@
 
 		{#if editing}
 			<Card.Root data-testid="central-edit">
-				<Card.Header><Card.Title>Edit column {editing.original}</Card.Title></Card.Header>
+				<Card.Header
+					><Card.Title>{t('Edit column {name}', { name: editing.original })}</Card.Title
+					></Card.Header
+				>
 				<form
 					method="POST"
 					action="?/save"
@@ -223,15 +233,17 @@
 						/>
 					</Card.Content>
 					<Card.Footer class="gap-2">
-						<Button type="submit" disabled={!hydration.ready}>Save</Button>
-						<Button type="button" variant="outline" onclick={() => (editing = null)}>Cancel</Button>
+						<Button type="submit" disabled={!hydration.ready}>{t('Save')}</Button>
+						<Button type="button" variant="outline" onclick={() => (editing = null)}
+							>{t('Cancel')}</Button
+						>
 					</Card.Footer>
 				</form>
 			</Card.Root>
 		{/if}
 
 		<Card.Root>
-			<Card.Header><Card.Title>Add a new central column</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Add a new central column')}</Card.Title></Card.Header>
 			<form
 				method="POST"
 				action="?/save"
@@ -258,7 +270,7 @@
 				</Card.Content>
 				<Card.Footer>
 					<Button type="submit" disabled={!hydration.ready} data-testid="central-add">
-						Add column
+						{t('Add column')}
 					</Button>
 				</Card.Footer>
 			</form>
@@ -266,20 +278,20 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Add columns from a table</Card.Title>
-				<Card.Description
-					>Copy the definition of existing columns to the central list.</Card.Description
-				>
+				<Card.Title>{t('Add columns from a table')}</Card.Title>
+				<Card.Description>
+					{t('Copy the definition of existing columns to the central list.')}
+				</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<form method="GET" action={base} class="flex items-center gap-2">
-					<NativeSelect name="from" value={data.from} aria-label="Table" class="max-w-xs">
-						<NativeSelectOption value="">Select a table</NativeSelectOption>
-						{#each data.tables as t (t)}
-							<NativeSelectOption value={t}>{t}</NativeSelectOption>
+					<NativeSelect name="from" value={data.from} aria-label={t('Table')} class="max-w-xs">
+						<NativeSelectOption value="">{t('Select a table')}</NativeSelectOption>
+						{#each data.tables as tbl (tbl)}
+							<NativeSelectOption value={tbl}>{tbl}</NativeSelectOption>
 						{/each}
 					</NativeSelect>
-					<Button type="submit" variant="outline">Show columns</Button>
+					<Button type="submit" variant="outline">{t('Show columns')}</Button>
 				</form>
 				{#if data.from}
 					<form
@@ -300,7 +312,7 @@
 						{#each data.candidates as c (c.name)}
 							<label class="flex items-center gap-2 text-sm">
 								<Checkbox
-									aria-label="Pick {c.name}"
+									aria-label={t('Pick {name}', { name: c.name })}
 									checked={picked.includes(c.name)}
 									onCheckedChange={(v) => (picked = toggle(picked, c.name, v === true))}
 								/>
@@ -309,7 +321,7 @@
 							</label>
 						{:else}
 							<p class="text-sm text-muted-foreground">
-								Every column of this table is already in the central list.
+								{t('Every column of this table is already in the central list.')}
 							</p>
 						{/each}
 						{#if data.candidates.length}
@@ -319,7 +331,7 @@
 									disabled={!hydration.ready || picked.length === 0}
 									data-testid="central-add-from-table"
 								>
-									Add to central columns
+									{t('Add to central columns')}
 								</Button>
 							</div>
 						{/if}

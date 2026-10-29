@@ -16,6 +16,8 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { Textarea } from '#lib/components/ui/textarea/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -40,13 +42,15 @@
 	};
 </script>
 
-<svelte:head><title>Tracking - {data.table}</title></svelte:head>
+<svelte:head><title>{t('Tracking')} - {data.table}</title></svelte:head>
 
 <div class="flex flex-col gap-6" data-testid="table-tracking">
 	<PageHeader
 		icon={History}
-		title="Tracking"
-		description="Versions of {data.db}.{data.table} and the statements recorded for them."
+		title={t('Tracking')}
+		description={t('Versions of {name} and the statements recorded for them.', {
+			name: `${data.db}.${data.table}`
+		})}
 	/>
 
 	{#if message}
@@ -60,33 +64,41 @@
 
 	{#if !data.available}
 		<Alert.Root role="status" data-testid="tracking-disabled">
-			<Alert.Title>Tracking is not available</Alert.Title>
+			<Alert.Title>{t('Tracking is not available')}</Alert.Title>
 			<Alert.Description>
-				The <code>tracking</code> table of the configuration storage is not configured or not reachable.
+				{t('The tracking table of the configuration storage is not configured or not reachable.')}
 			</Alert.Description>
 		</Alert.Root>
 	{:else}
 		{#if data.view === 'report'}
 			<Card.Root data-testid="tracking-report">
 				<Card.Header>
-					<Card.Title>Tracking report, version {data.version}</Card.Title>
-					<Card.Description>Tracking statements: {data.tracking}</Card.Description>
-					<Card.Action><Button variant="outline" href={base}>Close</Button></Card.Action>
+					<Card.Title
+						>{t('Tracking report, version {version}', { version: data.version ?? 0 })}</Card.Title
+					>
+					<Card.Description
+						>{t('Tracking statements: {statements}', {
+							statements: data.tracking
+						})}</Card.Description
+					>
+					<Card.Action><Button variant="outline" href={base}>{t('Close')}</Button></Card.Action>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-5">
 					<form method="GET" action={base} class="flex flex-wrap items-end gap-3">
 						<input type="hidden" name="report" value="1" />
 						<input type="hidden" name="version" value={data.version} />
 						<div class="flex flex-col gap-1.5">
-							<Label for="logtype">Show</Label>
+							<Label for="logtype">{t('Show')}</Label>
 							<NativeSelect id="logtype" name="logtype" value={data.filter.logtype}>
-								<NativeSelectOption value="schema">Structure only</NativeSelectOption>
-								<NativeSelectOption value="data">Data only</NativeSelectOption>
-								<NativeSelectOption value="schema_and_data">Structure and data</NativeSelectOption>
+								<NativeSelectOption value="schema">{t('Structure only')}</NativeSelectOption>
+								<NativeSelectOption value="data">{t('Data only')}</NativeSelectOption>
+								<NativeSelectOption value="schema_and_data"
+									>{t('Structure and data')}</NativeSelectOption
+								>
 							</NativeSelect>
 						</div>
 						<div class="flex flex-col gap-1.5">
-							<Label for="date_from">From</Label>
+							<Label for="date_from">{t('From')}</Label>
 							<Input
 								id="date_from"
 								name="date_from"
@@ -96,7 +108,7 @@
 							/>
 						</div>
 						<div class="flex flex-col gap-1.5">
-							<Label for="date_to">To</Label>
+							<Label for="date_to">{t('To')}</Label>
 							<Input
 								id="date_to"
 								name="date_to"
@@ -106,13 +118,13 @@
 							/>
 						</div>
 						<div class="flex flex-col gap-1.5">
-							<Label for="users">By user</Label>
+							<Label for="users">{t('By user')}</Label>
 							<Input id="users" name="users" value={data.filter.users} class="w-40" />
 						</div>
-						<Button type="submit">Go</Button>
+						<Button type="submit">{t('Go')}</Button>
 					</form>
 
-					{#each [{ key: 'ddl', title: 'Data definition statements', rows: data.ddl, show: data.filter.logtype !== 'data' }, { key: 'dml', title: 'Data manipulation statements', rows: data.dml, show: data.filter.logtype !== 'schema' }] as log (log.key)}
+					{#each [{ key: 'ddl', title: t('Data definition statements'), rows: data.ddl, show: data.filter.logtype !== 'data' }, { key: 'dml', title: t('Data manipulation statements'), rows: data.dml, show: data.filter.logtype !== 'schema' }] as log (log.key)}
 						{#if log.show}
 							<div class="flex flex-col gap-2" data-testid="log-{log.key}">
 								<h3 class="text-sm font-semibold">{log.title}</h3>
@@ -120,9 +132,9 @@
 									<Table.Header>
 										<Table.Row>
 											<Table.Head class="w-10">#</Table.Head>
-											<Table.Head>Date</Table.Head>
-											<Table.Head>Username</Table.Head>
-											<Table.Head>Statement</Table.Head>
+											<Table.Head>{t('Date')}</Table.Head>
+											<Table.Head>{t('Username')}</Table.Head>
+											<Table.Head>{t('Statement')}</Table.Head>
 											<Table.Head class="w-12"></Table.Head>
 										</Table.Row>
 									</Table.Header>
@@ -145,7 +157,7 @@
 															type="submit"
 															variant="ghost"
 															size="icon-sm"
-															aria-label="Delete tracking row {e.id + 1}"
+															aria-label={t('Delete tracking row {n}', { n: e.id + 1 })}
 														>
 															<Trash2 />
 														</Button>
@@ -155,7 +167,7 @@
 										{:else}
 											<Table.Row>
 												<Table.Cell colspan={5} class="text-center text-muted-foreground">
-													No data
+													{t('No data')}
 												</Table.Cell>
 											</Table.Row>
 										{/each}
@@ -166,9 +178,10 @@
 					{/each}
 
 					<div class="flex flex-wrap items-center gap-2 border-t pt-4" data-testid="report-export">
-						<span class="text-sm text-muted-foreground">Export as</span>
+						<span class="text-sm text-muted-foreground">{t('Export as')}</span>
 						<Button variant="outline" size="sm" href="{base}?{filterQuery({ export: 'sqldump' })}">
-							<FileText /> SQL dump
+							<FileText />
+							{t('SQL dump')}
 						</Button>
 						<Button
 							variant="outline"
@@ -176,7 +189,8 @@
 							href="{base}/download?{filterQuery({})}"
 							data-sveltekit-reload
 						>
-							<Download /> SQL dump (file download)
+							<Download />
+							{t('SQL dump (file download)')}
 						</Button>
 						<form method="POST" action="?/execute" use:enhance class="contents">
 							<input type="hidden" name="version" value={data.version} />
@@ -185,11 +199,11 @@
 							<input type="hidden" name="date_to" value={data.filter.to} />
 							<input type="hidden" name="users" value={data.filter.users} />
 							<Button type="submit" variant="outline" size="sm" data-testid="report-execute">
-								SQL execution
+								{t('SQL execution')}
 							</Button>
 						</form>
 						<span class="text-xs text-muted-foreground">
-							Executing replaces your table and contained data.
+							{t('Executing replaces your table and contained data.')}
 						</span>
 					</div>
 					{#if data.dump !== null}
@@ -197,7 +211,7 @@
 							readonly
 							rows={10}
 							value={data.dump}
-							aria-label="SQL dump"
+							aria-label={t('SQL dump')}
 							class="font-mono text-xs"
 							data-testid="report-dump"
 						/>
@@ -209,8 +223,12 @@
 		{#if data.view === 'snapshot' && data.snapshot}
 			<Card.Root data-testid="tracking-snapshot">
 				<Card.Header>
-					<Card.Title>Structure snapshot, version {data.version}</Card.Title>
-					<Card.Action><Button variant="outline" href={base}>Close</Button></Card.Action>
+					<Card.Title
+						>{t('Structure snapshot, version {version}', {
+							version: data.version ?? 0
+						})}</Card.Title
+					>
+					<Card.Action><Button variant="outline" href={base}>{t('Close')}</Button></Card.Action>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-4">
 					<pre
@@ -259,17 +277,17 @@
 
 		{#if data.versions.length > 0}
 			<Card.Root>
-				<Card.Header><Card.Title>Versions</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Versions')}</Card.Title></Card.Header>
 				<Card.Content>
 					<Table.Root data-testid="versions">
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Version</Table.Head>
-								<Table.Head>Created</Table.Head>
-								<Table.Head>Updated</Table.Head>
-								<Table.Head>Status</Table.Head>
-								<Table.Head>Tracking statements</Table.Head>
-								<Table.Head>Actions</Table.Head>
+								<Table.Head>{t('Version')}</Table.Head>
+								<Table.Head>{t('Created')}</Table.Head>
+								<Table.Head>{t('Updated')}</Table.Head>
+								<Table.Head>{t('Status')}</Table.Head>
+								<Table.Head>{t('Tracking statements')}</Table.Head>
+								<Table.Head>{t('Actions')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -280,7 +298,7 @@
 									<Table.Cell class="whitespace-nowrap">{v.updated}</Table.Cell>
 									<Table.Cell>
 										<Badge variant={v.active ? 'default' : 'secondary'}>
-											{v.active ? 'active' : 'not active'}
+											{v.active ? t('active') : t('not active')}
 										</Badge>
 									</Table.Cell>
 									<Table.Cell class="max-w-sm text-xs break-words">{v.tracking}</Table.Cell>
@@ -291,14 +309,14 @@
 												size="sm"
 												href="{base}?report=1&version={v.version}"
 											>
-												Tracking report
+												{t('Tracking report')}
 											</Button>
 											<Button
 												variant="outline"
 												size="sm"
 												href="{base}?snapshot=1&version={v.version}"
 											>
-												Structure snapshot
+												{t('Structure snapshot')}
 											</Button>
 											<form
 												method="POST"
@@ -308,7 +326,7 @@
 											>
 												<input type="hidden" name="version" value={v.version} />
 												<Button type="submit" variant="outline" size="sm">
-													{v.active ? 'Deactivate' : 'Activate'}
+													{v.active ? t('Deactivate') : t('Activate')}
 												</Button>
 											</form>
 											<form method="POST" action="?/deleteVersion" use:enhance class="contents">
@@ -317,9 +335,10 @@
 													type="submit"
 													variant="outline"
 													size="sm"
-													aria-label="Delete version {v.version}"
+													aria-label={t('Delete version {version}', { version: v.version })}
 												>
-													<Trash2 /> Delete version
+													<Trash2 />
+													{t('Delete version')}
 												</Button>
 											</form>
 										</div>
@@ -335,10 +354,15 @@
 		<Card.Root>
 			<Card.Header>
 				<Card.Title>
-					{data.versions.length === 0 ? 'Track this table' : `Create version ${data.nextVersion}`}
+					{data.versions.length === 0
+						? t('Track this table')
+						: t('Create version {version}', { version: data.nextVersion })}
 				</Card.Title>
 				<Card.Description>
-					Creates a snapshot of the structure of {data.table} and starts recording the chosen statements.
+					{t(
+						'Creates a snapshot of the structure of {table} and starts recording the chosen statements.',
+						{ table: data.table }
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>

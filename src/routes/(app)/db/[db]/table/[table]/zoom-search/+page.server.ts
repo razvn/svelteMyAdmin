@@ -79,7 +79,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 	if (submitted) {
 		const [cx, cy] = slotColumns;
 		if (!cx || !cy || cx.name === cy.name) {
-			error = 'Select two different columns for the X and Y axes.';
+			error = locals.i18n.t('Select two different columns for the X and Y axes.');
 		} else {
 			const info = await dbi.getServerInfo();
 			const criteria: Criterion[] = [];

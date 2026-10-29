@@ -44,7 +44,7 @@ export const actions: Actions = {
 	comment: async ({ request, locals, params }) => {
 		const dbi = await locals.dbi;
 		if (!(await hasColumnInfo(dbi, locals.server))) {
-			return failure('comment', 'Configuration storage unavailable.');
+			return failure('comment', locals.i18n.t('Configuration storage unavailable.'));
 		}
 		const comment = String((await request.formData()).get('comment') ?? '').slice(0, 255);
 		const res = await setDbComment(dbi, locals.server, params.db, comment);
@@ -52,20 +52,22 @@ export const actions: Actions = {
 		return {
 			action: 'comment',
 			ok: true,
-			message: 'The database comment has been saved.',
+			message: locals.i18n.t('The database comment has been saved.'),
 			sql: res.sql
 		};
 	},
 	rename: async ({ request, locals, params }) => {
 		const dbi = await locals.dbi;
-		if (isSystemSchema(params.db)) return failure('rename', 'System databases cannot be renamed.');
+		if (isSystemSchema(params.db))
+			return failure('rename', locals.i18n.t('System databases cannot be renamed.'));
 		const parsed = renameSchema.safeParse(formToObject(await request.formData()));
-		if (!parsed.success) return failure('rename', 'Invalid input.');
+		if (!parsed.success) return failure('rename', locals.i18n.t('Invalid input.'));
 		const res = await renameDatabase(
 			dbi,
 			params.db,
 			{ newName: parsed.data.newname, adjustPrivileges: parsed.data.adjust_privileges },
-			{ afterCopy: (a, b, move) => transferColumnInfo(dbi, locals.server, a, b, move) }
+			{ afterCopy: (a, b, move) => transferColumnInfo(dbi, locals.server, a, b, move) },
+			locals.i18n
 		);
 		const body = { action: 'rename', ...res };
 		return res.ok ? body : fail(400, body);
@@ -73,7 +75,7 @@ export const actions: Actions = {
 	copy: async ({ request, locals, params }) => {
 		const dbi = await locals.dbi;
 		const parsed = copySchema.safeParse(formToObject(await request.formData()));
-		if (!parsed.success) return failure('copy', 'Invalid input.');
+		if (!parsed.success) return failure('copy', locals.i18n.t('Invalid input.'));
 		const p = parsed.data;
 		const res = await copyDatabase(
 			dbi,
@@ -88,7 +90,8 @@ export const actions: Actions = {
 				adjustPrivileges: p.adjust_privileges,
 				switchToNew: p.switch_to_new
 			},
-			{ afterCopy: (a, b, move) => transferColumnInfo(dbi, locals.server, a, b, move) }
+			{ afterCopy: (a, b, move) => transferColumnInfo(dbi, locals.server, a, b, move) },
+			locals.i18n
 		);
 		const body = { action: 'copy', ...res };
 		return res.ok ? body : fail(400, body);
@@ -96,12 +99,17 @@ export const actions: Actions = {
 	collation: async ({ request, locals, params }) => {
 		const dbi = await locals.dbi;
 		const parsed = collationSchema.safeParse(formToObject(await request.formData()));
-		if (!parsed.success) return failure('collation', 'No collation provided.');
-		const res = await changeCollation(dbi, params.db, {
-			collation: parsed.data.db_collation,
-			changeTables: parsed.data.change_all_tables_collations,
-			changeColumns: parsed.data.change_all_tables_columns_collations
-		});
+		if (!parsed.success) return failure('collation', locals.i18n.t('No collation provided.'));
+		const res = await changeCollation(
+			dbi,
+			params.db,
+			{
+				collation: parsed.data.db_collation,
+				changeTables: parsed.data.change_all_tables_collations,
+				changeColumns: parsed.data.change_all_tables_columns_collations
+			},
+			locals.i18n
+		);
 		const body = { action: 'collation', ...res };
 		return res.ok ? body : fail(400, body);
 	},
@@ -116,7 +124,7 @@ export const actions: Actions = {
 			return fail(403, {
 				action: 'drop',
 				ok: false,
-				message: 'No privileges to drop this database.',
+				message: locals.i18n.t('No privileges to drop this database.'),
 				sql: []
 			});
 		}
@@ -126,7 +134,7 @@ export const actions: Actions = {
 		return {
 			action: 'drop',
 			ok: true,
-			message: `Database ${params.db} has been dropped.`,
+			message: locals.i18n.t('Database {db} has been dropped.', { db: params.db }),
 			sql,
 			goto: '/server/databases'
 		};

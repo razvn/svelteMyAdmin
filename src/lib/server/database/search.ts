@@ -7,6 +7,7 @@ import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import { searchSqls, type SearchCriteria, type SearchType } from '#lib/sql/db-search.ts';
 import type { DatabaseInterface, TableInfo } from '#lib/server/db/dbi.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 const searchTypeSchema = z
 	.enum(['1', '2', '3', '4', '5'])
@@ -103,13 +104,15 @@ export async function deleteMatches(
 	db: string,
 	tables: TableInfo[],
 	req: SearchRequest,
-	table: string
+	table: string,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<DeleteResult> {
-	if (!req.tables.includes(table)) return { ok: false, error: 'Table is not part of this search.' };
+	if (!req.tables.includes(table))
+		return { ok: false, error: tr.t('Table is not part of this search.') };
 	const info = selectedTables(tables, req).find((t) => t.name === table);
-	if (!info) return { ok: false, error: 'Table does not exist.' };
+	if (!info) return { ok: false, error: tr.t('Table does not exist.') };
 	if (info.type !== 'BASE TABLE')
-		return { ok: false, error: 'Rows cannot be deleted from a view.' };
+		return { ok: false, error: tr.t('Rows cannot be deleted from a view.') };
 
 	const columns = (await dbi.getColumns(db, table)).map((c) => c.field);
 	const sql = searchSqls(db, table, columns, req.criteria);

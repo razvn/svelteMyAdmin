@@ -13,6 +13,7 @@ import {
 	type TriggerEvent,
 	type TriggerTiming
 } from '#lib/sql/trigger.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { createOrReplace, rows, showCreate, sqlErrorMessage, str, type SaveResult } from './common';
 
 export interface TriggerListItem {
@@ -92,11 +93,12 @@ export async function saveTrigger(
 	conn: Connection,
 	db: string,
 	def: TriggerDef,
-	originalName: string | null
+	originalName: string | null,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<SaveResult> {
-	const built = buildCreateTrigger(db, def);
+	const built = buildCreateTrigger(db, def, tr);
 	if (built.errors.length > 0) return { ok: false, errors: built.errors, queries: [] };
-	if (originalName === null) return createOrReplace(conn, db, { createSql: built.sql });
+	if (originalName === null) return createOrReplace(conn, db, { createSql: built.sql, tr });
 	let originalSql: string | null;
 	try {
 		originalSql = await exportTrigger(conn, db, originalName);
@@ -106,6 +108,7 @@ export async function saveTrigger(
 	return createOrReplace(conn, db, {
 		createSql: built.sql,
 		dropSql: buildDropTrigger(db, originalName),
-		originalSql
+		originalSql,
+		tr
 	});
 }

@@ -44,7 +44,8 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		centralAvailable: storageTable(locals.server, 'central_columns') !== null,
 		canRenameIndex: supportsRenameIndex(caps),
 		canInvisible: supportsInvisibleIndex(caps),
-		invisibleLabel: caps.serverType === 'MariaDB' ? 'Ignored' : 'Invisible'
+		invisibleLabel:
+			caps.serverType === 'MariaDB' ? locals.i18n.t('Ignored') : locals.i18n.t('Invisible')
 	};
 };
 
@@ -61,11 +62,15 @@ export const actions: Actions = {
 		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			addTableColumns(conn, q, dbi, params.db, params.table, columns)
 		);
-		if (!res) return fail(400, { error: 'The central list of columns is not available.' });
+		if (!res)
+			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
 		return {
 			message:
-				`${res.added.length} column(s) added to the central list.` +
-				(res.existing.length ? ` Already in the list: ${res.existing.join(', ')}.` : '')
+				locals.i18n.t('{n} column(s) added to the central list.', { n: res.added.length }) +
+				(res.existing.length
+					? ' ' +
+						locals.i18n.t('Already in the list: {columns}.', { columns: res.existing.join(', ') })
+					: '')
 		};
 	},
 	centralRemove: async ({ request, locals, params }) => {
@@ -73,11 +78,16 @@ export const actions: Actions = {
 		const missing = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			deleteCentral(conn, q, params.db, columns)
 		);
-		if (!missing) return fail(400, { error: 'The central list of columns is not available.' });
+		if (!missing)
+			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
 		return {
 			message:
-				`${columns.length - missing.length} column(s) removed from the central list.` +
-				(missing.length ? ` Not in the list: ${missing.join(', ')}.` : '')
+				locals.i18n.t('{n} column(s) removed from the central list.', {
+					n: columns.length - missing.length
+				}) +
+				(missing.length
+					? ' ' + locals.i18n.t('Not in the list: {columns}.', { columns: missing.join(', ') })
+					: '')
 		};
 	}
 };

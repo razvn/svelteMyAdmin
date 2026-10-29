@@ -8,6 +8,7 @@
  */
 import { escapeId, escapeQualified } from '#lib/server/db/escape.ts';
 import { baseColumnType } from './table-operators.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 export interface FindReplaceRequest {
 	db: string;
@@ -56,7 +57,7 @@ export function supportsRegexReplace(
 }
 
 export function buildFindReplaceSql(req: FindReplaceRequest, flavor: ServerFlavor): FindReplaceSql {
-	if (req.find === '') throw new Error('Nothing to find');
+	if (req.find === '') throw new Error(N_('Nothing to find'));
 	if (!/^[A-Za-z0-9_]+$/.test(flavor.charset)) throw new Error('Unexpected connection charset');
 	const table = escapeQualified(req.db, req.table);
 	const col = escapeId(req.column);
@@ -67,7 +68,7 @@ export function buildFindReplaceSql(req: FindReplaceRequest, flavor: ServerFlavo
 	let whereParams: string[];
 	if (req.useRegex) {
 		if (!supportsRegexReplace(flavor)) {
-			throw new Error('Regular expression replacement needs MySQL 8.0.4+ or MariaDB 10.0.5+');
+			throw new Error(N_('Regular expression replacement needs MySQL 8.0.4+ or MariaDB 10.0.5+'));
 		}
 		if (flavor.isMariaDB) {
 			// PCRE: case-insensitive by collation unless switched off.

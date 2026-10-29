@@ -9,6 +9,10 @@ import { INPUT_PLUGINS } from './input.ts';
 import { OUTPUT_PLUGINS } from './output.ts';
 import type { InputPlugin, OutputPlugin, PluginInfo } from './types.ts';
 
+/** A translate function (`locals.i18n.t`); identity = English. */
+type Tr = (msgid: string) => string;
+const identity: Tr = (msgid) => msgid;
+
 export { INPUT_PLUGINS, OUTPUT_PLUGINS };
 
 /** Stored `transformation` value of an output plugin. */
@@ -53,8 +57,8 @@ export function mimeTypes(): string[] {
 }
 
 /** `Date Format (text/plain: Dateformat)`, the option label of the transformation selects. */
-export const pluginLabel = (p: PluginInfo): string =>
-	`${p.title} (${p.mime.toLowerCase()}: ${p.name})${p.unsupported ? ' - not supported' : ''}`;
+export const pluginLabel = (p: PluginInfo, t: Tr = identity): string =>
+	`${t(p.title)} (${p.mime.toLowerCase()}: ${p.name})${p.unsupported ? ' - ' + t('not supported') : ''}`;
 
 /** `Text/Plain: Dateformat`, as listed on the overview page. */
 export const pluginListName = (p: PluginInfo): string => `${p.mime}: ${p.name}`;
@@ -66,20 +70,20 @@ export interface TransformationChoice {
 	disabled: boolean;
 }
 
-export function outputChoices(): TransformationChoice[] {
+export function outputChoices(t: Tr = identity): TransformationChoice[] {
 	return OUTPUT_PLUGINS.map((p) => ({
 		key: outputKey(p),
-		label: pluginLabel(p),
-		description: p.description,
+		label: pluginLabel(p, t),
+		description: t(p.description),
 		disabled: !!p.unsupported
 	}));
 }
 
-export function inputChoices(): TransformationChoice[] {
+export function inputChoices(t: Tr = identity): TransformationChoice[] {
 	return INPUT_PLUGINS.map((p) => ({
 		key: inputKey(p),
-		label: pluginLabel(p),
-		description: p.description,
+		label: pluginLabel(p, t),
+		description: t(p.description),
 		disabled: false
 	}));
 }

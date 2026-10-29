@@ -165,7 +165,7 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 			});
 		}
 	} catch (e) {
-		queryError = e instanceof Error ? e.message : 'The query failed.';
+		queryError = e instanceof Error ? e.message : locals.i18n.t('The query failed.');
 	}
 
 	// Foreign key links with the referenced row's display value as tooltip.
@@ -251,19 +251,19 @@ export const actions: Actions = {
 	delete: async (event) => {
 		const { request, params, locals } = event;
 		const g = await guard(event);
-		if (g.readOnly) return fail(400, { error: 'Views are read-only.' });
+		if (g.readOnly) return fail(400, { error: locals.i18n.t('Views are read-only.') });
 		const form = await request.formData();
 		const parsed = rowFields.safeParse({
 			where: form.getAll('where').map(String),
 			sig: form.getAll('sig').map(String)
 		});
 		if (!parsed.success || parsed.data.where.length !== parsed.data.sig.length) {
-			return fail(400, { error: 'No rows selected.' });
+			return fail(400, { error: locals.i18n.t('No rows selected.') });
 		}
 		const secret = getSecret(locals.config.blowfish_secret);
 		const { where, sig } = parsed.data;
 		if (!where.every((w, i) => verifyClause(secret, params.db, params.table, w, sig[i]))) {
-			return fail(400, { error: 'Invalid row signature.' });
+			return fail(400, { error: locals.i18n.t('Invalid row signature.') });
 		}
 		const res = await deleteRows(await locals.db, params.db, params.table, where);
 		if (!res.ok) return fail(400, { error: res.error });
@@ -273,7 +273,7 @@ export const actions: Actions = {
 	update: async (event) => {
 		const { request, params, locals } = event;
 		const g = await guard(event);
-		if (g.readOnly) return fail(400, { error: 'Views are read-only.' });
+		if (g.readOnly) return fail(400, { error: locals.i18n.t('Views are read-only.') });
 		const form = await request.formData();
 		const parsed = z
 			.object({
@@ -284,15 +284,17 @@ export const actions: Actions = {
 				isNull: z.string().optional()
 			})
 			.safeParse(Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)])));
-		if (!parsed.success) return fail(400, { error: 'Invalid request.' });
+		if (!parsed.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const secret = getSecret(locals.config.blowfish_secret);
 		const d = parsed.data;
 		if (!verifyClause(secret, params.db, params.table, d.where, d.sig)) {
-			return fail(400, { error: 'Invalid row signature.' });
+			return fail(400, { error: locals.i18n.t('Invalid row signature.') });
 		}
 		const meta = await loadTableMeta(g.dbi, params.db, params.table);
 		if (!meta.hasUniqueKey) {
-			return fail(400, { error: 'This table has no unique key; use the edit page.' });
+			return fail(400, {
+				error: locals.i18n.t('This table has no unique key; use the edit page.')
+			});
 		}
 		const value = d.isNull === '1' ? null : (d.value ?? '');
 		const res = await updateCell(
@@ -302,7 +304,8 @@ export const actions: Actions = {
 			meta,
 			d.where,
 			d.column,
-			value
+			value,
+			locals.i18n
 		);
 		if (!res.ok) return fail(400, { error: res.error });
 		return { cell: res.cell, keyChanged: res.keyChanged, statement: res.statement };
@@ -315,7 +318,7 @@ export const actions: Actions = {
 			const v: unknown = JSON.parse(String(form.get('hidden') ?? '[]'));
 			hidden = z.array(z.string()).parse(v);
 		} catch {
-			return fail(400, { error: 'Invalid request.' });
+			return fail(400, { error: locals.i18n.t('Invalid request.') });
 		}
 		const dbi = await locals.dbi;
 		const names = (await dbi.getColumns(params.db, params.table)).map((c) => c.field);

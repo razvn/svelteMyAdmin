@@ -5,6 +5,8 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import { VERSION_STATEMENTS } from '#lib/tracking/report.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		action: string;
@@ -16,7 +18,7 @@
 		submitLabel?: string;
 	}
 
-	let { action, defaults, version, hidden = [], submitLabel = 'Create version' }: Props = $props();
+	let { action, defaults, version, hidden = [], submitLabel }: Props = $props();
 
 	/* The route data only seeds the form; the user's edits live in local state. */
 	/* svelte-ignore state_referenced_locally */
@@ -38,7 +40,7 @@
 		<input type="hidden" name="statement" value={name} />
 	{/each}
 	<div class="flex flex-col gap-1.5">
-		<Label for="tracking-version">Version</Label>
+		<Label for="tracking-version">{t('Version')}</Label>
 		<Input
 			id="tracking-version"
 			name="version"
@@ -52,9 +54,11 @@
 	<div class="grid gap-4 md:grid-cols-2">
 		{#each Object.entries(VERSION_STATEMENTS) as [group, list] (group)}
 			<fieldset class="flex flex-col gap-2">
-				<legend class="mb-1 text-sm font-medium"
-					>Track these {group.toLowerCase()} statements</legend
-				>
+				<legend class="mb-1 text-sm font-medium">
+					{group === 'Data definition'
+						? t('Track these data definition statements:')
+						: t('Track these data manipulation statements:')}
+				</legend>
 				{#each list as name (name)}
 					<label class="flex items-center gap-2 text-sm">
 						<Checkbox
@@ -69,6 +73,6 @@
 		{/each}
 	</div>
 	<div>
-		<Button type="submit" data-testid="create-version">{submitLabel}</Button>
+		<Button type="submit" data-testid="create-version">{submitLabel ?? t('Create version')}</Button>
 	</div>
 </form>

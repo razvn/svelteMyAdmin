@@ -22,6 +22,8 @@
 	import { emptySettings, type ColumnTransformSettings } from '#lib/transformations/ui.ts';
 	import TransformationFields from './transformation-fields.svelte';
 	import { alterEnhance } from './alter-enhance.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		mode: 'add' | 'change';
@@ -107,25 +109,30 @@
 	);
 	const structureHref = $derived(resolve(bare(tabHref('table', { db, table }, 'structure'))));
 
-	const submit = alterEnhance({
-		start: () => {
-			busy = true;
-			error = '';
+	const submit = alterEnhance(
+		{
+			start: () => {
+				busy = true;
+				error = '';
+			},
+			fail: (m) => {
+				busy = false;
+				error = m;
+				previewOpen = false;
+			},
+			success: async () => {
+				busy = false;
+				toast.success(
+					mode === 'add'
+						? t('The columns have been added.')
+						: t('The table has been altered successfully.')
+				);
+				void navState.load(db, true);
+				await goto(structureHref);
+			}
 		},
-		fail: (m) => {
-			busy = false;
-			error = m;
-			previewOpen = false;
-		},
-		success: async () => {
-			busy = false;
-			toast.success(
-				mode === 'add' ? 'The columns have been added.' : 'The table has been altered successfully.'
-			);
-			void navState.load(db, true);
-			await goto(structureHref);
-		}
-	});
+		t
+	);
 </script>
 
 {#snippet extra({ col, index }: { col: ColumnDef; index: number })}
@@ -143,20 +150,21 @@
 
 	{#if error}
 		<Alert.Root variant="destructive" role="alert" data-testid="alter-error">
-			<Alert.Title>Could not alter the table</Alert.Title>
+			<Alert.Title>{t('Could not alter the table')}</Alert.Title>
 			<Alert.Description>{error}</Alert.Description>
 		</Alert.Root>
 	{/if}
 
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>{mode === 'add' ? 'New columns' : 'Change columns'}</Card.Title>
+			<Card.Title>{mode === 'add' ? t('New columns') : t('Change columns')}</Card.Title>
 			<Card.Description>
 				{#if mode === 'add'}
-					Columns without a name are skipped. For ENUM and SET enter the values like
-					<code class="font-mono">'a','b','c'</code>.
+					{t(
+						"Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'."
+					)}
 				{:else}
-					Rename a column or change its definition. Indexes and foreign keys are kept.
+					{t('Rename a column or change its definition. Indexes and foreign keys are kept.')}
 				{/if}
 			</Card.Description>
 		</Card.Header>
@@ -178,25 +186,25 @@
 	</Card.Root>
 
 	<div class="flex flex-wrap justify-end gap-2">
-		<Button type="button" variant="outline" href={structureHref}>Cancel</Button>
+		<Button type="button" variant="outline" href={structureHref}>{t('Cancel')}</Button>
 		<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
-			Preview SQL
+			{t('Preview SQL')}
 		</Button>
-		<Button type="submit" disabled={busy || !hydration.ready}>Save</Button>
+		<Button type="submit" disabled={busy || !hydration.ready}>{t('Save')}</Button>
 	</div>
 </form>
 
 <Dialog.Root bind:open={previewOpen}>
 	<Dialog.Content class="max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>Preview SQL</Dialog.Title>
-			<Dialog.Description>The statement that Save will execute.</Dialog.Description>
+			<Dialog.Title>{t('Preview SQL')}</Dialog.Title>
+			<Dialog.Description>{t('The statement that Save will execute.')}</Dialog.Description>
 		</Dialog.Header>
 		<pre
 			class="max-h-96 overflow-auto rounded-lg border bg-muted p-3 font-mono text-sm whitespace-pre-wrap"
 			data-testid="preview-sql">{sql}</pre>
 		<Dialog.Footer>
-			<Button type="button" onclick={() => (previewOpen = false)}>Close</Button>
+			<Button type="button" onclick={() => (previewOpen = false)}>{t('Close')}</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

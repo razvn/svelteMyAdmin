@@ -165,7 +165,9 @@ export const actions: Actions = {
 				newUrl: insertUrl(db, table, [])
 			};
 		} catch (e) {
-			if (e instanceof InsertEditError) return fail(400, { error: e.message, statements });
+			if (e instanceof InsertEditError) {
+				return fail(400, { error: locals.i18n.t(e.message), statements });
+			}
 			const st = (e as { statements?: string[] }).statements ?? statements;
 			return fail(400, { error: sqlErrorMessage(e), statements: st });
 		}

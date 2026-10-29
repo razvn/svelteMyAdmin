@@ -13,6 +13,7 @@ import type { ServerConfig } from '../config/schema';
 import { createConnection } from '../db/connection';
 import type { DatabaseInterface } from '../db/dbi';
 import { escapeId, escapeQualified, escapeString, quoteValue } from '../db/escape';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 type Row = Record<string, unknown>;
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
@@ -399,22 +400,23 @@ const MAX_NAME = 64;
 export async function normalizeNewName(
 	dbi: DatabaseInterface,
 	db: string,
-	raw: string
+	raw: string,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<{ ok: true; name: string } | { ok: false; error: string }> {
 	let name = raw;
-	if (name.length === 0) return { ok: false, error: 'The database name is empty!' };
+	if (name.length === 0) return { ok: false, error: tr.t('The database name is empty!') };
 	if (name.length > MAX_NAME || name.includes('\0') || /\s$/.test(name)) {
-		return { ok: false, error: 'Invalid database name.' };
+		return { ok: false, error: tr.t('Invalid database name.') };
 	}
 	const [lc] = await rows(dbi.conn, 'SELECT @@lower_case_table_names AS v');
 	if (str(lc?.v) === '1') name = name.toLowerCase();
 	if (name === db) {
 		return {
 			ok: false,
-			error: 'Cannot copy database to the same name. Change the name and try again.'
+			error: tr.t('Cannot copy database to the same name. Change the name and try again.')
 		};
 	}
-	if (isSystemSchema(name)) return { ok: false, error: 'Invalid database name.' };
+	if (isSystemSchema(name)) return { ok: false, error: tr.t('Invalid database name.') };
 	return { ok: true, name };
 }
 
@@ -498,16 +500,21 @@ async function transfer(
 	db: string,
 	move: boolean,
 	input: CopyInput,
-	hooks: StorageHooks
+	hooks: StorageHooks,
+	tr: Translator
 ): Promise<OperationResult> {
-	const named = await normalizeNewName(dbi, db, input.newName);
+	const named = await normalizeNewName(dbi, db, input.newName, tr);
 	if (!named.ok) return { ok: false, message: named.error, sql: [] };
 	const newName = named.name;
 	if (isSystemSchema(db) && move) {
-		return { ok: false, message: 'System databases cannot be renamed.', sql: [] };
+		return { ok: false, message: tr.t('System databases cannot be renamed.'), sql: [] };
 	}
 	if (move && (await dbi.databaseExists(newName))) {
-		return { ok: false, message: `Database ${newName} already exists.`, sql: [] };
+		return {
+			ok: false,
+			message: tr.t('Database {name} already exists.', { name: newName }),
+			sql: []
+		};
 	}
 	const snap = await loadSnapshot(dbi, db);
 	const plan = planDatabaseCopy(snap, {
@@ -526,7 +533,6 @@ async function transfer(
 		)
 	);
 	const sql = [...run.sql];
-	const verb = move ? 'renamed' : 'copied';
 	if (run.error) {
 		return { ok: false, message: run.error, sql, error: run.error };
 	}
@@ -552,7 +558,7 @@ async function transfer(
 		if (Number(left[0]?.n) > 0) {
 			return {
 				ok: false,
-				message: `Some tables are still in ${db}; it was not dropped.`,
+				message: tr.t('Some tables are still in {db}; it was not dropped.', { db }),
 				sql
 			};
 		}
@@ -566,7 +572,9 @@ async function transfer(
 	}
 	return {
 		ok: true,
-		message: `Database ${db} has been ${verb} to ${newName}.`,
+		message: move
+			? tr.t('Database {db} has been renamed to {newName}.', { db, newName })
+			: tr.t('Database {db} has been copied to {newName}.', { db, newName }),
 		sql,
 		...(move || input.switchToNew ? { goto: newName } : {})
 	};
@@ -576,7 +584,8 @@ export function renameDatabase(
 	dbi: DatabaseInterface,
 	db: string,
 	input: Pick<CopyInput, 'newName' | 'adjustPrivileges'>,
-	hooks: StorageHooks = {}
+	hooks: StorageHooks = {},
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<OperationResult> {
 	return transfer(
 		dbi,
@@ -591,7 +600,8 @@ export function renameDatabase(
 			constraints: false,
 			switchToNew: true
 		},
-		hooks
+		hooks,
+		tr
 	);
 }
 
@@ -599,9 +609,10 @@ export function copyDatabase(
 	dbi: DatabaseInterface,
 	db: string,
 	input: CopyInput,
-	hooks: StorageHooks = {}
+	hooks: StorageHooks = {},
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<OperationResult> {
-	return transfer(dbi, db, false, input, hooks);
+	return transfer(dbi, db, false, input, hooks, tr);
 }
 
 /* ---- collation ---- */
@@ -616,10 +627,11 @@ export interface CollationInput {
 export async function changeCollation(
 	dbi: DatabaseInterface,
 	db: string,
-	input: CollationInput
+	input: CollationInput,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<OperationResult> {
 	const known = (await dbi.listCollations()).find((c) => c.name === input.collation);
-	if (!known) return { ok: false, message: 'No collation provided.', sql: [] };
+	if (!known) return { ok: false, message: tr.t('No collation provided.'), sql: [] };
 	const part = `CHARACTER SET ${escapeId(known.charset)} COLLATE ${escapeId(known.name)}`;
 	const statements = [`ALTER DATABASE ${escapeId(db)} DEFAULT ${part}`];
 	if (input.changeTables) {
@@ -632,7 +644,7 @@ export async function changeCollation(
 	}
 	const run = await runStatements(dbi.conn, statements);
 	if (run.error) return { ok: false, message: run.error, ...run };
-	return { ok: true, message: `The collation of ${db} has been changed.`, ...run };
+	return { ok: true, message: tr.t('The collation of {db} has been changed.', { db }), ...run };
 }
 
 export async function getDatabaseCollation(dbi: DatabaseInterface, db: string): Promise<string> {

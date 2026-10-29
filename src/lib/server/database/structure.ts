@@ -2,6 +2,7 @@
  * Database > Structure (Controllers/Database/StructureController.php and Controllers/Database/Structure/*).
  */
 import { z } from 'zod';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import type { DatabaseInterface } from '../db/dbi';
 import { escapeId, escapeQualified } from '../db/escape';
 
@@ -289,7 +290,7 @@ export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
 export const operationSchema = z.object({
 	op: z.enum(OPS),
-	selected: z.array(z.string().min(1).max(64)).min(1, 'No table selected.'),
+	selected: z.array(z.string().min(1).max(64)).min(1, N_('No table selected.')),
 	fk_checks: z.boolean().default(true),
 	prefix: z.string().max(64).default(''),
 	from_prefix: z.string().max(64).default(''),
@@ -338,18 +339,20 @@ export function planReplacePrefix(names: string[], fromPrefix: string, toPrefix:
 export function validateRenames(
 	renames: Rename[],
 	existing: string[],
-	opts: { allowExisting?: boolean } = {}
+	opts: { allowExisting?: boolean } = {},
+	tr: Translator = SOURCE_TRANSLATOR
 ): string | null {
-	if (renames.length === 0) return 'No table name would change.';
+	if (renames.length === 0) return tr.t('No table name would change.');
 	const seen = new Set<string>();
 	const moving = new Set(renames.map((r) => r.from));
 	for (const { to } of renames) {
-		if (to === '' || [...to].length > 64) return `Invalid table name: ${to}`;
-		if (/[\0/\\.]/.test(to) || to.endsWith(' ')) return `Invalid table name: ${to}`;
-		if (seen.has(to)) return `Duplicate target table name: ${to}`;
+		if (to === '' || [...to].length > 64) return tr.t('Invalid table name: {name}', { name: to });
+		if (/[\0/\\.]/.test(to) || to.endsWith(' '))
+			return tr.t('Invalid table name: {name}', { name: to });
+		if (seen.has(to)) return tr.t('Duplicate target table name: {name}', { name: to });
 		seen.add(to);
 		if (!opts.allowExisting && existing.includes(to) && !moving.has(to)) {
-			return `Table ${to} already exists.`;
+			return tr.t('Table {table} already exists.', { table: to });
 		}
 	}
 	return null;
@@ -374,18 +377,20 @@ export type PlanResult = { ok: true; plan: Plan } | { ok: false; error: string }
 export function buildPlan(
 	input: OperationInput,
 	tables: TableRef[],
-	db: string | null
+	db: string | null,
+	tr: Translator = SOURCE_TRANSLATOR
 ): PlanResult {
 	const byName = new Map(tables.map((t) => [t.name, t]));
 	const unique = [...new Set(input.selected)];
-	for (const n of unique) if (!byName.has(n)) return { ok: false, error: `Unknown table: ${n}` };
+	for (const n of unique)
+		if (!byName.has(n)) return { ok: false, error: tr.t('Unknown table: {name}', { name: n }) };
 	const q = (name: string) => (db === null ? escapeId(name) : escapeQualified(db, name));
 	const sel = unique.map((n) => byName.get(n)!);
 	const baseTables = sel.filter((t) => !t.isView);
 	const disableFk = !input.fk_checks && (input.op === 'drop' || input.op === 'empty');
 	const mk = (statements: string[]): PlanResult =>
 		statements.length === 0
-			? { ok: false, error: 'No applicable table selected.' }
+			? { ok: false, error: tr.t('No applicable table selected.') }
 			: { ok: true, plan: { op: input.op, statements, disableFk } };
 
 	switch (input.op) {
@@ -415,10 +420,10 @@ export function buildPlan(
 		case 'add_prefix':
 		case 'replace_prefix': {
 			if (input.op === 'add_prefix' && input.prefix === '') {
-				return { ok: false, error: 'The prefix is empty.' };
+				return { ok: false, error: tr.t('The prefix is empty.') };
 			}
 			if (input.op === 'replace_prefix' && input.from_prefix === '') {
-				return { ok: false, error: 'The prefix to replace is empty.' };
+				return { ok: false, error: tr.t('The prefix to replace is empty.') };
 			}
 			const renames =
 				input.op === 'add_prefix'
@@ -426,7 +431,9 @@ export function buildPlan(
 					: planReplacePrefix(unique, input.from_prefix, input.to_prefix);
 			const err = validateRenames(
 				renames,
-				tables.map((t) => t.name)
+				tables.map((t) => t.name),
+				{},
+				tr
 			);
 			if (err) return { ok: false, error: err };
 			return mk(
@@ -446,7 +453,8 @@ export function buildPlan(
 			const err = validateRenames(
 				renames,
 				tables.map((t) => t.name),
-				{ allowExisting: input.drop_if_exists }
+				{ allowExisting: input.drop_if_exists },
+				tr
 			);
 			if (err) return { ok: false, error: err };
 			const out: string[] = [];

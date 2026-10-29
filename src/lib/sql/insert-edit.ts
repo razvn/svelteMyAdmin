@@ -11,6 +11,7 @@
  * (function names, `b'01'` literals, `CURRENT_TIMESTAMP(n)`, digits) are inlined.
  */
 import { quoteId } from './column-definition.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 export type ValueKind =
 	| 'int'
@@ -395,10 +396,10 @@ export function functionGroups(col: ColumnMeta): { label: string; functions: str
 		order.unshift(own);
 	}
 	const label = {
-		CHAR: 'String',
-		NUMBER: 'Numeric',
-		DATE: 'Date and time',
-		SPATIAL: 'Spatial'
+		CHAR: N_('String'),
+		NUMBER: N_('Numeric'),
+		DATE: N_('Date and time'),
+		SPATIAL: N_('Spatial')
 	} as const;
 	return order.map((c) => ({ label: label[c], functions: [...FUNCTIONS[c]].sort() }));
 }

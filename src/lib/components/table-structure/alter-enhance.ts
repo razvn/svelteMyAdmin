@@ -11,7 +11,10 @@ export interface AlterHandlers {
  * `use:enhance` callback for the ALTER TABLE form actions (`{ done: string[] }` on success,
  * `fail(400, { error })` otherwise).
  */
-export function alterEnhance(h: AlterHandlers): SubmitFunction {
+export function alterEnhance(
+	h: AlterHandlers,
+	t: (msgid: string) => string = (msgid) => msgid
+): SubmitFunction {
 	return () => {
 		h.start();
 		return async ({ result, update }) => {
@@ -20,11 +23,11 @@ export function alterEnhance(h: AlterHandlers): SubmitFunction {
 				await update({ reset: false });
 				await h.success(sql);
 			} else if (result.type === 'failure') {
-				h.fail(String(result.data?.error ?? 'The statement failed.'));
+				h.fail(String(result.data?.error ?? t('The statement failed.')));
 			} else if (result.type === 'redirect') {
 				await update();
 			} else {
-				h.fail('Unexpected error while running the statement.');
+				h.fail(t('Unexpected error while running the statement.'));
 			}
 		};
 	};

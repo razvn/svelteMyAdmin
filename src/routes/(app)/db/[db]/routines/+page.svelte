@@ -24,6 +24,8 @@
 	import type { RoutineDef } from '#lib/sql/routine.ts';
 	import type { RoutineType } from '#lib/sql/routine-types.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -83,7 +85,7 @@
 	async function load(type: RoutineType, name: string): Promise<RoutineDef | null> {
 		const res = await callAction<{ routine: RoutineDef }>(page.url.pathname, 'get', { type, name });
 		if (!res.ok || !res.data?.routine) {
-			toast.error(res.message ?? 'The routine could not be loaded.');
+			toast.error(res.message ?? t('The routine could not be loaded.'));
 			return null;
 		}
 		return res.data.routine;
@@ -108,10 +110,13 @@
 	async function openExport(type: RoutineType, name: string) {
 		const res = await callAction<{ sql: string }>(page.url.pathname, 'export', { type, name });
 		if (!res.ok || !res.data?.sql) {
-			toast.error(res.message ?? 'The routine could not be exported.');
+			toast.error(res.message ?? t('The routine could not be exported.'));
 			return;
 		}
-		exportTitle = `Export of ${type.toLowerCase()} ${name}`;
+		exportTitle =
+			type === 'PROCEDURE'
+				? t('Export of procedure {name}', { name })
+				: t('Export of function {name}', { name });
 		exportSql = res.data.sql;
 		exportOpen = true;
 	}
@@ -122,32 +127,32 @@
 		const res = await callAction(page.url.pathname, 'drop', dropTarget);
 		dropping = false;
 		if (res.ok) {
-			toast.success(`Routine ${dropTarget.name} has been dropped.`);
+			toast.success(t('Routine {name} has been dropped.', { name: dropTarget.name }));
 			dropOpen = false;
 			await refreshAll();
 		} else {
-			toast.error(res.message ?? 'Drop failed.');
+			toast.error(res.message ?? t('Drop failed.'));
 		}
 	}
 
 	async function saved(name: string) {
-		toast.success(`Routine ${name} has been saved.`);
+		toast.success(t('Routine {name} has been saved.', { name }));
 		await refreshAll();
 	}
 </script>
 
 <svelte:head>
-	<title>Routines - {page.params.db} - svelteMyAdmin</title>
+	<title>{t('Routines')} - {page.params.db} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Terminal}
-		title="Routines"
-		description="Stored procedures and functions of {page.params.db}."
+		title={t('Routines')}
+		description={t('Stored procedures and functions of {db}.', { db: page.params.db ?? '' })}
 	>
 		{#snippet actions()}
-			<Button onclick={openAdd} data-testid="routine-add"><Plus /> Add routine</Button>
+			<Button onclick={openAdd} data-testid="routine-add"><Plus /> {t('Add routine')}</Button>
 		{/snippet}
 	</PageHeader>
 
@@ -158,14 +163,17 @@
 				<Input
 					type="search"
 					class="ps-8"
-					placeholder="Filter routines"
-					aria-label="Filter routines"
+					placeholder={t('Filter routines')}
+					aria-label={t('Filter routines')}
 					data-testid="routines-filter"
 					bind:value={filter}
 				/>
 			</div>
 			<p class="text-sm text-muted-foreground" data-testid="routines-count">
-				{visible.length} of {data.routines.length} routines shown
+				{t('{shown} of {total} routines shown', {
+					shown: visible.length,
+					total: data.routines.length
+				})}
 			</p>
 		</div>
 		<Card.Content class="px-0">
@@ -173,13 +181,13 @@
 				<Table.Root data-testid="routines-table">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Name</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Returns</Table.Head>
-							<Table.Head>Definer</Table.Head>
-							<Table.Head>Security</Table.Head>
-							<Table.Head>Comment</Table.Head>
-							<Table.Head class="text-end">Actions</Table.Head>
+							<Table.Head>{t('Name')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Returns')}</Table.Head>
+							<Table.Head>{t('Definer')}</Table.Head>
+							<Table.Head>{t('Security')}</Table.Head>
+							<Table.Head>{t('Comment')}</Table.Head>
+							<Table.Head class="text-end">{t('Actions')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -205,7 +213,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Edit {r.name}"
+											aria-label={t('Edit {name}', { name: r.name })}
 											onclick={() => openEdit(r.type, r.name)}
 										>
 											<Pencil />
@@ -213,7 +221,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Execute {r.name}"
+											aria-label={t('Execute {name}', { name: r.name })}
 											onclick={() => openExecute(r.type, r.name)}
 										>
 											<Play />
@@ -221,7 +229,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Export {r.name}"
+											aria-label={t('Export {name}', { name: r.name })}
 											onclick={() => openExport(r.type, r.name)}
 										>
 											<Download />
@@ -229,7 +237,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Drop {r.name}"
+											aria-label={t('Drop {name}', { name: r.name })}
 											onclick={() => {
 												dropTarget = { type: r.type, name: r.name };
 												dropOpen = true;
@@ -244,8 +252,8 @@
 							<Table.Row>
 								<Table.Cell colspan={7} class="py-8 text-center text-muted-foreground">
 									{data.routines.length === 0
-										? 'No routines in this database.'
-										: 'No routines match the filter.'}
+										? t('No routines in this database.')
+										: t('No routines match the filter.')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -268,7 +276,11 @@
 <SqlDialog bind:open={exportOpen} title={exportTitle} sql={exportSql} />
 <ConfirmDrop
 	bind:open={dropOpen}
-	subject="{dropTarget?.type.toLowerCase() ?? 'routine'} {dropTarget?.name ?? ''}"
+	title={dropTarget?.type === 'PROCEDURE'
+		? t('Drop procedure {name}?', { name: dropTarget.name })
+		: dropTarget?.type === 'FUNCTION'
+			? t('Drop function {name}?', { name: dropTarget.name })
+			: t('Drop routine {name}?', { name: dropTarget?.name ?? '' })}
 	busy={dropping}
 	onconfirm={confirmDrop}
 />

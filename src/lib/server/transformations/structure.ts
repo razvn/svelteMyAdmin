@@ -25,7 +25,7 @@ export async function transformUi(
 		const row = mime.get(c.name);
 		byId[c.id] = row ? canonicalSettings(row) : emptySettings();
 	}
-	return { choices: transformChoices(), byId };
+	return { choices: transformChoices(locals.i18n.t), byId };
 }
 
 const payloadSchema = z.object({ transformations: z.array(mimeEntrySchema).max(4096).optional() });

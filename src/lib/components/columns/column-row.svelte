@@ -21,6 +21,8 @@
 		type ServerCaps,
 		type TypeGroup
 	} from '#lib/sql/column-definition.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		col: ColumnDef;
@@ -66,14 +68,14 @@
 	const canVirtual = $derived(isVirtualColumnsSupported(caps));
 	const isVirtual = $derived(col.virtuality !== '');
 	const defaultOptions = $derived<{ value: DefaultType; label: string }[]>([
-		{ value: 'NONE', label: 'None' },
-		{ value: 'USER_DEFINED', label: 'As defined:' },
+		{ value: 'NONE', label: t('None') },
+		{ value: 'USER_DEFINED', label: t('As defined:') },
 		{ value: 'NULL', label: 'NULL' },
 		{ value: 'CURRENT_TIMESTAMP', label: 'CURRENT_TIMESTAMP' },
 		...(isUuidSupported(caps) ? [{ value: 'UUID' as const, label: 'UUID' }] : [])
 	]);
 	const defaultLabel = $derived(
-		defaultOptions.find((o) => o.value === col.defaultType)?.label ?? 'None'
+		defaultOptions.find((o) => o.value === col.defaultType)?.label ?? t('None')
 	);
 	const indexLabel = (v: IndexChoice) => (v === '' ? '---' : v);
 	const n = $derived(index + 1);
@@ -118,43 +120,43 @@
 
 <div
 	role="group"
-	aria-label="Column {n}"
+	aria-label={t('Column {n}', { n })}
 	data-testid="column-row-{index}"
 	class="grid grid-cols-2 gap-x-3 gap-y-3 rounded-lg border bg-card p-3 md:grid-cols-6 xl:grid-cols-12"
 >
 	{#snippet nameField()}
 		<Input
 			bind:value={col.name}
-			aria-label="Name"
-			placeholder="Column name"
+			aria-label={t('Name')}
+			placeholder={t('Column name')}
 			maxlength={64}
 			autocomplete="off"
 			class="font-mono"
 		/>
 	{/snippet}
-	{@render field('Name', 'col-span-2 md:col-span-3 xl:col-span-3', nameField)}
+	{@render field(t('Name'), 'col-span-2 md:col-span-3 xl:col-span-3', nameField)}
 
 	{#snippet typeField()}
 		<Select.Root type="single" value={col.type} onValueChange={setType}>
-			<Select.Trigger class="w-full" aria-label="Type">{col.type}</Select.Trigger>
+			<Select.Trigger class="w-full" aria-label={t('Type')}>{col.type}</Select.Trigger>
 			<Select.Content class="max-h-80">
 				{#each typeGroups as group (group.label)}
 					<Select.Group>
-						<Select.GroupHeading>{group.label}</Select.GroupHeading>
-						{#each group.types as t (t)}
-							<Select.Item value={t} label={t}>{t}</Select.Item>
+						<Select.GroupHeading>{t(group.label)}</Select.GroupHeading>
+						{#each group.types as tbl (tbl)}
+							<Select.Item value={tbl} label={tbl}>{tbl}</Select.Item>
 						{/each}
 					</Select.Group>
 				{/each}
 			</Select.Content>
 		</Select.Root>
 	{/snippet}
-	{@render field('Type', 'col-span-1 md:col-span-3 xl:col-span-2', typeField)}
+	{@render field(t('Type'), 'col-span-1 md:col-span-3 xl:col-span-2', typeField)}
 
 	{#snippet lengthField()}
 		<Input
 			bind:value={col.length}
-			aria-label="Length/Values"
+			aria-label={t('Length/Values')}
 			placeholder={isEnumOrSet(col.type) ? "'a','b'" : ''}
 			autocomplete="off"
 			class="font-mono"
@@ -165,11 +167,11 @@
 				class="self-start text-xs text-primary hover:underline"
 				onclick={oneditvalues}
 			>
-				Edit ENUM/SET values
+				{t('Edit ENUM/SET values')}
 			</button>
 		{/if}
 	{/snippet}
-	{@render field('Length/Values', 'col-span-1 md:col-span-3 xl:col-span-2', lengthField)}
+	{@render field(t('Length/Values'), 'col-span-1 md:col-span-3 xl:col-span-2', lengthField)}
 
 	{#snippet defaultField()}
 		<div class="flex gap-2">
@@ -179,7 +181,7 @@
 				onValueChange={setDefaultType}
 				disabled={isVirtual}
 			>
-				<Select.Trigger class="w-full min-w-0 flex-1" aria-label="Default">
+				<Select.Trigger class="w-full min-w-0 flex-1" aria-label={t('Default')}>
 					{defaultLabel}
 				</Select.Trigger>
 				<Select.Content>
@@ -191,15 +193,15 @@
 			{#if col.defaultType === 'USER_DEFINED' && !isVirtual}
 				<Input
 					bind:value={col.defaultValue}
-					aria-label="Default value"
-					placeholder="Value"
+					aria-label={t('Default value')}
+					placeholder={t('Value')}
 					autocomplete="off"
 					class="min-w-0 flex-1 font-mono"
 				/>
 			{/if}
 		</div>
 	{/snippet}
-	{@render field('Default', 'col-span-2 md:col-span-3 xl:col-span-3', defaultField)}
+	{@render field(t('Default'), 'col-span-2 md:col-span-3 xl:col-span-3', defaultField)}
 
 	{#snippet collationField()}
 		<Select.Root
@@ -208,11 +210,11 @@
 			onValueChange={(v) => (col.collation = v)}
 			disabled={!hasCollation(col.type)}
 		>
-			<Select.Trigger class="w-full" aria-label="Collation">
+			<Select.Trigger class="w-full" aria-label={t('Collation')}>
 				<span class="truncate">{col.collation || ' '}</span>
 			</Select.Trigger>
 			<Select.Content class="max-h-80">
-				<Select.Item value="" label="(default)">(default)</Select.Item>
+				<Select.Item value="" label={t('(default)')}>{t('(default)')}</Select.Item>
 				{#each collationGroups as group (group.charset)}
 					<Select.Group>
 						<Select.GroupHeading>{group.charset}</Select.GroupHeading>
@@ -224,7 +226,7 @@
 			</Select.Content>
 		</Select.Root>
 	{/snippet}
-	{@render field('Collation', 'col-span-1 md:col-span-2 xl:col-span-2', collationField)}
+	{@render field(t('Collation'), 'col-span-1 md:col-span-2 xl:col-span-2', collationField)}
 
 	{#snippet attributeField()}
 		<Select.Root
@@ -232,23 +234,25 @@
 			value={col.attribute}
 			onValueChange={(v) => (col.attribute = v === 'NONE' ? '' : v)}
 		>
-			<Select.Trigger class="w-full" aria-label="Attributes">
+			<Select.Trigger class="w-full" aria-label={t('Attributes')}>
 				<span class="truncate">{col.attribute || ' '}</span>
 			</Select.Trigger>
 			<Select.Content>
-				<Select.Item value="NONE" label="(none)">(none)</Select.Item>
+				<Select.Item value="NONE" label={t('(none)')}>{t('(none)')}</Select.Item>
 				{#each attributes as a (a)}
 					<Select.Item value={a} label={a}>{a}</Select.Item>
 				{/each}
 			</Select.Content>
 		</Select.Root>
 	{/snippet}
-	{@render field('Attributes', 'col-span-1 md:col-span-2 xl:col-span-2', attributeField)}
+	{@render field(t('Attributes'), 'col-span-1 md:col-span-2 xl:col-span-2', attributeField)}
 
 	{#if showIndex}
 		{#snippet indexField()}
 			<Select.Root type="single" value={col.index} onValueChange={setIndex}>
-				<Select.Trigger class="w-full" aria-label="Index">{indexLabel(col.index)}</Select.Trigger>
+				<Select.Trigger class="w-full" aria-label={t('Index')}
+					>{indexLabel(col.index)}</Select.Trigger
+				>
 				<Select.Content>
 					{#each INDEX_CHOICES as v (v)}
 						<Select.Item value={v} label={indexLabel(v)}>{indexLabel(v)}</Select.Item>
@@ -256,7 +260,7 @@
 				</Select.Content>
 			</Select.Root>
 		{/snippet}
-		{@render field('Index', 'col-span-1 md:col-span-2 xl:col-span-2', indexField)}
+		{@render field(t('Index'), 'col-span-1 md:col-span-2 xl:col-span-2', indexField)}
 	{/if}
 
 	{#snippet flagsField()}
@@ -265,9 +269,9 @@
 				<Checkbox
 					checked={col.null}
 					onCheckedChange={(v) => (col.null = v === true)}
-					aria-label="Null"
+					aria-label={t('Null')}
 				/>
-				Null
+				{t('Null')}
 			</label>
 			{#if showAutoIncrement}
 				<label class="flex items-center gap-1.5 text-sm" title="AUTO_INCREMENT">
@@ -275,29 +279,34 @@
 						checked={col.autoIncrement}
 						onCheckedChange={(v) => setAutoIncrement(v === true)}
 						disabled={isVirtual}
-						aria-label="A_I"
+						aria-label={t('A_I')}
 					/>
-					A_I
+					{t('A_I')}
 				</label>
 			{/if}
 		</div>
 	{/snippet}
-	{@render field('Null / Auto-increment', 'col-span-1 md:col-span-2 xl:col-span-2', flagsField)}
+	{@render field(t('Null / Auto-increment'), 'col-span-1 md:col-span-2 xl:col-span-2', flagsField)}
 
 	{#snippet commentField()}
-		<Input bind:value={col.comment} aria-label="Comments" maxlength={1024} autocomplete="off" />
+		<Input
+			bind:value={col.comment}
+			aria-label={t('Comments')}
+			maxlength={1024}
+			autocomplete="off"
+		/>
 	{/snippet}
-	{@render field('Comments', 'col-span-2 md:col-span-4 xl:col-span-4', commentField)}
+	{@render field(t('Comments'), 'col-span-2 md:col-span-4 xl:col-span-4', commentField)}
 
 	{#if canVirtual}
 		{#snippet virtualityField()}
 			<div class="flex gap-2">
 				<Select.Root type="single" value={col.virtuality || 'NONE'} onValueChange={setVirtuality}>
-					<Select.Trigger class="w-full min-w-0 flex-1" aria-label="Virtuality">
+					<Select.Trigger class="w-full min-w-0 flex-1" aria-label={t('Virtuality')}>
 						<span class="truncate">{col.virtuality || ' '}</span>
 					</Select.Trigger>
 					<Select.Content>
-						<Select.Item value="NONE" label="(none)">(none)</Select.Item>
+						<Select.Item value="NONE" label={t('(none)')}>{t('(none)')}</Select.Item>
 						{#each virtualities as v (v)}
 							<Select.Item value={v} label={v}>{v}</Select.Item>
 						{/each}
@@ -306,15 +315,15 @@
 				{#if isVirtual}
 					<Input
 						bind:value={col.expression}
-						aria-label="Expression"
-						placeholder="Expression"
+						aria-label={t('Expression')}
+						placeholder={t('Expression')}
 						autocomplete="off"
 						class="min-w-0 flex-1 font-mono"
 					/>
 				{/if}
 			</div>
 		{/snippet}
-		{@render field('Virtuality', 'col-span-2 md:col-span-4 xl:col-span-4', virtualityField)}
+		{@render field(t('Virtuality'), 'col-span-2 md:col-span-4 xl:col-span-4', virtualityField)}
 	{/if}
 
 	{#if extra}
@@ -329,7 +338,7 @@
 				type="button"
 				variant="ghost"
 				size="icon"
-				aria-label="Move column {n} up"
+				aria-label={t('Move column {n} up', { n })}
 				disabled={index === 0}
 				onclick={onmoveup}
 			>
@@ -339,7 +348,7 @@
 				type="button"
 				variant="ghost"
 				size="icon"
-				aria-label="Move column {n} down"
+				aria-label={t('Move column {n} down', { n })}
 				disabled={index === count - 1}
 				onclick={onmovedown}
 			>
@@ -349,7 +358,7 @@
 				type="button"
 				variant="ghost"
 				size="icon"
-				aria-label="Remove column {n}"
+				aria-label={t('Remove column {n}', { n })}
 				disabled={count <= 1}
 				onclick={onremove}
 			>

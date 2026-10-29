@@ -8,6 +8,7 @@ import { escapeId, escapeQualified } from '#lib/server/db/escape.ts';
 import { splitStatements } from '#lib/server/db/splitter.ts';
 import { describeField } from '#lib/server/sql/execute.ts';
 import { classifyStatement } from '#lib/sql/classify.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 export interface GisRow {
 	/** Label column value ('' when none). */
@@ -39,7 +40,7 @@ export function baseQuery(db: string, table: string, sql: string | null): string
 	if (sql === null || sql.trim() === '') return `SELECT * FROM ${escapeQualified(db, table)}`;
 	const statements = splitStatements(sql);
 	if (statements.length !== 1 || classifyStatement(statements[0].sql) !== 'select') {
-		throw new GisError('Only a single SELECT statement can be visualized.');
+		throw new GisError(N_('Only a single SELECT statement can be visualized.'));
 	}
 	return statements[0].sql.trim().replace(/;+\s*$/, '');
 }

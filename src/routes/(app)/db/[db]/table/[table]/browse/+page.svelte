@@ -28,10 +28,11 @@
 	import * as Collapsible from '#lib/components/ui/collapsible/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import { callAction } from '#lib/forms/call-action.ts';
-	import { formatNumber } from '#lib/format.ts';
 	import { pageChoices } from '#lib/table/pagination.ts';
 	import type { Sort } from '#lib/table/sort.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn, fmt } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -120,8 +121,8 @@
 			value: value ?? '',
 			isNull: value === null ? '1' : '0'
 		});
-		if (!res.ok || !res.data) return { ok: false, error: res.message ?? 'Update failed.' };
-		toast.success(`Column ${column.name} updated`);
+		if (!res.ok || !res.data) return { ok: false, error: res.message ?? t('Update failed.') };
+		toast.success(t('Column {name} updated', { name: column.name }));
 		// A changed key invalidates the signed links of the row: reload the page data.
 		if (res.data.keyChanged) void refreshAll();
 		return { ok: true, cell: res.data.cell };
@@ -140,23 +141,24 @@
 </script>
 
 <svelte:head>
-	<title>Browse - {data.table} - svelteMyAdmin</title>
+	<title>{t('Browse')} - {data.table} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6 p-4 md:p-6">
 	<PageHeader
 		title={data.table}
-		description={data.isView ? 'Browse view (read-only)' : 'Browse data'}
+		description={data.isView ? t('Browse view (read-only)') : t('Browse data')}
 		icon={Table2}
 	>
 		{#snippet actions()}
 			{#if data.columns.some((c) => c.kind === 'geometry')}
-				<Button href="{tableBase}/gis" size="sm" variant="outline">Visualize GIS data</Button>
+				<Button href="{tableBase}/gis" size="sm" variant="outline">{t('Visualize GIS data')}</Button
+				>
 			{/if}
 			{#if !data.isView}
 				<Button href="{tableBase}/insert" size="sm">
 					<Plus class="size-4" aria-hidden="true" />
-					Insert
+					{t('Insert')}
 				</Button>
 			{/if}
 		{/snippet}
@@ -176,42 +178,45 @@
 			<div class="flex flex-wrap items-center gap-2 text-sm">
 				<p data-testid="rows-message">
 					{#if data.page.to === 0}
-						Showing no rows
+						{t('Showing no rows')}
 					{:else}
-						Showing rows {formatNumber(data.page.from - 1)} - {formatNumber(data.page.to - 1)}
+						{t('Showing rows {from} - {to}', {
+							from: fmt.number(data.page.from - 1),
+							to: fmt.number(data.page.to - 1)
+						})}
 					{/if}
 					<span class="text-muted-foreground">
-						({data.approx ? '~' : ''}{formatNumber(data.total)} total, Query took {data.seconds.toFixed(
-							4
-						)}
-						seconds.)
+						{t('({total} total, Query took {seconds} seconds.)', {
+							total: (data.approx ? '~' : '') + fmt.number(data.total),
+							seconds: fmt.numberFormat(data.seconds, 4)
+						})}
 					</span>
 				</p>
 				{#if data.filter}
-					<Badge variant="info" data-testid="filter-badge">Filtered</Badge>
+					<Badge variant="info" data-testid="filter-badge">{t('Filtered')}</Badge>
 					<a
 						class="inline-flex items-center gap-1 text-primary hover:underline"
 						href={data.clearFilterHref}
 					>
 						<FilterX class="size-3.5" aria-hidden="true" />
-						Clear filter
+						{t('Clear filter')}
 					</a>
 				{/if}
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
-				<div class="flex items-center gap-1" role="navigation" aria-label="Pagination">
+				<div class="flex items-center gap-1" role="navigation" aria-label={t('Pagination')}>
 					<Button
 						variant="outline"
 						size="icon-sm"
-						aria-label="First page"
+						aria-label={t('First page')}
 						disabled={data.page.prevPos === null}
 						onclick={() => goToPos(data.page.firstPos)}><ChevronsLeft class="size-4" /></Button
 					>
 					<Button
 						variant="outline"
 						size="icon-sm"
-						aria-label="Previous page"
+						aria-label={t('Previous page')}
 						disabled={data.page.prevPos === null}
 						onclick={() => goToPos(data.page.prevPos ?? 0)}><ChevronLeft class="size-4" /></Button
 					>
@@ -220,26 +225,28 @@
 						value={String(data.page.page)}
 						onValueChange={(v) => goToPos((Number(v) - 1) * data.page.size)}
 					>
-						<Select.Trigger size="sm" class="w-28" aria-label="Page">
-							Page {data.page.page} / {data.page.pages}
+						<Select.Trigger size="sm" class="w-28" aria-label={t('Page')}>
+							{t('Page {page} / {pages}', { page: data.page.page, pages: data.page.pages })}
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each pages as p (p)}
-								<Select.Item value={String(p)} label="Page {p}">{p}</Select.Item>
+								<Select.Item value={String(p)} label={t('Page {page}', { page: p })}
+									>{p}</Select.Item
+								>
 							{/each}
 						</Select.Content>
 					</Select.Root>
 					<Button
 						variant="outline"
 						size="icon-sm"
-						aria-label="Next page"
+						aria-label={t('Next page')}
 						disabled={data.page.nextPos === null}
 						onclick={() => goToPos(data.page.nextPos ?? 0)}><ChevronRight class="size-4" /></Button
 					>
 					<Button
 						variant="outline"
 						size="icon-sm"
-						aria-label="Last page"
+						aria-label={t('Last page')}
 						disabled={data.page.nextPos === null}
 						onclick={() => goToPos(data.page.lastPos)}><ChevronsRight class="size-4" /></Button
 					>
@@ -250,15 +257,17 @@
 					value={String(data.rowsPerPage)}
 					onValueChange={(v) => go({ rows: v, pos: null })}
 				>
-					<Select.Trigger size="sm" class="w-36" aria-label="Rows per page">
-						{data.rowsPerPage === 'all' ? 'Show all' : `${data.rowsPerPage} rows`}
+					<Select.Trigger size="sm" class="w-36" aria-label={t('Rows per page')}>
+						{data.rowsPerPage === 'all' ? t('Show all') : t('{n} rows', { n: data.rowsPerPage })}
 					</Select.Trigger>
 					<Select.Content>
 						{#each data.rowsOptions as n (n)}
-							<Select.Item value={String(n)} label="{n} rows">{n} rows</Select.Item>
+							<Select.Item value={String(n)} label={t('{n} rows', { n })}
+								>{t('{n} rows', { n })}</Select.Item
+							>
 						{/each}
 						{#if data.showAllAllowed}
-							<Select.Item value="all" label="Show all">Show all</Select.Item>
+							<Select.Item value="all" label={t('Show all')}>{t('Show all')}</Select.Item>
 						{/if}
 					</Select.Content>
 				</Select.Root>
@@ -276,14 +285,18 @@
 					<Table2 class="size-6" aria-hidden="true" />
 				</span>
 				{#if data.filter}
-					<p class="font-medium">No rows match the filter.</p>
-					<Button href={data.clearFilterHref} variant="outline" size="sm">Clear filter</Button>
+					<p class="font-medium">{t('No rows match the filter.')}</p>
+					<Button href={data.clearFilterHref} variant="outline" size="sm"
+						>{t('Clear filter')}</Button
+					>
 				{:else}
-					<p class="font-medium">This {data.isView ? 'view' : 'table'} has no rows yet.</p>
+					<p class="font-medium">
+						{data.isView ? t('This view has no rows yet.') : t('This table has no rows yet.')}
+					</p>
 					{#if !data.isView}
 						<Button href="{tableBase}/insert" size="sm">
 							<Plus class="size-4" aria-hidden="true" />
-							Insert a row
+							{t('Insert a row')}
 						</Button>
 					{/if}
 				{/if}
@@ -312,29 +325,29 @@
 						variant="ghost"
 						size={showText ? 'sm' : 'icon-sm'}
 						href={editHref([row])}
-						aria-label="Edit row {row + 1}"
+						aria-label={t('Edit row {n}', { n: row + 1 })}
 					>
 						{#if showIcons}<Pencil class="size-4" aria-hidden="true" />{/if}
-						{#if showText}Edit{/if}
+						{#if showText}{t('Edit')}{/if}
 					</Button>
 					<Button
 						variant="ghost"
 						size={showText ? 'sm' : 'icon-sm'}
 						href={copyHref([row])}
-						aria-label="Copy row {row + 1}"
+						aria-label={t('Copy row {n}', { n: row + 1 })}
 					>
 						{#if showIcons}<Copy class="size-4" aria-hidden="true" />{/if}
-						{#if showText}Copy{/if}
+						{#if showText}{t('Copy')}{/if}
 					</Button>
 					<Button
 						variant="ghost"
 						size={showText ? 'sm' : 'icon-sm'}
 						class="text-destructive hover:text-destructive"
-						aria-label="Delete row {row + 1}"
+						aria-label={t('Delete row {n}', { n: row + 1 })}
 						onclick={() => askDelete([row])}
 					>
 						{#if showIcons}<Trash2 class="size-4" aria-hidden="true" />{/if}
-						{#if showText}Delete{/if}
+						{#if showText}{t('Delete')}{/if}
 					</Button>
 				{/snippet}
 			</ResultGrid>
@@ -344,18 +357,22 @@
 					class="flex flex-wrap items-center gap-2 border-t p-3 text-sm"
 					data-testid="with-selected"
 				>
-					<span class="text-muted-foreground">With selected ({selected.length}):</span>
+					<span class="text-muted-foreground"
+						>{t('With selected ({count}):', { count: selected.length })}</span
+					>
 					<Button
 						variant="outline"
 						size="sm"
 						href={selected.length ? editHref(selected) : undefined}
-						disabled={!selected.length}><Pencil class="size-4" aria-hidden="true" />Edit</Button
+						disabled={!selected.length}
+						><Pencil class="size-4" aria-hidden="true" />{t('Edit')}</Button
 					>
 					<Button
 						variant="outline"
 						size="sm"
 						href={selected.length ? copyHref(selected) : undefined}
-						disabled={!selected.length}><Copy class="size-4" aria-hidden="true" />Copy</Button
+						disabled={!selected.length}
+						><Copy class="size-4" aria-hidden="true" />{t('Copy')}</Button
 					>
 					<Button
 						variant="outline"
@@ -363,13 +380,14 @@
 						class="text-destructive"
 						disabled={!selected.length}
 						onclick={() => askDelete(selected)}
-						><Trash2 class="size-4" aria-hidden="true" />Delete</Button
+						><Trash2 class="size-4" aria-hidden="true" />{t('Delete')}</Button
 					>
 					<Button
 						variant="outline"
 						size="sm"
 						href={selected.length ? exportHref(selected) : undefined}
-						disabled={!selected.length}><Download class="size-4" aria-hidden="true" />Export</Button
+						disabled={!selected.length}
+						><Download class="size-4" aria-hidden="true" />{t('Export')}</Button
 					>
 				</div>
 			{/if}
@@ -384,7 +402,7 @@
 				class={['size-4 transition-transform', !sqlOpen && '-rotate-90']}
 				aria-hidden="true"
 			/>
-			SQL query
+			{t('SQL query')}
 		</Collapsible.Trigger>
 		<Collapsible.Content>
 			<pre
@@ -403,12 +421,14 @@
 	<AlertDialog.Content class="sm:max-w-xl">
 		<AlertDialog.Header>
 			<AlertDialog.Title
-				>Delete {deleting?.length === 1
-					? 'this row'
-					: `${deleting?.length ?? 0} rows`}?</AlertDialog.Title
+				>{deleting?.length === 1
+					? t('Delete this row?')
+					: t('Delete {n} rows?', { n: deleting?.length ?? 0 })}</AlertDialog.Title
 			>
 			<AlertDialog.Description
-				>The following queries will be executed. This cannot be undone.</AlertDialog.Description
+				>{t(
+					'The following queries will be executed. This cannot be undone.'
+				)}</AlertDialog.Description
 			>
 		</AlertDialog.Header>
 		<pre
@@ -427,12 +447,12 @@
 					deleteBusy = false;
 					if (result.type === 'success') {
 						const n = (result.data as { deleted?: number } | undefined)?.deleted ?? 0;
-						toast.success(`${n} row${n === 1 ? '' : 's'} deleted`);
+						toast.success(tn('{n} row deleted', '{n} rows deleted', n));
 						deleting = null;
 						await update();
 					} else if (result.type === 'failure') {
 						deleteError = String(
-							(result.data as { error?: string } | undefined)?.error ?? 'Delete failed.'
+							(result.data as { error?: string } | undefined)?.error ?? t('Delete failed.')
 						);
 					} else {
 						await update();
@@ -446,7 +466,7 @@
 			{/each}
 		</form>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={deleteBusy}
@@ -455,7 +475,7 @@
 					deleteForm?.requestSubmit();
 				}}
 			>
-				Delete
+				{t('Delete')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

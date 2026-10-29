@@ -19,6 +19,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import {
 		MAINTENANCE_LABELS,
 		buildDropSql,
@@ -32,6 +33,7 @@
 		rowFormatsFor
 	} from '#lib/sql/table-operations.ts';
 	import type { PageProps } from './$types';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 	const navState = getNavState();
@@ -197,6 +199,27 @@
 		};
 	}
 
+	function partitionOpLabel(op: string): string {
+		switch (op) {
+			case 'ANALYZE':
+				return t('Analyze');
+			case 'CHECK':
+				return t('Check');
+			case 'OPTIMIZE':
+				return t('Optimize');
+			case 'REBUILD':
+				return t('Rebuild');
+			case 'REPAIR':
+				return t('Repair');
+			case 'TRUNCATE':
+				return t('Truncate');
+			case 'DROP':
+				return t('Drop');
+			default:
+				return t('Coalesce');
+		}
+	}
+
 	const dbHref = (name: string) => `/db/${encodeURIComponent(name)}`;
 </script>
 
@@ -215,7 +238,7 @@
 
 {#snippet dbSelect(name: string, value: string, onchange: (v: string) => void)}
 	<Select.Root type="single" {name} {value} onValueChange={onchange}>
-		<Select.Trigger class="w-56" aria-label="Database">{value}</Select.Trigger>
+		<Select.Trigger class="w-56" aria-label={t('Database')}>{value}</Select.Trigger>
 		<Select.Content class="max-h-72">
 			{#each data.databases as d (d)}
 				<Select.Item value={d} label={d}>{d}</Select.Item>
@@ -227,8 +250,8 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Settings2}
-		title="Operations"
-		description="{data.isView ? 'View' : 'Table'} {table} · {data.options.engine || 'view'}"
+		title={t('Operations')}
+		description="{data.isView ? t('View') : t('Table')} {table} · {data.options.engine || 'view'}"
 	/>
 
 	{#if last}
@@ -256,17 +279,17 @@
 	{#if data.isSystemSchema}
 		<Alert variant="warning">
 			<AlertDescription>
-				Operations that change data are not available in the system schema "{db}".
+				{t('Operations that change data are not available in the system schema "{db}".', { db })}
 			</AlertDescription>
 		</Alert>
 	{/if}
 
 	{#if data.isView}
 		<Card.Root>
-			<Card.Header><Card.Title>View</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('View')}</Card.Title></Card.Header>
 			<Card.Content>
-				<Button variant="outline" disabled title="Editing views is not available yet">
-					Edit view
+				<Button variant="outline" disabled title={t('Editing views is not available yet')}>
+					{t('Edit view')}
 				</Button>
 			</Card.Content>
 		</Card.Root>
@@ -274,7 +297,7 @@
 
 	{#if !data.isView && !data.isSystemSchema}
 		<Card.Root>
-			<Card.Header><Card.Title>Alter table order by</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Alter table order by')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -285,7 +308,7 @@
 				>
 					<div class="flex flex-wrap items-center gap-4">
 						<Select.Root type="single" name="order_field" bind:value={orderField}>
-							<Select.Trigger class="w-56" aria-label="Column">{orderField}</Select.Trigger>
+							<Select.Trigger class="w-56" aria-label={t('Column')}>{orderField}</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each data.columns as c (c)}
 									<Select.Item value={c} label={c}>{c}</Select.Item>
@@ -301,7 +324,7 @@
 								onchange={() => (orderDesc = false)}
 								class="size-4 accent-primary"
 							/>
-							Ascending
+							{t('Ascending')}
 						</label>
 						<label class="flex items-center gap-2 text-sm">
 							<input
@@ -312,22 +335,24 @@
 								onchange={() => (orderDesc = true)}
 								class="size-4 accent-primary"
 							/>
-							Descending
+							{t('Descending')}
 						</label>
 					</div>
 					<p class="text-sm text-muted-foreground" data-testid="reorder-hint">
 						{#if data.innodbClustered}
-							InnoDB always keeps rows ordered by its PRIMARY KEY (or first NOT NULL UNIQUE index),
-							so this has no lasting effect on this table.
+							{t(
+								'InnoDB always keeps rows ordered by its PRIMARY KEY (or first NOT NULL UNIQUE index), so this has no lasting effect on this table.'
+							)}
 						{:else}
-							Reorders the rows once; rows inserted later are not kept in this order. Most useful
-							for MyISAM tables.
+							{t(
+								'Reorders the rows once; rows inserted later are not kept in this order. Most useful for MyISAM tables.'
+							)}
 						{/if}
 					</p>
 					{#if reorderPreview}
 						<code class="font-mono text-xs text-muted-foreground">{reorderPreview}</code>
 					{/if}
-					<div><Button type="submit" disabled={busy === 'reorder'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'reorder'}>{t('Go')}</Button></div>
 				</form>
 			</Card.Content>
 		</Card.Root>
@@ -336,7 +361,9 @@
 	{#if !data.isSystemSchema}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Move {data.isView ? 'view' : 'table'} to (database.table)</Card.Title>
+				<Card.Title>
+					{data.isView ? t('Move view to (database.table)') : t('Move table to (database.table)')}
+				</Card.Title>
 			</Card.Header>
 			<Card.Content>
 				<form
@@ -354,18 +381,18 @@
 							placeholder={table}
 							maxlength={64}
 							required
-							aria-label="New table name"
+							aria-label={t('New table name')}
 							class="w-64"
 						/>
 					</div>
 					{@render option(
 						'mv-priv',
 						'adjust_privileges',
-						'Adjust privileges',
+						t('Adjust privileges'),
 						data.canAdjustPrivileges,
 						!data.canAdjustPrivileges
 					)}
-					<div><Button type="submit" disabled={busy === 'move'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'move'}>{t('Go')}</Button></div>
 				</form>
 			</Card.Content>
 		</Card.Root>
@@ -373,7 +400,7 @@
 
 	{#if !data.isView && !data.isSystemSchema}
 		<Card.Root>
-			<Card.Header><Card.Title>Table options</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Table options')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -383,7 +410,7 @@
 					data-testid="options-form"
 				>
 					<div class="flex flex-wrap items-center gap-3">
-						<Label for="opt-rename" class="w-40">Rename table to</Label>
+						<Label for="opt-rename" class="w-40">{t('Rename table to')}</Label>
 						<Input
 							id="opt-rename"
 							name="new_name"
@@ -396,12 +423,12 @@
 					{@render option(
 						'opt-priv',
 						'adjust_privileges',
-						'Adjust privileges',
+						t('Adjust privileges'),
 						data.canAdjustPrivileges,
 						!data.canAdjustPrivileges
 					)}
 					<div class="flex flex-wrap items-center gap-3">
-						<Label for="opt-comment" class="w-40">Table comments</Label>
+						<Label for="opt-comment" class="w-40">{t('Table comments')}</Label>
 						<Input
 							id="opt-comment"
 							name="comment"
@@ -411,9 +438,10 @@
 						/>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
-						<span class="w-40 text-sm font-medium">Storage engine</span>
+						<span class="w-40 text-sm font-medium">{t('Storage engine')}</span>
 						<Select.Root type="single" name="new_tbl_storage_engine" bind:value={engine}>
-							<Select.Trigger class="w-56" aria-label="Storage engine">{engine}</Select.Trigger>
+							<Select.Trigger class="w-56" aria-label={t('Storage engine')}>{engine}</Select.Trigger
+							>
 							<Select.Content class="max-h-72">
 								{#each data.engines as e (e)}
 									<Select.Item value={e} label={e}>{e}</Select.Item>
@@ -422,9 +450,9 @@
 						</Select.Root>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
-						<span class="w-40 text-sm font-medium">Collation</span>
+						<span class="w-40 text-sm font-medium">{t('Collation')}</span>
 						<Select.Root type="single" name="tbl_collation" bind:value={collation}>
-							<Select.Trigger class="w-72" aria-label="Collation">{collation}</Select.Trigger>
+							<Select.Trigger class="w-72" aria-label={t('Collation')}>{collation}</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each byCharset as group (group.charset)}
 									<Select.Group>
@@ -443,7 +471,9 @@
 								value="1"
 								bind:checked={changeAll}
 							/>
-							<Label for="opt-change-all" class="font-normal">Change all column collations</Label>
+							<Label for="opt-change-all" class="font-normal"
+								>{t('Change all column collations')}</Label
+							>
 						</div>
 					</div>
 
@@ -525,20 +555,22 @@
 					{/if}
 
 					<div class="flex flex-col gap-1.5">
-						<span class="text-sm font-medium">SQL preview</span>
+						<span class="text-sm font-medium">{t('SQL preview')}</span>
 						{#if optionsPreview.length > 0}
 							{@render sqlBlock(optionsPreview, 'options-preview')}
 						{:else}
-							<p class="text-sm text-muted-foreground" data-testid="options-preview">No change.</p>
+							<p class="text-sm text-muted-foreground" data-testid="options-preview">
+								{t('No change.')}
+							</p>
 						{/if}
 					</div>
-					<div><Button type="submit" disabled={busy === 'options'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'options'}>{t('Go')}</Button></div>
 				</form>
 			</Card.Content>
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title>Copy table to (database.table)</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Copy table to (database.table)')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -555,12 +587,12 @@
 							placeholder={table}
 							maxlength={64}
 							required
-							aria-label="Copy to table name"
+							aria-label={t('Copy to table name')}
 							class="w-64"
 						/>
 					</div>
-					<div class="flex flex-col gap-2" role="radiogroup" aria-label="What to copy">
-						{#each [{ v: 'structure', t: 'Structure only' }, { v: 'data', t: 'Structure and data' }, { v: 'dataonly', t: 'Data only' }] as o (o.v)}
+					<div class="flex flex-col gap-2" role="radiogroup" aria-label={t('What to copy')}>
+						{#each [{ v: 'structure', label: N_('Structure only') }, { v: 'data', label: N_('Structure and data') }, { v: 'dataonly', label: N_('Data only') }] as o (o.v)}
 							<label class="flex items-center gap-2 text-sm">
 								<input
 									type="radio"
@@ -570,33 +602,33 @@
 									onchange={() => (copyWhat = o.v)}
 									class="size-4 accent-primary"
 								/>
-								{o.t}
+								{t(o.label)}
 							</label>
 						{/each}
 					</div>
 					<div class="flex flex-col gap-2">
-						{@render option('cp-drop', 'drop_if_exists', 'Add DROP TABLE', false)}
-						{@render option('cp-ai', 'sql_auto_increment', 'Add AUTO_INCREMENT value', false)}
+						{@render option('cp-drop', 'drop_if_exists', t('Add DROP TABLE'), false)}
+						{@render option('cp-ai', 'sql_auto_increment', t('Add AUTO_INCREMENT value'), false)}
 						{#if data.hasForeignKeys}
-							{@render option('cp-fk', 'add_constraints', 'Add constraints', true)}
+							{@render option('cp-fk', 'add_constraints', t('Add constraints'), true)}
 						{/if}
 						{@render option(
 							'cp-priv',
 							'adjust_privileges',
-							'Adjust privileges',
+							t('Adjust privileges'),
 							data.canAdjustPrivileges,
 							!data.canAdjustPrivileges
 						)}
-						{@render option('cp-switch', 'switch_to_new', 'Switch to copied table', false)}
+						{@render option('cp-switch', 'switch_to_new', t('Switch to copied table'), false)}
 					</div>
-					<div><Button type="submit" disabled={busy === 'copy'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'copy'}>{t('Go')}</Button></div>
 				</form>
 			</Card.Content>
 		</Card.Root>
 	{/if}
 
 	<Card.Root>
-		<Card.Header><Card.Title>Table maintenance</Card.Title></Card.Header>
+		<Card.Header><Card.Title>{t('Table maintenance')}</Card.Title></Card.Header>
 		<Card.Content>
 			<ul class="flex flex-col gap-1" data-testid="maintenance">
 				{#each maintenance as a (a)}
@@ -610,7 +642,7 @@
 								disabled={busy === 'maintenance' ||
 									(data.isSystemSchema && a !== 'check' && a !== 'checksum')}
 							>
-								{MAINTENANCE_LABELS[a]}
+								{t(MAINTENANCE_LABELS[a])}
 							</Button>
 						</form>
 					</li>
@@ -621,7 +653,7 @@
 
 	{#if !data.isSystemSchema}
 		<Card.Root>
-			<Card.Header><Card.Title>Delete data or table</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Delete data or table')}</Card.Title></Card.Header>
 			<Card.Content class="flex flex-col items-start gap-2">
 				{#if !data.isView}
 					<Button
@@ -630,7 +662,7 @@
 						data-testid="empty-table"
 						disabled={busy === 'empty'}
 					>
-						Empty the table (TRUNCATE)
+						{t('Empty the table (TRUNCATE)')}
 					</Button>
 				{/if}
 				<Button
@@ -639,7 +671,7 @@
 					data-testid="drop-table"
 					disabled={busy === 'drop'}
 				>
-					Delete the {data.isView ? 'view' : 'table'} (DROP)
+					{data.isView ? t('Delete the view (DROP)') : t('Delete the table (DROP)')}
 				</Button>
 				<form
 					bind:this={emptyForm}
@@ -665,7 +697,7 @@
 
 	{#if data.partitions && !data.isSystemSchema}
 		<Card.Root>
-			<Card.Header><Card.Title>Partition maintenance</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Partition maintenance')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -675,7 +707,7 @@
 					data-testid="partition-form"
 				>
 					<fieldset class="flex flex-col gap-2">
-						<legend class="mb-1 text-sm font-medium">Partition</legend>
+						<legend class="mb-1 text-sm font-medium">{t('Partition')}</legend>
 						{#each data.partitions.names as p (p)}
 							<div class="flex items-center gap-2">
 								<Checkbox
@@ -692,7 +724,7 @@
 							</div>
 						{/each}
 					</fieldset>
-					<div class="flex flex-wrap gap-4" role="radiogroup" aria-label="Partition operation">
+					<div class="flex flex-wrap gap-4" role="radiogroup" aria-label={t('Partition operation')}>
 						{#each partitionOps as op (op)}
 							<label class="flex items-center gap-2 text-sm">
 								<input
@@ -703,12 +735,12 @@
 									onchange={() => (partitionOp = op)}
 									class="size-4 accent-primary"
 								/>
-								{op[0] + op.slice(1).toLowerCase()}
+								{partitionOpLabel(op)}
 							</label>
 						{/each}
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
-						<Button type="submit" disabled={busy === 'partition'}>Go</Button>
+						<Button type="submit" disabled={busy === 'partition'}>{t('Go')}</Button>
 					</div>
 				</form>
 				<form method="POST" action="?/unpartition" use:enhance={submit('unpartition')} class="mt-3">
@@ -718,7 +750,7 @@
 						class="h-auto p-0 text-destructive"
 						disabled={busy === 'unpartition'}
 					>
-						Remove partitioning
+						{t('Remove partitioning')}
 					</Button>
 				</form>
 			</Card.Content>
@@ -726,7 +758,9 @@
 	{/if}
 
 	<p class="text-sm text-muted-foreground">
-		<a class="underline underline-offset-2" href="{dbHref(db)}/structure">Back to {db}</a>
+		<a class="underline underline-offset-2" href="{dbHref(db)}/structure"
+			>{t('Back to {db}', { db })}</a
+		>
 	</p>
 </div>
 
@@ -734,8 +768,10 @@
 <AlertDialog.Root bind:open={dangerOpen}>
 	<AlertDialog.Content class="sm:max-w-xl" data-testid="confirm-dialog">
 		<AlertDialog.Header>
-			<AlertDialog.Title>Do you really want to execute the following query?</AlertDialog.Title>
-			<AlertDialog.Description>This cannot be undone.</AlertDialog.Description>
+			<AlertDialog.Title
+				>{t('Do you really want to execute the following query?')}</AlertDialog.Title
+			>
+			<AlertDialog.Description>{t('This cannot be undone.')}</AlertDialog.Description>
 		</AlertDialog.Header>
 		<pre
 			class="max-h-60 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap"
@@ -746,10 +782,10 @@
 				checked={fkChecks}
 				onCheckedChange={(v) => (fkChecks = v === true)}
 			/>
-			<Label for="fk-checks" class="font-normal">Enable foreign key checks</Label>
+			<Label for="fk-checks" class="font-normal">{t('Enable foreign key checks')}</Label>
 		</div>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={busy === 'empty' || busy === 'drop'}
@@ -758,7 +794,7 @@
 					(dangerKind === 'empty' ? emptyForm : dropForm)?.requestSubmit();
 				}}
 			>
-				Yes
+				{t('Yes')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
@@ -774,7 +810,7 @@
 		<Dialog.Footer>
 			<Dialog.Close>
 				{#snippet child({ props })}
-					<Button variant="outline" {...props}>Close</Button>
+					<Button variant="outline" {...props}>{t('Close')}</Button>
 				{/snippet}
 			</Dialog.Close>
 		</Dialog.Footer>

@@ -30,5 +30,5 @@ export const POST: RequestHandler = async ({ request, locals, params }) => {
 			dependencies: await findPartialDependencies(dbi, db, b.table ?? table)
 		});
 	}
-	return Response.json(await runOperation(dbi, db, table, b.op));
+	return Response.json(await runOperation(dbi, db, table, b.op, false, locals.i18n));
 };

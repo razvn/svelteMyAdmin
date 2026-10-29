@@ -3,6 +3,7 @@
  */
 import type { Connection } from '../db/connection';
 import { escapeId } from '../db/escape';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export type Row = Record<string, unknown>;
 
@@ -14,9 +15,13 @@ export async function rows(conn: Connection, sql: string, params: unknown[] = []
 }
 
 /** MySQL's own message (`sqlMessage`) only; never stack traces. */
-export function sqlErrorMessage(err: unknown, fallback = 'The statement failed.'): string {
+export function sqlErrorMessage(
+	err: unknown,
+	fallback: string = N_('The statement failed.'),
+	tr: Translator = SOURCE_TRANSLATOR
+): string {
 	const sqlMessage = (err as { sqlMessage?: unknown } | null)?.sqlMessage;
-	return typeof sqlMessage === 'string' && sqlMessage !== '' ? sqlMessage : fallback;
+	return typeof sqlMessage === 'string' && sqlMessage !== '' ? sqlMessage : tr.t(fallback);
 }
 
 export interface SaveResult {
@@ -35,8 +40,9 @@ export interface SaveResult {
 export async function createOrReplace(
 	conn: Connection,
 	db: string,
-	opts: { createSql: string; dropSql?: string; originalSql?: string | null }
+	opts: { createSql: string; dropSql?: string; originalSql?: string | null; tr?: Translator }
 ): Promise<SaveResult> {
+	const tr = opts.tr ?? SOURCE_TRANSLATOR;
 	const queries: string[] = [];
 	try {
 		await conn.query(`USE ${escapeId(db)}`);
@@ -54,10 +60,13 @@ export async function createOrReplace(
 			try {
 				await conn.query(opts.originalSql);
 				rolledBack = true;
-				errors.push('The original definition was restored.');
+				errors.push(tr.t('The original definition was restored.'));
 			} catch (rollbackErr) {
 				errors.push(
-					`The original could not be restored: ${sqlErrorMessage(rollbackErr)} Original definition: ${opts.originalSql}`
+					tr.t('The original could not be restored: {error} Original definition: {sql}', {
+						error: sqlErrorMessage(rollbackErr),
+						sql: opts.originalSql
+					})
 				);
 			}
 		}

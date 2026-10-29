@@ -16,6 +16,8 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { buildDropForeignKey, newFkDef, type FkDef } from '#lib/sql/foreign-key.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -58,10 +60,12 @@
 				return true;
 			}
 			toast.error(
-				result.type === 'failure' ? String(result.data?.error ?? 'Failed.') : 'Unexpected error.'
+				result.type === 'failure'
+					? String(result.data?.error ?? t('Failed.'))
+					: t('Unexpected error.')
 			);
 		} catch {
-			toast.error('Unexpected error.');
+			toast.error(t('Unexpected error.'));
 		}
 		return false;
 	}
@@ -97,7 +101,7 @@
 		const ok = await post(
 			'saveInternal',
 			{ column: relColumn, refDb: relDb, refTable: relTable, refColumn: relRefColumn },
-			'The internal relation has been saved.'
+			t('The internal relation has been saved.')
 		);
 		if (ok) {
 			relColumn = relDb = relTable = relRefColumn = '';
@@ -107,51 +111,55 @@
 	let displayColumn = $derived(data.displayField);
 </script>
 
-<svelte:head><title>Relation view - {data.table}</title></svelte:head>
+<svelte:head><title>{t('Relation view')} - {data.table}</title></svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader icon={ArrowLeftRight} title="Relation view" description="{data.db}.{data.table}">
+	<PageHeader icon={ArrowLeftRight} title={t('Relation view')} description="{data.db}.{data.table}">
 		{#snippet actions()}
-			<Button variant="outline" href="{base}/structure">Back to structure</Button>
+			<Button variant="outline" href="{base}/structure">{t('Back to structure')}</Button>
 		{/snippet}
 	</PageHeader>
 
 	{#if data.isView}
-		<Alert.Root><Alert.Description>A view has no relations.</Alert.Description></Alert.Root>
+		<Alert.Root><Alert.Description>{t('A view has no relations.')}</Alert.Description></Alert.Root>
 	{:else}
 		<Card.Root class="gap-0 py-0" data-testid="fk-card">
 			<Card.Header class="flex-row items-center justify-between border-b py-5">
 				<div>
-					<Card.Title>Foreign key constraints</Card.Title>
-					<Card.Description>Storage engine: {data.engine ?? 'unknown'}</Card.Description>
+					<Card.Title>{t('Foreign key constraints')}</Card.Title>
+					<Card.Description>
+						{t('Storage engine: {engine}', { engine: data.engine ?? t('unknown') })}
+					</Card.Description>
 				</div>
 				<Button size="sm" onclick={() => openEditor(null)} disabled={!data.fkSupported}>
-					<Plus /> Add foreign key
+					<Plus />
+					{t('Add foreign key')}
 				</Button>
 			</Card.Header>
 			{#if !data.fkSupported}
 				<Card.Content class="py-5">
 					<Alert.Root>
 						<Alert.Description>
-							Foreign keys need the InnoDB storage engine; this table uses {data.engine ??
-								'an unknown engine'}.
+							{t('Foreign keys need the InnoDB storage engine; this table uses {engine}.', {
+								engine: data.engine ?? t('an unknown engine')
+							})}
 						</Alert.Description>
 					</Alert.Root>
 				</Card.Content>
 			{:else if data.foreignKeys.length === 0}
 				<Card.Content class="py-5 text-sm text-muted-foreground">
-					No foreign key defined.
+					{t('No foreign key defined.')}
 				</Card.Content>
 			{:else}
 				<Table.Root data-testid="fk-table">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Actions</Table.Head>
-							<Table.Head>Constraint name</Table.Head>
-							<Table.Head>Column</Table.Head>
-							<Table.Head>Referenced</Table.Head>
-							<Table.Head>ON DELETE</Table.Head>
-							<Table.Head>ON UPDATE</Table.Head>
+							<Table.Head>{t('Actions')}</Table.Head>
+							<Table.Head>{t('Constraint name')}</Table.Head>
+							<Table.Head>{t('Column')}</Table.Head>
+							<Table.Head>{t('Referenced')}</Table.Head>
+							<Table.Head>{t('ON DELETE')}</Table.Head>
+							<Table.Head>{t('ON UPDATE')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -162,7 +170,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Edit foreign key {fk.name}"
+											aria-label={t('Edit foreign key {name}', { name: fk.name })}
 											onclick={() => openEditor(fk)}
 										>
 											<Pencil />
@@ -170,7 +178,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Drop foreign key {fk.name}"
+											aria-label={t('Drop foreign key {name}', { name: fk.name })}
 											onclick={() => askDrop(fk)}
 										>
 											<Trash2 />
@@ -198,17 +206,17 @@
 		{#if data.storage.relation}
 			<Card.Root class="gap-0 py-0" data-testid="internal-card">
 				<Card.Header class="border-b py-5">
-					<Card.Title>Internal relations</Card.Title>
+					<Card.Title>{t('Internal relations')}</Card.Title>
 					<Card.Description>
-						Stored in the configuration storage (not enforced by the server).
+						{t('Stored in the configuration storage (not enforced by the server).')}
 					</Card.Description>
 				</Card.Header>
 				{#if data.internal.length > 0}
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Column</Table.Head>
-								<Table.Head>Referenced</Table.Head>
+								<Table.Head>{t('Column')}</Table.Head>
+								<Table.Head>{t('Referenced')}</Table.Head>
 								<Table.Head class="w-12"></Table.Head>
 							</Table.Row>
 						</Table.Header>
@@ -223,12 +231,12 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Remove internal relation of {r.column}"
+											aria-label={t('Remove internal relation of {name}', { name: r.column })}
 											onclick={() =>
 												post(
 													'saveInternal',
 													{ column: r.column, refDb: '', refTable: '', refColumn: '' },
-													'The internal relation has been removed.'
+													t('The internal relation has been removed.')
 												)}
 										>
 											<Trash2 />
@@ -241,8 +249,8 @@
 				{/if}
 				<div class="flex flex-wrap items-center gap-2 border-t p-4">
 					<Select.Root type="single" value={relColumn} onValueChange={(v) => (relColumn = v)}>
-						<Select.Trigger class="w-44" aria-label="Internal relation column">
-							<span class="truncate font-mono">{relColumn || 'Column'}</span>
+						<Select.Trigger class="w-44" aria-label={t('Internal relation column')}>
+							<span class="truncate font-mono">{relColumn || t('Column')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each data.columns as c (c)}
@@ -252,8 +260,8 @@
 					</Select.Root>
 					<span class="text-muted-foreground" aria-hidden="true">→</span>
 					<Select.Root type="single" value={relDb} onValueChange={pickRelDb}>
-						<Select.Trigger class="w-44" aria-label="Internal relation database">
-							<span class="truncate font-mono">{relDb || 'Database'}</span>
+						<Select.Trigger class="w-44" aria-label={t('Internal relation database')}>
+							<span class="truncate font-mono">{relDb || t('Database')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each data.databases as d (d)}
@@ -267,12 +275,12 @@
 						onValueChange={pickRelTable}
 						disabled={relDb === ''}
 					>
-						<Select.Trigger class="w-44" aria-label="Internal relation table">
-							<span class="truncate font-mono">{relTable || 'Table'}</span>
+						<Select.Trigger class="w-44" aria-label={t('Internal relation table')}>
+							<span class="truncate font-mono">{relTable || t('Table')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
-							{#each relTables as t (t)}
-								<Select.Item value={t} label={t}>{t}</Select.Item>
+							{#each relTables as tbl (tbl)}
+								<Select.Item value={tbl} label={tbl}>{tbl}</Select.Item>
 							{/each}
 						</Select.Content>
 					</Select.Root>
@@ -282,8 +290,8 @@
 						onValueChange={(v) => (relRefColumn = v)}
 						disabled={relTable === ''}
 					>
-						<Select.Trigger class="w-44" aria-label="Internal relation referenced column">
-							<span class="truncate font-mono">{relRefColumn || 'Column'}</span>
+						<Select.Trigger class="w-44" aria-label={t('Internal relation referenced column')}>
+							<span class="truncate font-mono">{relRefColumn || t('Column')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each relColumns as c (c)}
@@ -296,7 +304,7 @@
 						disabled={!relColumn || !relDb || !relTable || !relRefColumn}
 						onclick={saveRelation}
 					>
-						Save relation
+						{t('Save relation')}
 					</Button>
 				</div>
 			</Card.Root>
@@ -305,9 +313,9 @@
 		{#if data.storage.tableInfo}
 			<Card.Root data-testid="display-card">
 				<Card.Header>
-					<Card.Title>Choose column to display</Card.Title>
+					<Card.Title>{t('Choose column to display')}</Card.Title>
 					<Card.Description>
-						Shown instead of the key when other tables link to this one.
+						{t('Shown instead of the key when other tables link to this one.')}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content class="flex flex-wrap items-center gap-2">
@@ -316,11 +324,11 @@
 						value={displayColumn}
 						onValueChange={(v) => (displayColumn = v === '__none' ? '' : v)}
 					>
-						<Select.Trigger class="w-56" aria-label="Column to display">
-							<span class="truncate font-mono">{displayColumn || '(none)'}</span>
+						<Select.Trigger class="w-56" aria-label={t('Column to display')}>
+							<span class="truncate font-mono">{displayColumn || t('(none)')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
-							<Select.Item value="__none" label="(none)">(none)</Select.Item>
+							<Select.Item value="__none" label={t('(none)')}>{t('(none)')}</Select.Item>
 							{#each data.columns as c (c)}
 								<Select.Item value={c} label={c}>{c}</Select.Item>
 							{/each}
@@ -329,9 +337,13 @@
 					<Button
 						size="sm"
 						onclick={() =>
-							post('saveDisplay', { column: displayColumn }, 'The display column has been saved.')}
+							post(
+								'saveDisplay',
+								{ column: displayColumn },
+								t('The display column has been saved.')
+							)}
 					>
-						Save
+						{t('Save')}
 					</Button>
 				</Card.Content>
 			</Card.Root>
@@ -355,14 +367,14 @@
 {#if dropTarget}
 	<SqlConfirmDialog
 		bind:open={dropOpen}
-		title="Drop foreign key {dropTarget.name}"
-		description="Do you really want to execute the following query?"
+		title={t('Drop foreign key {name}', { name: dropTarget.name })}
+		description={t('Do you really want to execute the following query?')}
 		sql={buildDropForeignKey(data.db, data.table, dropTarget.name)}
 		action="dropFk"
 		payload={{ name: dropTarget.name }}
-		label="Drop"
+		label={t('Drop')}
 		destructive
-		message="The foreign key has been dropped."
+		message={t('The foreign key has been dropped.')}
 		refreshTree={false}
 	/>
 {/if}

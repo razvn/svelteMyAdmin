@@ -3,6 +3,8 @@
 	import { getQuickAccess } from '#lib/components/navigation/quick-access.svelte.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { cn } from '#lib/utils.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		db: string;
@@ -14,7 +16,11 @@
 
 	const quick = getQuickAccess();
 	const favorite = $derived(quick.isFavorite(db, table));
-	const label = $derived(favorite ? `Remove ${table} from favorites` : `Add ${table} to favorites`);
+	const label = $derived(
+		favorite
+			? t('Remove {table} from favorites', { table })
+			: t('Add {table} to favorites', { table })
+	);
 </script>
 
 <Button
@@ -23,7 +29,7 @@
 	class={cn('shrink-0', className)}
 	aria-label={label}
 	aria-pressed={favorite}
-	title={favorite ? 'Remove from favorites' : 'Add to favorites'}
+	title={favorite ? t('Remove from favorites') : t('Add to favorites')}
 	data-testid="favorite-{table}"
 	onclick={() => void quick.toggleFavorite(db, table)}
 >

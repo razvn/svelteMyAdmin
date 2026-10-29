@@ -4,6 +4,8 @@
 	import AlterColumnsForm from '#lib/components/table-structure/alter-columns-form.svelte';
 	import { newColumn } from '#lib/sql/column-definition.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -14,22 +16,24 @@
 	);
 	const where = $derived(
 		data.where === 'first'
-			? 'at the beginning of the table'
+			? t('at the beginning of the table')
 			: data.where === 'after'
-				? `after ${data.after}`
-				: 'at the end of the table'
+				? t('after {column}', { column: data.after })
+				: t('at the end of the table')
 	);
 </script>
 
-<svelte:head><title>Add columns - {data.table}</title></svelte:head>
+<svelte:head><title>{t('Add columns')} - {data.table}</title></svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Columns3}
-		title="Add columns"
-		description="{data.db}.{data.table} · {data.num} new {data.num === 1
-			? 'column'
-			: 'columns'} {where}"
+		title={t('Add columns')}
+		description="{data.db}.{data.table} · {tn(
+			'{n} new column',
+			'{n} new columns',
+			data.num
+		)} {where}"
 	/>
 	<AlterColumnsForm
 		mode="add"

@@ -33,11 +33,11 @@ export const emptySettings = (): ColumnTransformSettings => ({
 	input_transformation_options: ''
 });
 
-export function transformChoices(): TransformChoices {
+export function transformChoices(t: (msgid: string) => string = (m) => m): TransformChoices {
 	return {
 		mimeTypes: mimeTypes().map((m) => ({ value: mimeValue(m), label: m.toLowerCase() })),
-		outputs: outputChoices(),
-		inputs: inputChoices()
+		outputs: outputChoices(t),
+		inputs: inputChoices(t)
 	};
 }
 

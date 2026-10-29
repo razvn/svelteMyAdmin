@@ -4,6 +4,7 @@
  * `buildCreateTable` (never trusted from the client).
  */
 import { z } from 'zod';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import type { DatabaseInterface } from '../db/dbi';
 import { listEngines } from '../admin/engines';
 import {
@@ -88,7 +89,7 @@ export const columnSchema = z.object({
 });
 
 export const createTableSchema = z.object({
-	name: z.string().trim().min(1, 'The table name is empty!').max(64, 'Name is too long.'),
+	name: z.string().trim().min(1, N_('The table name is empty!')).max(64, N_('Name is too long.')),
 	comment: z.string().max(2048).default(''),
 	collation: z.string().regex(identifier).or(z.literal('')).default(''),
 	engine: z.string().regex(identifier).or(z.literal('')).default(''),
@@ -100,7 +101,8 @@ export type ColumnInput = z.infer<typeof columnSchema>;
 /** Upper-case the types and check type / attribute / virtuality against the server's catalog. */
 export function normalizeColumns(
 	input: ColumnInput[],
-	caps: ServerCaps
+	caps: ServerCaps,
+	tr: Translator = SOURCE_TRANSLATOR
 ): { ok: true; columns: ColumnDef[] } | { ok: false; error: string } {
 	const types = new Set(getAllTypes(caps));
 	const attributes = new Set(['', ...getAttributes(caps)]);
@@ -112,15 +114,22 @@ export function normalizeColumns(
 		index: c.index as IndexChoice
 	}));
 	for (const c of namedColumns(columns)) {
-		if (!types.has(c.type)) return { ok: false, error: `Unsupported column type ${c.type}.` };
+		if (!types.has(c.type))
+			return { ok: false, error: tr.t('Unsupported column type {type}.', { type: c.type }) };
 		if (!attributes.has(c.attribute)) {
-			return { ok: false, error: `Unsupported attribute ${c.attribute}.` };
+			return {
+				ok: false,
+				error: tr.t('Unsupported attribute {attribute}.', { attribute: c.attribute })
+			};
 		}
 		if (!virtualities.has(c.virtuality)) {
-			return { ok: false, error: `Unsupported virtuality ${c.virtuality}.` };
+			return {
+				ok: false,
+				error: tr.t('Unsupported virtuality {virtuality}.', { virtuality: c.virtuality })
+			};
 		}
 		if (c.virtuality !== '' && c.expression.trim() === '') {
-			return { ok: false, error: `Column ${c.name} needs an expression.` };
+			return { ok: false, error: tr.t('Column {name} needs an expression.', { name: c.name }) };
 		}
 	}
 	return { ok: true, columns };
@@ -132,37 +141,41 @@ export type CreateTableResult =
 export async function createTable(
 	dbi: DatabaseInterface,
 	db: string,
-	rawInput: unknown
+	rawInput: unknown,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<CreateTableResult> {
 	const parsed = createTableSchema.safeParse(rawInput);
-	if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+	if (!parsed.success) return { ok: false, error: tr.t(parsed.error.issues[0].message) };
 	const input = parsed.data;
 	const ctx = await getCreateTableContext(dbi);
 	const { caps } = ctx;
 
-	const checked = normalizeColumns(input.columns, caps);
+	const checked = normalizeColumns(input.columns, caps, tr);
 	if (!checked.ok) return checked;
 	const columns = checked.columns;
 	if (namedColumns(columns).length === 0) {
-		return { ok: false, error: 'The table needs at least one named column.' };
+		return { ok: false, error: tr.t('The table needs at least one named column.') };
 	}
 	if (
 		input.engine &&
 		!ctx.engines.some((e) => e.name.toLowerCase() === input.engine.toLowerCase())
 	) {
-		return { ok: false, error: `Unknown storage engine ${input.engine}.` };
+		return { ok: false, error: tr.t('Unknown storage engine {engine}.', { engine: input.engine }) };
 	}
 	if (input.collation && !ctx.collations.some((c) => c.name === input.collation)) {
-		return { ok: false, error: `Unknown collation ${input.collation}.` };
+		return {
+			ok: false,
+			error: tr.t('Unknown collation {collation}.', { collation: input.collation })
+		};
 	}
 
 	let table = input.name;
 	const [lc] = await dbi.conn.query('SELECT @@lower_case_table_names AS v');
 	if (String((lc as Record<string, unknown>[])[0]?.v) === '1') table = table.toLowerCase();
-	if (table.includes('\0')) return { ok: false, error: 'Invalid table name.' };
+	if (table.includes('\0')) return { ok: false, error: tr.t('Invalid table name.') };
 
 	if ((await dbi.getTableType(db, table)) !== null) {
-		return { ok: false, error: `Table ${table} already exists!` };
+		return { ok: false, error: tr.t('Table {table} already exists!', { table }) };
 	}
 
 	const sql = buildCreateTable(

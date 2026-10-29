@@ -6,6 +6,7 @@ import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
 import { escapeQualified } from '#lib/server/db/escape.ts';
 import { withControl } from '#lib/server/table/control.ts';
 import type { QuerySchemaData } from '#lib/sql/query-schema.ts';
+import { SOURCE_TRANSLATOR } from '#lib/i18n/translator.ts';
 
 type Row = Record<string, unknown>;
 const s = (v: unknown) => (v === null || v === undefined ? '' : String(v));
@@ -144,7 +145,10 @@ export async function saveSearch(
 	input: { id?: number; name: string; data: Record<string, unknown> }
 ): Promise<SaveResult> {
 	if (!savedSearchesConfigured(locals) || !locals.session) {
-		return { ok: false, error: 'Saved searches are not available.' };
+		return {
+			ok: false,
+			error: (locals.i18n ?? SOURCE_TRANSLATOR).t('Saved searches are not available.')
+		};
 	}
 	const server = locals.server;
 	const table = escapeQualified(server.pmadb, server.savedsearches);
@@ -165,11 +169,24 @@ export async function saveSearch(
 			);
 			return { id: Number((r as { insertId: number }).insertId), affected: 1 };
 		});
-		if (!res) return { ok: false, error: 'The configuration storage is not reachable.' };
-		if (res.affected === 0) return { ok: false, error: 'The saved search no longer exists.' };
+		if (!res)
+			return {
+				ok: false,
+				error: (locals.i18n ?? SOURCE_TRANSLATOR).t('The configuration storage is not reachable.')
+			};
+		if (res.affected === 0)
+			return {
+				ok: false,
+				error: (locals.i18n ?? SOURCE_TRANSLATOR).t('The saved search no longer exists.')
+			};
 		return { ok: true, id: res.id };
 	} catch {
-		return { ok: false, error: 'Could not save the search (is the name already used?).' };
+		return {
+			ok: false,
+			error: (locals.i18n ?? SOURCE_TRANSLATOR).t(
+				'Could not save the search (is the name already used?).'
+			)
+		};
 	}
 }
 

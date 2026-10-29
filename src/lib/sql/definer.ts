@@ -3,6 +3,7 @@
  * (Routines::getQueryFromRequest, Events::getQueryFromRequest, Triggers::getQueryFromRequest).
  */
 import { escapeId } from './escape.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export interface Definer {
 	user: string;
@@ -52,13 +53,16 @@ export type DefinerClause = { clause: string; error: null } | { clause: ''; erro
  * "DEFINER=`user`@`host` " for the CREATE statement; empty input gives an empty clause,
  * CURRENT_USER is passed through verbatim.
  */
-export function buildDefinerClause(input: string): DefinerClause {
+export function buildDefinerClause(
+	input: string,
+	tr: Translator = SOURCE_TRANSLATOR
+): DefinerClause {
 	const text = input.trim();
 	if (text === '') return { clause: '', error: null };
 	if (/^current_user(\(\))?$/i.test(text)) return { clause: 'DEFINER=CURRENT_USER ', error: null };
 	const parsed = parseDefiner(text);
 	if (!parsed) {
-		return { clause: '', error: 'The definer must be in the "username@hostname" format!' };
+		return { clause: '', error: tr.t('The definer must be in the "username@hostname" format!') };
 	}
 	return { clause: `DEFINER=${formatDefiner(parsed)} `, error: null };
 }

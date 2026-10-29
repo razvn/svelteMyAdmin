@@ -18,6 +18,7 @@ import {
 	type DecompositionGroup
 } from '#lib/sql/normalization.ts';
 import { addColumns, addKey, dropColumns, type ActionResult } from '#lib/server/table/structure.ts';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export interface NormalizationTable {
 	table: string;
@@ -129,7 +130,7 @@ async function exec(
 		}
 		return { ok: true, sql: done };
 	} catch (e) {
-		return fail(sqlErrorMessage(e, 'The statement failed.'), done);
+		return fail(sqlErrorMessage(e, N_('The statement failed.')), done);
 	}
 }
 
@@ -139,14 +140,15 @@ export async function runOperation(
 	db: string,
 	table: string,
 	raw: unknown,
-	dryRun = false
+	dryRun = false,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<OpResult> {
 	const parsed = opSchema.safeParse(raw);
-	if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Invalid input.');
+	if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? tr.t('Invalid input.'));
 	const op = parsed.data;
-	const ctx = { dbi, db, table };
+	const ctx = { dbi, db, table, tr };
 	const info = await loadTableInfo(dbi, db, table);
-	if (!info) return fail('Table not found.');
+	if (!info) return fail(tr.t('Table not found.'));
 
 	switch (op.op) {
 		case 'addPrimary':
@@ -156,14 +158,15 @@ export async function runOperation(
 		case 'dropColumns':
 			return dropColumns(ctx, { columns: op.columns });
 		case 'repeating': {
-			if (info.pk.length === 0) return fail('The table needs a primary key first.');
+			if (info.pk.length === 0) return fail(tr.t('The table needs a primary key first.'));
 			const names = new Set(info.columns.map((c) => c.name));
 			const bad = op.columns.find((c) => !names.has(c) || info.pk.includes(c));
-			if (bad) return fail(`Column ${bad} cannot be part of the repeating group.`);
+			if (bad)
+				return fail(tr.t('Column {name} cannot be part of the repeating group.', { name: bad }));
 			if (
 				(await listBaseTables(dbi, db)).some((t) => t.toLowerCase() === op.newTable.toLowerCase())
 			) {
-				return fail(`Table ${op.newTable} already exists.`);
+				return fail(tr.t('Table {table} already exists.', { table: op.newTable }));
 			}
 			return exec(
 				dbi,
@@ -173,14 +176,18 @@ export async function runOperation(
 		}
 		case 'decompose': {
 			const target = op.table === table ? info : await loadTableInfo(dbi, db, op.table);
-			if (!target) return fail('Table not found.');
-			if (target.pk.length === 0) return fail('The table needs a primary key first.');
+			if (!target) return fail(tr.t('Table not found.'));
+			if (target.pk.length === 0) return fail(tr.t('The table needs a primary key first.'));
 			const nonPk = target.columns.map((c) => c.name).filter((c) => !target.pk.includes(c));
 			const all = new Set(target.columns.map((c) => c.name));
 			for (const a of op.answers) {
-				if (!nonPk.includes(a.column)) return fail(`Column ${a.column} is not a non-key column.`);
+				if (!nonPk.includes(a.column))
+					return fail(tr.t('Column {name} is not a non-key column.', { name: a.column }));
 				const bad = a.dependsOn.find((d) => !all.has(d) || d === a.column);
-				if (bad) return fail(`Column ${a.column} cannot depend on ${bad}.`);
+				if (bad)
+					return fail(
+						tr.t('Column {name} cannot depend on {other}.', { name: a.column, other: bad })
+					);
 			}
 			// columns without an answer depend on the whole primary key
 			const answered = new Set(op.answers.map((a) => a.column));

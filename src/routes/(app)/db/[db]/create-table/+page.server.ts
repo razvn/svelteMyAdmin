@@ -23,10 +23,10 @@ export const actions: Actions = {
 		try {
 			input = JSON.parse(String(form.get('definition') ?? ''));
 		} catch {
-			return fail(400, { error: 'Invalid table definition.' });
+			return fail(400, { error: locals.i18n.t('Invalid table definition.') });
 		}
 		const dbi = await locals.dbi;
-		const res = await createTable(dbi, params.db, input);
+		const res = await createTable(dbi, params.db, input, locals.i18n);
 		if (!res.ok) return fail(400, { error: res.error });
 		return { created: res.table };
 	}

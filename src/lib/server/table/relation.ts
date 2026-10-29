@@ -21,6 +21,7 @@ import {
 	type FkRow
 } from '#lib/sql/foreign-key.ts';
 import { loadColumns, loadIndexes, getCaps, type ActionResult } from './structure';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 type Row = Record<string, unknown>;
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
@@ -115,37 +116,48 @@ interface Ctx {
 	dbi: DatabaseInterface;
 	db: string;
 	table: string;
+	tr?: Translator;
 }
 
 const fail = (error: string, sql: string[] = []): ActionResult => ({ ok: false, error, sql });
 
 /** Add a foreign key, or replace `original` (drop + add; the original is restored on failure). */
-export async function saveForeignKey({ dbi, db, table }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function saveForeignKey(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const parsed = saveFkSchema.safeParse(raw);
-	if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Invalid input.');
+	if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? tr.t('Invalid input.'));
 	const def = parsed.data.def as FkDef;
 	const bad = validateFkDef(def);
-	if (bad) return fail(bad);
+	if (bad) return fail(tr.t(bad));
 
 	if (!supportsForeignKeys(await getEngine(dbi, db, table))) {
-		return fail('Foreign keys need a table that uses the InnoDB storage engine.');
+		return fail(tr.t('Foreign keys need a table that uses the InnoDB storage engine.'));
 	}
 	const caps = await getCaps(dbi);
 	const own = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 	const unknown = def.columns.find((c) => !own.includes(c));
-	if (unknown) return fail(`Unknown column ${unknown}.`);
+	if (unknown) return fail(tr.t('Unknown column {name}.', { name: unknown }));
 
 	const refTables = await listTableNames(dbi, def.refDb);
 	if (!refTables.includes(def.refTable)) {
-		return fail(`The referenced table ${def.refDb}.${def.refTable} does not exist.`);
+		return fail(
+			tr.t('The referenced table {table} does not exist.', {
+				table: `${def.refDb}.${def.refTable}`
+			})
+		);
 	}
 	const refCols = await listColumnNames(dbi, def.refDb, def.refTable);
 	const unknownRef = def.refColumns.find((c) => !refCols.includes(c));
-	if (unknownRef) return fail(`Unknown referenced column ${unknownRef}.`);
+	if (unknownRef) return fail(tr.t('Unknown referenced column {name}.', { name: unknownRef }));
 	const refIndexes = await loadIndexes(dbi, def.refDb, def.refTable);
 	if (!columnsAreIndexed(def.refColumns, refIndexes)) {
 		return fail(
-			`The referenced column(s) ${def.refColumns.join(', ')} must be indexed (a PRIMARY, UNIQUE or INDEX key that starts with them).`
+			tr.t(
+				'The referenced column(s) {columns} must be indexed (a PRIMARY, UNIQUE or INDEX key that starts with them).',
+				{ columns: def.refColumns.join(', ') }
+			)
 		);
 	}
 
@@ -153,13 +165,13 @@ export async function saveForeignKey({ dbi, db, table }: Ctx, raw: unknown): Pro
 	let original: FkDef | undefined;
 	if (parsed.data.original !== null) {
 		original = existing.find((f) => f.name === parsed.data.original);
-		if (!original) return fail(`Unknown foreign key ${parsed.data.original}.`);
+		if (!original) return fail(tr.t('Unknown foreign key {name}.', { name: parsed.data.original }));
 	}
 	if (
 		def.name !== '' &&
 		existing.some((f) => f.name.toLowerCase() === def.name.toLowerCase() && f !== original)
 	) {
-		return fail(`A foreign key named ${def.name} already exists.`);
+		return fail(tr.t('A foreign key named {name} already exists.', { name: def.name }));
 	}
 
 	const statements: string[] = [];
@@ -173,32 +185,39 @@ export async function saveForeignKey({ dbi, db, table }: Ctx, raw: unknown): Pro
 		}
 		return { ok: true, sql: statements };
 	} catch (e) {
-		let message = sqlErrorMessage(e, 'The statement failed.');
+		let message = sqlErrorMessage(e, N_('The statement failed.'));
 		if (original && done.length > 0) {
 			try {
 				await dbi.conn.query(buildAddForeignKey(db, table, original));
-				message += ' The original foreign key was restored.';
+				message += ' ' + tr.t('The original foreign key was restored.');
 			} catch {
-				message += ` The original foreign key could not be restored: ${buildAddForeignKey(db, table, original)}`;
+				message +=
+					' ' +
+					tr.t('The original foreign key could not be restored: {sql}', {
+						sql: buildAddForeignKey(db, table, original)
+					});
 			}
 		}
 		return fail(message, statements);
 	}
 }
 
-export async function dropForeignKey({ dbi, db, table }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function dropForeignKey(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const parsed = dropFkSchema.safeParse(raw);
-	if (!parsed.success) return fail('Invalid input.');
+	if (!parsed.success) return fail(tr.t('Invalid input.'));
 	const existing = await loadForeignKeys(dbi, db, table);
 	if (!existing.some((f) => f.name === parsed.data.name)) {
-		return fail(`Unknown foreign key ${parsed.data.name}.`);
+		return fail(tr.t('Unknown foreign key {name}.', { name: parsed.data.name }));
 	}
 	const sql = buildDropForeignKey(db, table, parsed.data.name);
 	try {
 		await dbi.conn.query(sql);
 		return { ok: true, sql: [sql] };
 	} catch (e) {
-		return fail(sqlErrorMessage(e, 'The statement failed.'), [sql]);
+		return fail(sqlErrorMessage(e, N_('The statement failed.')), [sql]);
 	}
 }
 
@@ -297,19 +316,19 @@ const internalSchema = z.object({
 
 /** Set (or, with an empty target, remove) the internal relation of one column. */
 export async function saveInternalRelation(
-	{ dbi, db, table }: Ctx,
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
 	server: RelationServer,
 	raw: unknown
 ): Promise<ActionResult> {
 	const parsed = internalSchema.safeParse(raw);
-	if (!parsed.success) return fail('Invalid input.');
+	if (!parsed.success) return fail(tr.t('Invalid input.'));
 	const rel = parsed.data;
 	if (!(await tableReachable(dbi, server, server.relation))) {
-		return fail('The relation table of the configuration storage is not available.');
+		return fail(tr.t('The relation table of the configuration storage is not available.'));
 	}
 	const caps = await getCaps(dbi);
 	const own = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
-	if (!own.includes(rel.column)) return fail(`Unknown column ${rel.column}.`);
+	if (!own.includes(rel.column)) return fail(tr.t('Unknown column {name}.', { name: rel.column }));
 	const target = `${escapeQualified(server.pmadb, server.relation)}`;
 	const remove = rel.refDb === '' && rel.refTable === '' && rel.refColumn === '';
 	const statements: { sql: string; params: unknown[] }[] = [
@@ -319,9 +338,11 @@ export async function saveInternalRelation(
 		}
 	];
 	if (!remove) {
-		if (!rel.refDb || !rel.refTable || !rel.refColumn) return fail('Choose the referenced column.');
+		if (!rel.refDb || !rel.refTable || !rel.refColumn)
+			return fail(tr.t('Choose the referenced column.'));
 		const refCols = await listColumnNames(dbi, rel.refDb, rel.refTable);
-		if (!refCols.includes(rel.refColumn)) return fail('The referenced column does not exist.');
+		if (!refCols.includes(rel.refColumn))
+			return fail(tr.t('The referenced column does not exist.'));
 		statements.push({
 			sql:
 				`INSERT INTO ${target} (master_db, master_table, master_field, foreign_db, foreign_table, ` +
@@ -335,7 +356,7 @@ export async function saveInternalRelation(
 		});
 		return { ok: true, sql: statements.map((s) => s.sql) };
 	} catch (e) {
-		return fail(sqlErrorMessage(e, 'The statement failed.'));
+		return fail(sqlErrorMessage(e, N_('The statement failed.')));
 	}
 }
 
@@ -343,20 +364,20 @@ const displaySchema = z.object({ column: z.string().max(64) });
 
 /** Choose the column to display (empty = remove). */
 export async function saveDisplayField(
-	{ dbi, db, table }: Ctx,
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
 	server: RelationServer,
 	raw: unknown
 ): Promise<ActionResult> {
 	const parsed = displaySchema.safeParse(raw);
-	if (!parsed.success) return fail('Invalid input.');
+	if (!parsed.success) return fail(tr.t('Invalid input.'));
 	if (!(await tableReachable(dbi, server, server.table_info))) {
-		return fail('The table information table of the configuration storage is not available.');
+		return fail(tr.t('The table information table of the configuration storage is not available.'));
 	}
 	const column = parsed.data.column;
 	if (column !== '') {
 		const caps = await getCaps(dbi);
 		const own = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
-		if (!own.includes(column)) return fail(`Unknown column ${column}.`);
+		if (!own.includes(column)) return fail(tr.t('Unknown column {name}.', { name: column }));
 	}
 	const target = escapeQualified(server.pmadb, server.table_info);
 	try {
@@ -372,6 +393,6 @@ export async function saveDisplayField(
 		});
 		return { ok: true, sql: [] };
 	} catch (e) {
-		return fail(sqlErrorMessage(e, 'The statement failed.'));
+		return fail(sqlErrorMessage(e, N_('The statement failed.')));
 	}
 }

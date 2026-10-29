@@ -19,6 +19,8 @@
 	import { tabHref } from '#lib/nav/tabs.ts';
 	import { buildCreateTable, newColumn } from '#lib/sql/column-definition.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -54,13 +56,13 @@
 	});
 </script>
 
-<svelte:head><title>Create table - {data.db}</title></svelte:head>
+<svelte:head><title>{t('Create table')} - {data.db}</title></svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Table2}
-		title="Create new table"
-		description="Define the columns of a new table in database {data.db}."
+		title={t('Create new table')}
+		description={t('Define the columns of a new table in database {db}.', { db: data.db })}
 	/>
 
 	<form
@@ -74,13 +76,13 @@
 				saving = false;
 				if (result.type === 'success') {
 					const table = String(result.data?.created ?? tableName);
-					toast.success(`Table ${table} has been created.`);
+					toast.success(t('Table {table} has been created.', { table }));
 					void navState.load(data.db, true);
 					await goto(resolve(bare(tabHref('table', { db: data.db, table }, 'structure'))));
 				} else if (result.type === 'failure') {
-					error = String(result.data?.error ?? 'Could not create the table.');
+					error = String(result.data?.error ?? t('Could not create the table.'));
 				} else {
-					error = 'Unexpected error while creating the table.';
+					error = t('Unexpected error while creating the table.');
 				}
 			};
 		}}
@@ -89,18 +91,18 @@
 
 		{#if error}
 			<Alert.Root variant="destructive" role="alert" data-testid="create-error">
-				<Alert.Title>Could not create the table</Alert.Title>
+				<Alert.Title>{t('Could not create the table')}</Alert.Title>
 				<Alert.Description>{error}</Alert.Description>
 			</Alert.Root>
 		{/if}
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Table</Card.Title>
+				<Card.Title>{t('Table')}</Card.Title>
 			</Card.Header>
 			<Card.Content class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 				<div class="flex flex-col gap-1.5">
-					<Label for="table-name">Table name</Label>
+					<Label for="table-name">{t('Table name')}</Label>
 					<Input
 						id="table-name"
 						bind:value={tableName}
@@ -111,21 +113,21 @@
 					/>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label for="table-comment">Table comments</Label>
+					<Label for="table-comment">{t('Table comments')}</Label>
 					<Input id="table-comment" bind:value={comment} maxlength={60} autocomplete="off" />
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="table-collation-label">Collation</Label>
+					<Label id="table-collation-label">{t('Collation')}</Label>
 					<Select.Root type="single" bind:value={collation}>
 						<Select.Trigger
 							class="w-full"
 							aria-labelledby="table-collation-label"
 							data-testid="table-collation"
 						>
-							<span class="truncate">{collation || '(default)'}</span>
+							<span class="truncate">{collation || t('(default)')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-80">
-							<Select.Item value="" label="(default)">(default)</Select.Item>
+							<Select.Item value="" label={t('(default)')}>{t('(default)')}</Select.Item>
 							{#each collationGroups as group (group.charset)}
 								<Select.Group>
 									<Select.GroupHeading>{group.charset}</Select.GroupHeading>
@@ -138,7 +140,7 @@
 					</Select.Root>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="table-engine-label">Storage engine</Label>
+					<Label id="table-engine-label">{t('Storage engine')}</Label>
 					<Select.Root type="single" bind:value={engine}>
 						<Select.Trigger
 							class="w-full"
@@ -159,10 +161,11 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Structure</Card.Title>
+				<Card.Title>{t('Structure')}</Card.Title>
 				<Card.Description>
-					Columns without a name are skipped. For ENUM and SET enter the values like
-					<code class="font-mono">'a','b','c'</code>.
+					{t(
+						"Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'."
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
@@ -177,10 +180,10 @@
 
 		<div class="flex flex-wrap justify-end gap-2">
 			<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
-				Preview SQL
+				{t('Preview SQL')}
 			</Button>
 			<!-- the definition payload is built client-side: never post it before hydration -->
-			<Button type="submit" disabled={saving || !hydration.ready}>Save</Button>
+			<Button type="submit" disabled={saving || !hydration.ready}>{t('Save')}</Button>
 		</div>
 	</form>
 </div>
@@ -188,14 +191,14 @@
 <Dialog.Root bind:open={previewOpen}>
 	<Dialog.Content class="max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>Preview SQL</Dialog.Title>
-			<Dialog.Description>The statement that Save will execute.</Dialog.Description>
+			<Dialog.Title>{t('Preview SQL')}</Dialog.Title>
+			<Dialog.Description>{t('The statement that Save will execute.')}</Dialog.Description>
 		</Dialog.Header>
 		<pre
 			class="max-h-96 overflow-auto rounded-lg border bg-muted p-3 font-mono text-sm whitespace-pre-wrap"
 			data-testid="preview-sql">{sql}</pre>
 		<Dialog.Footer>
-			<Button type="button" onclick={() => (previewOpen = false)}>Close</Button>
+			<Button type="button" onclick={() => (previewOpen = false)}>{t('Close')}</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

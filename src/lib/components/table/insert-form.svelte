@@ -25,6 +25,8 @@
 		type InputSettings
 	} from '#lib/sql/insert-edit.ts';
 	import InsertValueInput from './insert-value-input.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	export interface FormRowData {
 		cells: FormCell[];
@@ -100,9 +102,9 @@
 
 	function summary(r: Record<string, unknown>): string {
 		const affected = Number(r.affectedRows ?? 0);
-		let text = `${affected} row${affected === 1 ? '' : 's'} affected.`;
-		if (r.insertId) text += ` Inserted row id: ${r.insertId}.`;
-		if (Number(r.skipped) > 0) text += ` ${r.skipped} ignored.`;
+		let text = tn('{n} row affected.', '{n} rows affected.', affected);
+		if (r.insertId) text += ' ' + t('Inserted row id: {id}.', { id: String(r.insertId) });
+		if (Number(r.skipped) > 0) text += ' ' + t('{n} ignored.', { n: Number(r.skipped) });
 		return text;
 	}
 
@@ -111,7 +113,7 @@
 			cancel();
 			result = {
 				kind: 'error',
-				message: 'Fix the invalid JSON values before saving.',
+				message: t('Fix the invalid JSON values before saving.'),
 				statements: [],
 				warnings: []
 			};
@@ -125,20 +127,20 @@
 			if (res.type === 'failure') {
 				result = {
 					kind: 'error',
-					message: String(data.error ?? 'The statement failed.'),
+					message: String(data.error ?? t('The statement failed.')),
 					statements,
 					warnings: []
 				};
 				return;
 			}
 			if (res.type !== 'success') {
-				result = { kind: 'error', message: 'The request failed.', statements: [], warnings: [] };
+				result = { kind: 'error', message: t('The request failed.'), statements: [], warnings: [] };
 				return;
 			}
 			if (!data.executed) {
 				result = {
 					kind: data.noChange ? 'nochange' : 'preview',
-					message: data.noChange ? 'No change.' : 'Showing SQL query.',
+					message: data.noChange ? t('No change.') : t('Showing SQL query.'),
 					statements,
 					warnings: []
 				};
@@ -160,7 +162,7 @@
 				if (data.next) {
 					await goto(String(data.next), { refreshAll: true });
 				} else {
-					toast.info('There is no next row.');
+					toast.info(t('There is no next row.'));
 					await goto(gotoUrl);
 				}
 			} else {
@@ -176,24 +178,24 @@
 	enctype="multipart/form-data"
 	use:enhance={submit}
 	class="flex flex-col gap-4"
-	aria-label={mode === 'edit' ? 'Edit rows' : 'Insert rows'}
+	aria-label={mode === 'edit' ? t('Edit rows') : t('Insert rows')}
 >
 	<input type="hidden" name="rows" value={rows.length} />
 	<div class="flex flex-wrap items-center gap-2 text-sm">
-		<span class="text-muted-foreground">Show</span>
+		<span class="text-muted-foreground">{t('Show')}</span>
 		<Button
 			type="button"
 			size="sm"
 			variant={showFunctions ? 'secondary' : 'outline'}
 			aria-pressed={showFunctions}
-			onclick={() => (showFunctions = !showFunctions)}>Function</Button
+			onclick={() => (showFunctions = !showFunctions)}>{t('Function')}</Button
 		>
 		<Button
 			type="button"
 			size="sm"
 			variant={showTypes ? 'secondary' : 'outline'}
 			aria-pressed={showTypes}
-			onclick={() => (showTypes = !showTypes)}>Type</Button
+			onclick={() => (showTypes = !showTypes)}>{t('Type')}</Button
 		>
 	</div>
 
@@ -201,7 +203,9 @@
 		<Card.Root class="gap-0 py-0" data-testid="insert-row-{r}">
 			<Card.Header class="flex flex-row items-center justify-between border-b py-3">
 				<Card.Title class="text-base">
-					{#if mode === 'edit'}Edit{:else if mode === 'copy'}Copy of{:else}Row{/if}
+					{#if mode === 'edit'}{t('Edit')}{:else if mode === 'copy'}{t('Copy of')}{:else}{t(
+							'Row'
+						)}{/if}
 					{rows.length > 1 || mode !== 'insert' ? r + 1 : ''}
 				</Card.Title>
 				{#if mode === 'insert' && r > 0}
@@ -210,10 +214,10 @@
 							id="ignore-{r}"
 							checked={ignored[r]}
 							onCheckedChange={(on) => (ignored[r] = on === true)}
-							aria-label="Ignore row {r + 1}"
+							aria-label={t('Ignore row {n}', { n: r + 1 })}
 						/>
 						{#if ignored[r]}<input type="hidden" name="ignore_{r}" value="1" />{/if}
-						<Label for="ignore-{r}" class="font-normal">Ignore</Label>
+						<Label for="ignore-{r}" class="font-normal">{t('Ignore')}</Label>
 					</div>
 				{/if}
 			</Card.Header>
@@ -234,11 +238,11 @@
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Column</Table.Head>
-							{#if showTypes}<Table.Head>Type</Table.Head>{/if}
-							{#if showFunctions}<Table.Head>Function</Table.Head>{/if}
-							<Table.Head>Null</Table.Head>
-							<Table.Head>Value</Table.Head>
+							<Table.Head>{t('Column')}</Table.Head>
+							{#if showTypes}<Table.Head>{t('Type')}</Table.Head>{/if}
+							{#if showFunctions}<Table.Head>{t('Function')}</Table.Head>{/if}
+							<Table.Head>{t('Null')}</Table.Head>
+							<Table.Head>{t('Value')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -251,7 +255,8 @@
 									{#if column.autoIncrement}
 										<Badge variant="info" class="ms-1">auto_increment</Badge>
 									{/if}
-									{#if column.generated}<Badge variant="muted" class="ms-1">generated</Badge>{/if}
+									{#if column.generated}<Badge variant="muted" class="ms-1">{t('generated')}</Badge
+										>{/if}
 								</Table.Cell>
 								{#if showTypes}
 									<Table.Cell class="font-mono text-xs text-muted-foreground">
@@ -265,13 +270,13 @@
 												<NativeSelect
 													name="f_{r}_{c}"
 													bind:value={cell.func}
-													aria-label="Function for {column.name}"
+													aria-label={t('Function for {name}', { name: column.name })}
 													size="sm"
 													class="w-36"
 												>
 													<NativeSelectOption value=""></NativeSelectOption>
 													{#each functionLists[c] as group (group.label)}
-														<NativeSelectOptGroup label={group.label}>
+														<NativeSelectOptGroup label={t(group.label)}>
 															{#each group.functions as fn (fn)}
 																<NativeSelectOption value={fn}>{fn}</NativeSelectOption>
 															{/each}
@@ -282,8 +287,8 @@
 													<Input
 														name="s_{r}_{c}"
 														bind:value={cell.salt}
-														placeholder="salt"
-														aria-label="Salt for {column.name}"
+														placeholder={t('salt')}
+														aria-label={t('Salt for {name}', { name: column.name })}
 														class="h-8 w-24"
 													/>
 												{/if}
@@ -296,7 +301,7 @@
 										<Checkbox
 											checked={cell.isNull}
 											onCheckedChange={(on) => (cell.isNull = on === true)}
-											aria-label="Null {column.name}"
+											aria-label={t('Null {name}', { name: column.name })}
 										/>
 										{#if cell.isNull}<input type="hidden" name="n_{r}_{c}" value="1" />{/if}
 									{/if}
@@ -332,46 +337,46 @@
 	<Card.Root>
 		<Card.Content class="flex flex-wrap items-end gap-4">
 			<div class="flex flex-col gap-1.5">
-				<Label for="submit-type">Action</Label>
+				<Label for="submit-type">{t('Action')}</Label>
 				<NativeSelect
 					id="submit-type"
 					name="submit_type"
 					bind:value={submitType}
-					aria-label="Action"
+					aria-label={t('Action')}
 				>
-					<NativeSelectOption value="save">{editing ? 'Save' : 'Insert'}</NativeSelectOption>
+					<NativeSelectOption value="save">{editing ? t('Save') : t('Insert')}</NativeSelectOption>
 					{#if editing}
-						<NativeSelectOption value="insert">Insert as new row</NativeSelectOption>
+						<NativeSelectOption value="insert">{t('Insert as new row')}</NativeSelectOption>
 					{/if}
 					<NativeSelectOption value="insertignore">
-						{editing ? 'Insert as new row and ignore errors' : 'Insert and ignore errors'}
+						{editing ? t('Insert as new row and ignore errors') : t('Insert and ignore errors')}
 					</NativeSelectOption>
-					<NativeSelectOption value="showinsert">Show insert query</NativeSelectOption>
+					<NativeSelectOption value="showinsert">{t('Show insert query')}</NativeSelectOption>
 				</NativeSelect>
 			</div>
 			<div class="flex flex-col gap-1.5">
-				<Label for="after-insert">After saving</Label>
+				<Label for="after-insert">{t('After saving')}</Label>
 				<NativeSelect
 					id="after-insert"
 					name="after_insert"
 					bind:value={afterInsert}
-					aria-label="After saving"
+					aria-label={t('After saving')}
 				>
-					<NativeSelectOption value="back">Go back to previous page</NativeSelectOption>
-					<NativeSelectOption value="new_insert">Insert another new row</NativeSelectOption>
-					<NativeSelectOption value="same_insert">Go back to this page</NativeSelectOption>
+					<NativeSelectOption value="back">{t('Go back to previous page')}</NativeSelectOption>
+					<NativeSelectOption value="new_insert">{t('Insert another new row')}</NativeSelectOption>
+					<NativeSelectOption value="same_insert">{t('Go back to this page')}</NativeSelectOption>
 					{#if editing}
-						<NativeSelectOption value="edit_next">Edit next row</NativeSelectOption>
+						<NativeSelectOption value="edit_next">{t('Edit next row')}</NativeSelectOption>
 					{/if}
 				</NativeSelect>
 			</div>
 			<Button type="submit" disabled={busy || hasJsonError}>
-				{busy ? 'Saving...' : 'Go'}
+				{busy ? t('Saving...') : t('Go')}
 			</Button>
 			{#if mode === 'insert'}
 				<div class="ms-auto flex items-end gap-2">
 					<div class="flex flex-col gap-1.5">
-						<Label for="row-count">Continue insertion with rows</Label>
+						<Label for="row-count">{t('Continue insertion with rows')}</Label>
 						<Input
 							id="row-count"
 							type="number"
@@ -381,7 +386,7 @@
 							class="w-24"
 						/>
 					</div>
-					<Button type="button" variant="outline" onclick={setRowCount}>Apply</Button>
+					<Button type="button" variant="outline" onclick={setRowCount}>{t('Apply')}</Button>
 				</div>
 			{/if}
 		</Card.Content>
