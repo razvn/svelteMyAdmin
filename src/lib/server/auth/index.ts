@@ -7,6 +7,8 @@ import { getAuthPlugin } from './plugins/index';
 import { clearSessionCookie, readSession, setSessionCookie } from './plugins/cookie';
 import type { AuthContext, AuthPlugin, Credentials } from './plugins/types';
 import { checkRules } from './rules';
+import { requiresSecondFactor } from '../two-factor/config';
+import { loadTwoFactor } from '../two-factor/store';
 
 export { getAuthPlugin } from './plugins/index';
 export type { AuthContext, AuthPlugin, Credentials } from './plugins/types';
@@ -110,7 +112,8 @@ export interface LoginInput {
 	port?: string | number;
 }
 
-export type LoginResult = { ok: true } | { ok: false; error: string };
+/** `twoFactor`: the password was right but a second factor is still required. */
+export type LoginResult = { ok: true; twoFactor: boolean } | { ok: false; error: string };
 
 /**
  * Cookie-auth login: arbitrary server validation, AllowDeny/AllowRoot/AllowNoPassword,
@@ -152,14 +155,33 @@ export async function attemptLogin(
 	} catch (e) {
 		return { ok: false, error: mapConnectError(e, baseServer.hide_connection_errors) };
 	}
-	setSessionCookie(ctx.cookies, config, ctx.url, {
-		serverIndex: input.serverIndex,
-		host: arbitrary?.host,
-		port: arbitrary?.port,
-		user,
-		password: input.password
-	});
-	return { ok: true };
+	// Does the account have a second factor? Fail closed when the storage is configured but unreadable.
+	let twoFactor: boolean;
+	try {
+		const stored = await loadTwoFactor(
+			server,
+			{ get: () => createConnection(server, user, input.password), closeOwn: true },
+			user
+		);
+		twoFactor = stored !== null && requiresSecondFactor(stored.config);
+	} catch {
+		return { ok: false, error: 'Could not read the two-factor authentication settings.' };
+	}
+	setSessionCookie(
+		ctx.cookies,
+		config,
+		ctx.url,
+		{
+			serverIndex: input.serverIndex,
+			host: arbitrary?.host,
+			port: arbitrary?.port,
+			user,
+			password: input.password
+		},
+		undefined,
+		twoFactor ? false : undefined
+	);
+	return { ok: true, twoFactor };
 }
 
 /**
@@ -184,7 +206,8 @@ export function updateSessionPassword(
 			user: session.user,
 			password: newPassword
 		},
-		session.createdAt
+		session.createdAt,
+		session.twoFactorVerified
 	);
 	return true;
 }

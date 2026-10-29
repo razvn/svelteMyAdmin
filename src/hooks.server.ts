@@ -17,17 +17,13 @@ import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
 import { expiredLoginLocation } from '#lib/server/auth/expired.ts';
 import { legacyRedirectTarget } from '#lib/server/routing/legacy.ts';
 import { buildEffectiveConfig } from '#lib/server/preferences/effective.ts';
+import {
+	isPublicPath,
+	isTwoFactorPending,
+	twoFactorRedirect
+} from '#lib/server/two-factor/gate.ts';
+import { readSession } from '#lib/server/auth/plugins/cookie.ts';
 import { loadPrefs } from '#lib/server/preferences/store.ts';
-
-/** Reachable without authentication (static assets are served before `handle`). */
-function isPublicPath(pathname: string): boolean {
-	return (
-		pathname === '/login' ||
-		pathname === '/logout' ||
-		pathname === '/api/health' ||
-		pathname.startsWith('/_app/')
-	);
-}
 
 const redirectTo = (location: string, status = 302) =>
 	new Response(null, { status, headers: { location } });
@@ -128,8 +124,19 @@ const auth: Handle = async ({ event, resolve }) => {
 	event.locals.serverIndex = ctx.serverIndex;
 	event.locals.server = server;
 	event.locals.clientIp = clientIp;
+	// Cookie login whose second factor is still pending: not a session yet (see two-factor/gate.ts).
+	const twoFactorPending =
+		resolution.status === 'ok' &&
+		plugin.type === 'cookie' &&
+		isTwoFactorPending(readSession({ cookies: event.cookies, config }));
 	event.locals.session =
-		resolution.status === 'ok' ? sessionInfo(ctx.server, resolution.creds) : null;
+		resolution.status === 'ok' && !twoFactorPending
+			? sessionInfo(ctx.server, resolution.creds)
+			: null;
+	event.locals.twoFactorPending =
+		resolution.status === 'ok' && twoFactorPending
+			? sessionInfo(ctx.server, resolution.creds)
+			: null;
 	Object.defineProperty(event.locals, 'db', {
 		configurable: true,
 		get: () => (connection ??= open())
@@ -170,6 +177,11 @@ const auth: Handle = async ({ event, resolve }) => {
 
 		// Authenticated: slide the session expiry.
 		if (pathname !== '/api/health') plugin.touch?.(ctx, resolution.creds);
+
+		if (twoFactorPending) {
+			const to = twoFactorRedirect(true, event.request.method, pathname, event.url.search);
+			if (to) return redirectTo(to, 303);
+		}
 
 		// `http`/`config` auth have no login step: verify the credentials right away
 		// so wrong ones produce a new challenge instead of an error page.

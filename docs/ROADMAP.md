@@ -138,7 +138,7 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 
 - Designer (ER diagram, relations drag & drop, PDF/SVG schema export) (S)
 - Status monitor charts, Advisor rules (S), Normalization wizard (S), GIS visualization (S)
-- Two-factor auth, setup wizard, error reporting (H/S)
+- Two-factor auth (done, 9d: TOTP app + WebAuthn, cookie auth only; `simple` with DBG.simple2fa; legacy U2F `key` not implemented), setup wizard, error reporting (H/S)
 
 ## Working process (orchestration)
 

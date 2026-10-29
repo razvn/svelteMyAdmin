@@ -18,6 +18,8 @@ declare global {
 			clientIp: string | null;
 			/** Non-secret facts about the logged-in user; null when not authenticated. */
 			session: SessionInfo | null;
+			/** Password accepted but the second factor is still pending (only `/login/2fa` serves it). */
+			twoFactorPending: SessionInfo | null;
 			/**
 			 * Lazily opened connection using the session credentials. Awaiting it opens the
 			 * connection on first use; it is closed automatically after the response.

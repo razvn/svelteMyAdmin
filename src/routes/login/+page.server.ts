@@ -70,6 +70,13 @@ export const actions: Actions = {
 				port: data.pma_serverport ?? ''
 			});
 		}
+		if (result.twoFactor) {
+			const target = safeRedirectTarget(data.redirect);
+			redirect(
+				303,
+				target === '/' ? '/login/2fa' : `/login/2fa?redirect=${encodeURIComponent(target)}`
+			);
+		}
 		redirect(303, safeRedirectTarget(data.redirect));
 	}
 };

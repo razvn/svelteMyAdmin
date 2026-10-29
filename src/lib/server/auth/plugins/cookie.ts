@@ -21,7 +21,9 @@ export function setSessionCookie(
 	config: AppConfig,
 	url: URL,
 	creds: Credentials,
-	createdAt: number = Date.now()
+	createdAt: number = Date.now(),
+	/** Omit for "no second factor involved"; false = login pending the second factor. */
+	twoFactorVerified?: boolean
 ): void {
 	const token = sealSession(
 		{
@@ -31,7 +33,8 @@ export function setSessionCookie(
 			user: creds.user,
 			password: creds.password,
 			createdAt,
-			lastActivity: Date.now()
+			lastActivity: Date.now(),
+			...(twoFactorVerified === undefined ? {} : { twoFactorVerified })
 		},
 		getSecret(config.blowfish_secret)
 	);
@@ -69,7 +72,7 @@ export const cookieAuth: AuthPlugin = {
 
 	touch(ctx, creds) {
 		const s = readSession(ctx);
-		setSessionCookie(ctx.cookies, ctx.config, ctx.url, creds, s?.createdAt);
+		setSessionCookie(ctx.cookies, ctx.config, ctx.url, creds, s?.createdAt, s?.twoFactorVerified);
 	},
 
 	unauthenticated(ctx) {

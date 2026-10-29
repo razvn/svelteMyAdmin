@@ -7,11 +7,14 @@ export const GET: RequestHandler = async ({ locals, cookies, url }) => {
 	if (!locals.session) return new Response('Unauthorized', { status: 401 });
 	const prefs = await loadPrefs(locals, cookies);
 	const host = url.host.replace(/[^A-Za-z0-9._-]/g, '_');
-	return new Response(exportJson(prefs.data), {
-		headers: {
-			'content-type': 'application/json; charset=utf-8',
-			'content-disposition': `attachment; filename="phpMyAdmin-config-${host}.json"`,
-			'cache-control': 'no-store'
+	return new Response(
+		exportJson(Object.fromEntries(Object.entries(prefs.data).filter(([k]) => k !== '2fa'))),
+		{
+			headers: {
+				'content-type': 'application/json; charset=utf-8',
+				'content-disposition': `attachment; filename="phpMyAdmin-config-${host}.json"`,
+				'cache-control': 'no-store'
+			}
 		}
-	});
+	);
 };
