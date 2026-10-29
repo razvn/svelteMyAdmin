@@ -20,6 +20,8 @@ export interface AuthContext {
 	serverIndex: number;
 	server: ServerConfig;
 	clientIp: string | null;
+	/** Translation function of the request (`locals.i18n.t`); English when absent. */
+	t?: (msgid: string) => string;
 }
 
 export type AuthType = ServerConfig['auth_type'];

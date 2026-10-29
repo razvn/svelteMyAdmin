@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import * as Alert from '#lib/components/ui/alert/index.ts';
 	import { buttonVariants } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		status: number;
@@ -15,12 +18,12 @@
 
 	const title = $derived(
 		status === 404
-			? 'Not found'
+			? t('Not found')
 			: status === 403
-				? 'Forbidden'
+				? t('Forbidden')
 				: status >= 500
-					? 'Server error'
-					: 'Error'
+					? t('Server error')
+					: t('Error')
 	);
 </script>
 
@@ -41,7 +44,9 @@
 			<Alert.Root variant="destructive" class="text-start">
 				<Alert.Description>{message}</Alert.Description>
 			</Alert.Root>
-			<a href={resolve(bare('/'))} class={buttonVariants({ variant: 'default' })}>Back to home</a>
+			<a href={resolve(bare('/'))} class={buttonVariants({ variant: 'default' })}
+				>{t('Back to home')}</a
+			>
 		</Card.Content>
 	</Card.Root>
 </div>

@@ -12,10 +12,10 @@ const paramsSchema = z.object({ db: z.string().min(1).max(64) });
 /** Lazy children (tables, views, routines, events) of one database for the navigation tree. */
 export const GET: RequestHandler = async ({ params, locals }) => {
 	const parsed = paramsSchema.safeParse(params);
-	if (!parsed.success) error(400, 'Invalid database name');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid database name'));
 	const { db } = parsed.data;
 	const dbi = await locals.dbi;
-	if (!(await dbi.databaseExists(db))) error(404, 'Database not found');
+	if (!(await dbi.databaseExists(db))) error(404, locals.i18n.t('Database not found'));
 	const children = await getDbChildren(dbi, db, toNavConfig(locals.config));
 	// Hidden items (pma__navigationhiding) are filtered out of the data, not just the view.
 	const canHide = storageTable(locals.server, 'navigationhiding') !== null;

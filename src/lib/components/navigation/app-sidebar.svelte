@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { N_ } from '#lib/i18n/index.ts';
 	import { bare } from '#lib/nav/paths.ts';
 	import Cog from '@lucide/svelte/icons/cog';
 	import House from '@lucide/svelte/icons/house';
@@ -15,6 +17,8 @@
 	import type { NavState } from './nav-state.svelte.ts';
 	import SidebarResizer from './sidebar-resizer.svelte';
 	import type { SidebarWidth } from './sidebar-width.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		databases: string[];
@@ -34,15 +38,15 @@
 	const pathname = $derived(page.url.pathname);
 
 	const links = $derived([
-		{ label: 'Home', href: '/', icon: House, match: (p: string) => p === '/' },
+		{ label: N_('Home'), href: '/', icon: House, match: (p: string) => p === '/' },
 		{
-			label: 'SQL query',
+			label: N_('SQL query'),
 			href: sqlHref,
 			icon: SquareTerminal,
 			match: (p: string) => p.endsWith('/sql')
 		},
 		{
-			label: 'Settings',
+			label: N_('Settings'),
 			href: '/server/settings',
 			icon: Cog,
 			match: (p: string) => p.startsWith('/server/settings')
@@ -55,7 +59,7 @@
 		<a
 			href={resolve(bare('/'))}
 			class="flex h-16 items-center gap-3 rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-			aria-label="svelteMyAdmin home"
+			aria-label={t('svelteMyAdmin home')}
 		>
 			{#if nav.displayLogo}
 				<BrandMark />
@@ -66,9 +70,9 @@
 
 	<Sidebar.Content class="gap-2 py-3">
 		<Sidebar.Group class="gap-1 px-3 py-1">
-			<Sidebar.GroupLabel class="px-3">Server</Sidebar.GroupLabel>
+			<Sidebar.GroupLabel class="px-3">{t('Server')}</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
-				<Sidebar.Menu aria-label="Quick links">
+				<Sidebar.Menu aria-label={t('Quick links')}>
 					{#each links as link (link.label)}
 						{@const active = link.match(pathname)}
 						<Sidebar.MenuItem>
@@ -80,7 +84,7 @@
 										aria-current={active ? 'page' : undefined}
 									>
 										<link.icon />
-										<span>{link.label}</span>
+										<span>{t(link.label)}</span>
 									</a>
 								{/snippet}
 							</Sidebar.MenuButton>
@@ -89,7 +93,7 @@
 					<Sidebar.MenuItem>
 						<Sidebar.MenuButton onclick={onreload}>
 							<RefreshCw />
-							<span>Reload navigation</span>
+							<span>{t('Reload navigation')}</span>
 						</Sidebar.MenuButton>
 					</Sidebar.MenuItem>
 				</Sidebar.Menu>
@@ -105,7 +109,7 @@
 		<a
 			href={resolve(bare('/server/check-relations'))}
 			class="rounded-md px-2 py-1 text-xs text-muted-foreground outline-hidden hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-			>Configuration storage</a
+			>{t('Configuration storage')}</a
 		>
 	</Sidebar.Footer>
 

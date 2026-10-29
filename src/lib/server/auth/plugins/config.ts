@@ -17,8 +17,9 @@ export const configAuth: AuthPlugin = {
 		return new Response('Forbidden', { status: 403 });
 	},
 
-	rejected() {
-		return new Response('Cannot log in to the MySQL server with the configured credentials.', {
+	rejected(ctx) {
+		const t = ctx.t ?? ((s: string) => s);
+		return new Response(t('Cannot log in to the MySQL server with the configured credentials.'), {
 			status: 503,
 			headers: { 'content-type': 'text/plain; charset=utf-8' }
 		});

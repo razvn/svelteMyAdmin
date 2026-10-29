@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/translator.ts';
 import type { Cookies } from '@sveltejs/kit';
 import type { AppConfig, ServerConfig } from '../config/schema';
 import { createConnection } from '../db/connection';
@@ -126,14 +127,14 @@ export async function attemptLogin(
 	const { config } = ctx;
 	const baseServer = config.Servers[input.serverIndex - 1];
 	if (!baseServer || baseServer.auth_type !== 'cookie') {
-		return { ok: false, error: 'Invalid server selected.' };
+		return { ok: false, error: N_('Invalid server selected.') };
 	}
 	if (input.password.length >= 2000) {
 		return {
 			ok: false,
-			error:
-				'Your password is too long. To prevent denial-of-service attacks, ' +
-				'phpMyAdmin restricts passwords to less than 2000 characters.'
+			error: N_(
+				'Your password is too long. To prevent denial-of-service attacks, phpMyAdmin restricts passwords to less than 2000 characters.'
+			)
 		};
 	}
 	const user = input.user.split('\0')[0];
@@ -165,7 +166,7 @@ export async function attemptLogin(
 		);
 		twoFactor = stored !== null && requiresSecondFactor(stored.config);
 	} catch {
-		return { ok: false, error: 'Could not read the two-factor authentication settings.' };
+		return { ok: false, error: N_('Could not read the two-factor authentication settings.') };
 	}
 	setSessionCookie(
 		ctx.cookies,

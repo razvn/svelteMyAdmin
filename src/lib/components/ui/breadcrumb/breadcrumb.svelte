@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { WithElementRef } from '#lib/utils.ts';
 	import { cn } from '#lib/utils.ts';
 	import type { HTMLAttributes } from 'svelte/elements';
+
+	const { t } = useI18n();
 
 	let {
 		ref = $bindable(null),
@@ -14,7 +17,7 @@
 <nav
 	bind:this={ref}
 	data-slot="breadcrumb"
-	aria-label="breadcrumb"
+	aria-label={t('Breadcrumb')}
 	class={cn(className)}
 	{...restProps}
 >

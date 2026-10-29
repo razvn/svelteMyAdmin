@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import { untrack } from 'svelte';
@@ -15,10 +16,13 @@
 	import { dbHref, tableHref, type NavConfig } from '#lib/nav/config.ts';
 	import type { HiddenType } from '#lib/nav/hidden.ts';
 	import { tabHref } from '#lib/nav/tabs.ts';
+	import { N_ } from '#lib/i18n/index.ts';
 	import { cn } from '#lib/utils.ts';
 	import HiddenItemsDialog from './hidden-items-dialog.svelte';
 	import ItemGroup from './item-group.svelte';
 	import type { NavState } from './nav-state.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		/** Full database name. */
@@ -52,7 +56,7 @@
 		children?.canHide
 			? (item: string) => void navState.setHidden(name, item, type, true)
 			: undefined;
-	const isCurrentTable = (t: string) => isCurrent && currentTable === t;
+	const isCurrentTable = (tbl: string) => isCurrent && currentTable === tbl;
 </script>
 
 <Sidebar.MenuItem data-testid="nav-db-{name}">
@@ -62,7 +66,7 @@
 				type="button"
 				class="flex size-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 				aria-expanded={expanded}
-				aria-label="{expanded ? 'Collapse' : 'Expand'} {name}"
+				aria-label={expanded ? t('Collapse {name}', { name }) : t('Expand {name}', { name })}
 				onclick={() => void navState.toggle(name)}
 			>
 				{#if status === 'loading' && expanded}
@@ -96,25 +100,25 @@
 						class="w-full px-2 text-start text-xs text-destructive"
 						onclick={() => void navState.load(name, true)}
 					>
-						Could not load. Retry
+						{t('Could not load. Retry')}
 					</button>
 				</Sidebar.MenuSubItem>
 			{:else if !children}
 				<Sidebar.MenuSubItem>
-					<span class="px-2 text-xs text-muted-foreground" role="status">Loading...</span>
+					<span class="px-2 text-xs text-muted-foreground" role="status">{t('Loading...')}</span>
 				</Sidebar.MenuSubItem>
 			{:else}
 				{#if nav.showTables}
 					<ItemGroup
-						title="Tables"
+						title={N_('Tables')}
 						icon={Table2}
 						items={children.tables}
-						hrefFor={(t) => tableHref(nav, name, t)}
+						hrefFor={(tbl) => tableHref(nav, name, tbl)}
 						isActive={isCurrentTable}
-						quickHref={(t) => tabHref('table', { db: name, table: t }, nav.quickTabTable)}
-						quickLabel="Open {nav.quickTabTable}"
+						quickHref={(tbl) => tabHref('table', { db: name, table: tbl }, nav.quickTabTable)}
+						quickLabel={t('Open {tab}', { tab: nav.quickTabTable })}
 						onhide={hide('table')}
-						newEntry={{ label: 'New table', href: tabHref('db', { db: name }, 'create-table') }}
+						newEntry={{ label: N_('New table'), href: tabHref('db', { db: name }, 'create-table') }}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
 						forceOpen={isCurrent && !!currentTable && children.tables.includes(currentTable)}
@@ -122,14 +126,14 @@
 				{/if}
 				{#if nav.showViews}
 					<ItemGroup
-						title="Views"
+						title={N_('Views')}
 						icon={Eye}
 						items={children.views}
 						onhide={hide('view')}
-						hrefFor={(t) => tableHref(nav, name, t)}
+						hrefFor={(tbl) => tableHref(nav, name, tbl)}
 						isActive={isCurrentTable}
-						quickHref={(t) => tabHref('table', { db: name, table: t }, nav.quickTabTable)}
-						quickLabel="Open {nav.quickTabTable}"
+						quickHref={(tbl) => tabHref('table', { db: name, table: tbl }, nav.quickTabTable)}
+						quickLabel={t('Open {tab}', { tab: nav.quickTabTable })}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
 						forceOpen={isCurrent && !!currentTable && children.views.includes(currentTable)}
@@ -137,7 +141,7 @@
 				{/if}
 				{#if nav.showProcedures}
 					<ItemGroup
-						title="Procedures"
+						title={N_('Procedures')}
 						icon={Terminal}
 						items={children.procedures}
 						onhide={hide('procedure')}
@@ -148,7 +152,7 @@
 				{/if}
 				{#if nav.showFunctions}
 					<ItemGroup
-						title="Functions"
+						title={N_('Functions')}
 						icon={FunctionSquare}
 						items={children.functions}
 						onhide={hide('function')}
@@ -159,7 +163,7 @@
 				{/if}
 				{#if nav.showEvents}
 					<ItemGroup
-						title="Events"
+						title={N_('Events')}
 						icon={CalendarClock}
 						items={children.events}
 						onhide={hide('event')}
@@ -177,7 +181,7 @@
 							onclick={() => (hiddenOpen = true)}
 						>
 							<EyeOff class="size-3.5" />
-							Show hidden items ({children.hiddenCount})
+							{t('Show hidden items ({count})', { count: children.hiddenCount ?? 0 })}
 						</button>
 					</Sidebar.MenuSubItem>
 				{/if}

@@ -25,7 +25,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	const { config } = locals;
 	return {
 		expired: url.searchParams.get('expired') === '1',
-		expiredMessage: EXPIRED_MESSAGE,
+		expiredMessage: locals.i18n.t(EXPIRED_MESSAGE),
 		redirectTo: url.searchParams.get('redirect') ? redirectTo : '',
 		servers: config.Servers.map((s, i) => ({
 			index: i + 1,
@@ -44,7 +44,7 @@ export const actions: Actions = {
 		const form = loginSchema.safeParse(Object.fromEntries(await request.formData()));
 		if (!form.success)
 			return fail(400, {
-				error: 'Invalid request.',
+				error: locals.i18n.t('Invalid request.'),
 				username: '',
 				server: 0,
 				host: '',
@@ -76,7 +76,7 @@ export const actions: Actions = {
 		if (!result.ok) {
 			// Never echo the password back.
 			return fail(401, {
-				error: result.error,
+				error: locals.i18n.t(result.error), // i18n-ignore: msgids marked with N_ in lib/server/auth
 				username: data.username,
 				server: data.server,
 				host: data.pma_servername ?? '',

@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { enhance } from '$app/forms';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		current: string;
@@ -36,7 +39,7 @@
 		};
 	}}
 >
-	<Label for="collation_connection">Server connection collation</Label>
+	<Label for="collation_connection">{t('Server connection collation')}</Label>
 	<div class="flex gap-2">
 		<Select.Root type="single" name="collation_connection" bind:value>
 			<Select.Trigger
@@ -57,11 +60,15 @@
 				{/each}
 			</Select.Content>
 		</Select.Root>
-		<Button type="submit" variant="secondary" disabled={saving || value === current}>Apply</Button>
+		<Button type="submit" variant="secondary" disabled={saving || value === current}
+			>{t('Apply')}</Button
+		>
 	</div>
 	{#if error}
 		<p class="text-sm text-destructive" role="alert">{error}</p>
 	{:else if saved}
-		<p class="text-sm text-muted-foreground" role="status">Connection collation set to {saved}.</p>
+		<p class="text-sm text-muted-foreground" role="status">
+			{t('Connection collation set to {collation}.', { collation: saved })}
+		</p>
 	{/if}
 </form>

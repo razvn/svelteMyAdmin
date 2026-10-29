@@ -4,18 +4,20 @@
  * and the client (tab bars, command palette).
  */
 
+import { N_ } from '#lib/i18n/translator.ts';
+
 export type TabLevel = 'server' | 'db' | 'table';
 
 /** Roadmap phase (docs/ROADMAP.md) in which a tab gets its real implementation. */
 export const PHASE_TITLES: Record<number, string> = {
-	2: 'Phase 2 — Server level',
-	3: 'Phase 3 — Database level',
-	4: 'Phase 4 — Table level',
-	5: 'Phase 5 — SQL engine & editor',
-	6: 'Phase 6 — Import / Export',
-	7: 'Phase 7 — Users & privileges',
-	8: 'Phase 8 — Configuration storage features',
-	9: 'Phase 9 — Advanced'
+	2: N_('Phase 2 — Server level'),
+	3: N_('Phase 3 — Database level'),
+	4: N_('Phase 4 — Table level'),
+	5: N_('Phase 5 — SQL engine & editor'),
+	6: N_('Phase 6 — Import / Export'),
+	7: N_('Phase 7 — Users & privileges'),
+	8: N_('Phase 8 — Configuration storage features'),
+	9: N_('Phase 9 — Advanced')
 };
 
 export interface TabDef {
@@ -37,7 +39,7 @@ export interface ExtraPage {
 	phase: number;
 }
 
-const t = (id: string, label: string, phase: number, path = id, also?: string[]): TabDef => ({
+const def = (id: string, label: string, phase: number, path = id, also?: string[]): TabDef => ({
 	id,
 	label,
 	path,
@@ -52,19 +54,19 @@ export interface ServerTabOptions {
 
 export function serverTabs(opts: ServerTabOptions = {}): TabDef[] {
 	return [
-		t('databases', 'Databases', 2),
-		t('sql', 'SQL', 5),
-		t('status', 'Status', 2),
-		t('privileges', 'User accounts', 7, 'privileges', ['user-groups']),
-		t('export', 'Export', 6),
-		t('import', 'Import', 6),
-		t('settings', 'Settings', 8),
-		...(opts.binlog ? [t('binlog', 'Binary log', 2)] : []),
-		t('replication', 'Replication', 2),
-		t('variables', 'Variables', 2),
-		t('charsets', 'Charsets', 2),
-		t('engines', 'Engines', 2),
-		t('plugins', 'Plugins', 2)
+		def('databases', N_('Databases'), 2),
+		def('sql', N_('SQL'), 5),
+		def('status', N_('Status'), 2),
+		def('privileges', N_('User accounts'), 7, 'privileges', ['user-groups']),
+		def('export', N_('Export'), 6),
+		def('import', N_('Import'), 6),
+		def('settings', N_('Settings'), 8),
+		...(opts.binlog ? [def('binlog', N_('Binary log'), 2)] : []),
+		def('replication', N_('Replication'), 2),
+		def('variables', N_('Variables'), 2),
+		def('charsets', N_('Charsets'), 2),
+		def('engines', N_('Engines'), 2),
+		def('plugins', N_('Plugins'), 2)
 	];
 }
 
@@ -77,22 +79,22 @@ export interface DbTabOptions {
 
 export function dbTabs(opts: DbTabOptions = {}): TabDef[] {
 	return [
-		t('structure', 'Structure', 3),
-		t('sql', 'SQL', 5),
-		t('search', 'Search', 3),
-		t('query', 'Query', 3),
-		t('export', 'Export', 6),
-		t('import', 'Import', 6),
-		t('operations', 'Operations', 3),
-		t('privileges', 'Privileges', 7),
-		t('routines', 'Routines', 3),
-		t('events', 'Events', 3),
-		t('triggers', 'Triggers', 3),
-		...(opts.tracking === false ? [] : [t('tracking', 'Tracking', 8)]),
-		t('designer', 'Designer', 9),
+		def('structure', N_('Structure'), 3),
+		def('sql', N_('SQL'), 5),
+		def('search', N_('Search'), 3),
+		def('query', N_('Query'), 3),
+		def('export', N_('Export'), 6),
+		def('import', N_('Import'), 6),
+		def('operations', N_('Operations'), 3),
+		def('privileges', N_('Privileges'), 7),
+		def('routines', N_('Routines'), 3),
+		def('events', N_('Events'), 3),
+		def('triggers', N_('Triggers'), 3),
+		...(opts.tracking === false ? [] : [def('tracking', N_('Tracking'), 8)]),
+		def('designer', N_('Designer'), 9),
 		...(opts.centralColumns === false
 			? []
-			: [t('central-columns', 'Central columns', 8, 'central-columns')])
+			: [def('central-columns', N_('Central columns'), 8, 'central-columns')])
 	];
 }
 
@@ -105,31 +107,31 @@ export interface TableTabOptions {
 export function tableTabs(opts: TableTabOptions): TabDef[] {
 	const { isView } = opts;
 	return [
-		t('browse', 'Browse', 4),
-		t('structure', 'Structure', 4, 'structure', ['relation', 'indexes', 'partitions']),
-		t('sql', 'SQL', 5),
-		t('search', 'Search', 4, 'search', ['zoom-search', 'find-replace']),
-		...(isView ? [] : [t('insert', 'Insert', 4)]),
-		t('export', 'Export', 6),
-		...(isView ? [] : [t('import', 'Import', 6)]),
-		t('privileges', 'Privileges', 7),
-		t('operations', 'Operations', 4),
-		...(opts.tracking === false ? [] : [t('tracking', 'Tracking', 8)]),
-		...(isView ? [] : [t('triggers', 'Triggers', 4)])
+		def('browse', N_('Browse'), 4),
+		def('structure', N_('Structure'), 4, 'structure', ['relation', 'indexes', 'partitions']),
+		def('sql', N_('SQL'), 5),
+		def('search', N_('Search'), 4, 'search', ['zoom-search', 'find-replace']),
+		...(isView ? [] : [def('insert', N_('Insert'), 4)]),
+		def('export', N_('Export'), 6),
+		...(isView ? [] : [def('import', N_('Import'), 6)]),
+		def('privileges', N_('Privileges'), 7),
+		def('operations', N_('Operations'), 4),
+		...(opts.tracking === false ? [] : [def('tracking', N_('Tracking'), 8)]),
+		...(isView ? [] : [def('triggers', N_('Triggers'), 4)])
 	];
 }
 
 const SERVER_EXTRA: ExtraPage[] = [
-	{ path: 'status/processes', label: 'Processes', phase: 2 },
-	{ path: 'status/monitor', label: 'Monitor', phase: 9 },
-	{ path: 'status/queries', label: 'Query statistics', phase: 2 },
-	{ path: 'status/variables', label: 'Status variables', phase: 2 },
-	{ path: 'status/advisor', label: 'Advisor', phase: 9 },
-	{ path: 'user-groups', label: 'User groups', phase: 7 },
-	{ path: 'user-password', label: 'Change password', phase: 7 }
+	{ path: 'status/processes', label: N_('Processes'), phase: 2 },
+	{ path: 'status/monitor', label: N_('Monitor'), phase: 9 },
+	{ path: 'status/queries', label: N_('Query statistics'), phase: 2 },
+	{ path: 'status/variables', label: N_('Status variables'), phase: 2 },
+	{ path: 'status/advisor', label: N_('Advisor'), phase: 9 },
+	{ path: 'user-groups', label: N_('User groups'), phase: 7 },
+	{ path: 'user-password', label: N_('Change password'), phase: 7 }
 ];
-const DB_EXTRA: ExtraPage[] = [{ path: 'data-dictionary', label: 'Data dictionary', phase: 3 }];
-const TABLE_EXTRA: ExtraPage[] = [{ path: 'chart', label: 'Chart', phase: 4 }];
+const DB_EXTRA: ExtraPage[] = [{ path: 'data-dictionary', label: N_('Data dictionary'), phase: 3 }];
+const TABLE_EXTRA: ExtraPage[] = [{ path: 'chart', label: N_('Chart'), phase: 4 }];
 
 /** Every tab (conditional ones included) and sub page of a level, for routing and titles. */
 function allPages(level: TabLevel): (ExtraPage & { tab?: TabDef })[] {

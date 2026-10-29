@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.ts';
 	import { dbHref, serverHref, tableHref, type NavConfig } from '#lib/nav/config.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		nav: Pick<NavConfig, 'defaultTabServer' | 'defaultTabDatabase' | 'defaultTabTable'>;
@@ -18,7 +21,7 @@
 	const ITEM = 'min-w-12 [&:first-child]:min-w-8';
 	const LINK = 'block max-w-full truncate';
 
-	const tableKind = $derived(tableType === 'view' ? 'View' : 'Table');
+	const tableKind = $derived(tableType === 'view' ? t('View') : t('Table'));
 </script>
 
 {#snippet crumb(kind: string, name: string)}
@@ -30,7 +33,7 @@
 	<Breadcrumb.List class="w-full flex-nowrap gap-1.5 sm:gap-1.5">
 		<Breadcrumb.Item class="{ITEM} shrink-[4]">
 			<Breadcrumb.Link href={serverHref(nav)} class={LINK} aria-current={db ? undefined : 'page'}>
-				{@render crumb('Server', serverLabel)}
+				{@render crumb(t('Server'), serverLabel)}
 			</Breadcrumb.Link>
 		</Breadcrumb.Item>
 		{#if db}
@@ -41,7 +44,7 @@
 					class={LINK}
 					aria-current={table ? undefined : 'page'}
 				>
-					{@render crumb('Database', db)}
+					{@render crumb(t('Database'), db)}
 				</Breadcrumb.Link>
 			</Breadcrumb.Item>
 		{/if}

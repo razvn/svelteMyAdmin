@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import * as Sheet from '#lib/components/ui/sheet/index.ts';
 	import { cn, type WithElementRef } from '#lib/utils.ts';
 	import { SIDEBAR_WIDTH_MOBILE } from './constants.js';
 	import { useSidebar } from './context.svelte.js';
 	import type { HTMLAttributes } from 'svelte/elements';
+
+	const { t } = useI18n();
 
 	let {
 		ref = $bindable(null),
@@ -48,8 +51,8 @@
 			{side}
 		>
 			<Sheet.Header class="sr-only">
-				<Sheet.Title>Sidebar</Sheet.Title>
-				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
+				<Sheet.Title>{t('Sidebar')}</Sheet.Title>
+				<Sheet.Description>{t('Displays the mobile sidebar.')}</Sheet.Description>
 			</Sheet.Header>
 			<div class="flex h-full w-full flex-col">
 				{@render children?.()}

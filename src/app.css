@@ -169,7 +169,7 @@
 	[data-slot='sidebar-container'],
 	[data-slot='sidebar-inset'] > header,
 	[data-testid='tab-bar'],
-	nav[aria-label='breadcrumb'] {
+	nav[data-slot='breadcrumb'] {
 		display: none !important;
 	}
 }
