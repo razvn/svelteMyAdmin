@@ -7,6 +7,8 @@
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Dialog from '#lib/components/ui/dialog/index.ts';
 	import { alterEnhance } from './alter-enhance.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -33,7 +35,7 @@
 		sql,
 		action,
 		payload,
-		label = 'Confirm',
+		label,
 		destructive = false,
 		message,
 		refreshTree = true,
@@ -60,7 +62,7 @@
 			onsuccess?.();
 			if (refreshTree && page.params.db) void navState.load(page.params.db, true);
 		}
-	});
+	}, t);
 </script>
 
 <Dialog.Root bind:open onOpenChange={(o) => o && (error = '')}>
@@ -80,9 +82,9 @@
 		<form method="POST" action="?/{action}" use:enhance={submit}>
 			<input type="hidden" name="payload" value={JSON.stringify(payload)} />
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
 				<Button type="submit" variant={destructive ? 'destructive' : 'default'} disabled={busy}>
-					{label}
+					{label ?? t('Confirm')}
 				</Button>
 			</Dialog.Footer>
 		</form>

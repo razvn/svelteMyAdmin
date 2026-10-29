@@ -7,6 +7,8 @@
 	import { buildMoveColumns } from '#lib/sql/alter-table.ts';
 	import type { ColumnDef, ServerCaps } from '#lib/sql/column-definition.ts';
 	import SqlConfirmDialog from './sql-confirm-dialog.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -38,12 +40,12 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] max-w-lg overflow-y-auto" data-testid="move-columns">
 		<Dialog.Header>
-			<Dialog.Title>Move columns</Dialog.Title>
+			<Dialog.Title>{t('Move columns')}</Dialog.Title>
 			<Dialog.Description>
-				Drag the columns, or use the arrows, to set the new order.
+				{t('Drag the columns, or use the arrows, to set the new order.')}
 			</Dialog.Description>
 		</Dialog.Header>
-		<ol class="flex flex-col gap-1" aria-label="Column order">
+		<ol class="flex flex-col gap-1" aria-label={t('Column order')}>
 			{#each order as name, i (name)}
 				<li
 					class="flex items-center gap-2 rounded-lg border bg-card px-2 py-1.5 {dragFrom === i
@@ -70,7 +72,7 @@
 						type="button"
 						variant="ghost"
 						size="icon-sm"
-						aria-label="Move {name} up"
+						aria-label={t('Move {name} up', { name })}
 						disabled={i === 0}
 						onclick={() => move(i, i - 1)}
 					>
@@ -80,7 +82,7 @@
 						type="button"
 						variant="ghost"
 						size="icon-sm"
-						aria-label="Move {name} down"
+						aria-label={t('Move {name} down', { name })}
 						disabled={i === order.length - 1}
 						onclick={() => move(i, i + 1)}
 					>
@@ -90,9 +92,9 @@
 			{/each}
 		</ol>
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
+			<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
 			<Button type="button" disabled={sql === ''} onclick={() => (confirmOpen = true)}>
-				Preview SQL
+				{t('Preview SQL')}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -100,12 +102,12 @@
 
 <SqlConfirmDialog
 	bind:open={confirmOpen}
-	title="Move columns"
-	description="The statement that will be executed."
+	title={t('Move columns')}
+	description={t('The statement that will be executed.')}
 	{sql}
 	action="move"
 	payload={{ order }}
-	label="Move"
-	message="The columns have been moved."
+	label={t('Move')}
+	message={t('The columns have been moved.')}
 	onsuccess={() => (open = false)}
 />

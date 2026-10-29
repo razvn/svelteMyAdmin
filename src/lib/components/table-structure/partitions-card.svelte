@@ -1,8 +1,9 @@
 <script lang="ts">
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
-	import { formatByteDown, formatNumber } from '#lib/format.ts';
-	import type { PartitionData } from '#lib/server/table/structure.ts';
+		import type { PartitionData } from '#lib/server/table/structure.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, fmt } = useI18n();
 
 	interface Props {
 		partitions: PartitionData | null;
@@ -11,7 +12,7 @@
 	let { partitions }: Props = $props();
 
 	const bytes = (n: number): string => {
-		const r = formatByteDown(n, 3, 1);
+		const r = fmt.byteDown(n, 3, 1);
 		return r ? `${r[0]} ${r[1]}` : '0 B';
 	};
 	const rangeOrList = $derived(partitions !== null && /^(RANGE|LIST)/.test(partitions.method));
@@ -21,17 +22,20 @@
 
 <Card.Root class="gap-0 py-0" id="partitions" data-testid="partitions-card">
 	<Card.Header class="border-b py-5">
-		<Card.Title>Partitions</Card.Title>
+		<Card.Title>{t('Partitions')}</Card.Title>
 		{#if partitions}
 			<Card.Description>
-				Partitioned by <code class="font-mono">{partitions.method}({partitions.expression})</code>
 				{#if partitions.subMethod}
-					, sub partitioned by
-					<code class="font-mono">{partitions.subMethod}({partitions.subExpression})</code>
+					{t('Partitioned by {by}, sub partitioned by {subBy}', {
+						by: `${partitions.method}(${partitions.expression})`,
+						subBy: `${partitions.subMethod}(${partitions.subExpression})`
+					})}
+				{:else}
+					{t('Partitioned by {by}', { by: `${partitions.method}(${partitions.expression})` })}
 				{/if}
 			</Card.Description>
 		{:else}
-			<Card.Description>No partitioning defined.</Card.Description>
+			<Card.Description>{t('No partitioning defined.')}</Card.Description>
 		{/if}
 	</Card.Header>
 	{#if partitions}
@@ -40,12 +44,12 @@
 				<Table.Header>
 					<Table.Row>
 						<Table.Head class="w-10">#</Table.Head>
-						<Table.Head>Partition</Table.Head>
-						{#if rangeOrList}<Table.Head>Expression</Table.Head>{/if}
-						<Table.Head class="text-end">Rows</Table.Head>
-						<Table.Head class="text-end">Data length</Table.Head>
-						<Table.Head class="text-end">Index length</Table.Head>
-						<Table.Head>Comment</Table.Head>
+						<Table.Head>{t('Partition')}</Table.Head>
+						{#if rangeOrList}<Table.Head>{t('Expression')}</Table.Head>{/if}
+						<Table.Head class="text-end">{t('Rows')}</Table.Head>
+						<Table.Head class="text-end">{t('Data length')}</Table.Head>
+						<Table.Head class="text-end">{t('Index length')}</Table.Head>
+						<Table.Head>{t('Comment')}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -58,7 +62,7 @@
 									{describe(partitions.method, partitions.expression, p.description)}
 								</Table.Cell>
 							{/if}
-							<Table.Cell class="text-end tabular-nums">{formatNumber(p.rows)}</Table.Cell>
+							<Table.Cell class="text-end tabular-nums">{fmt.number(p.rows)}</Table.Cell>
 							<Table.Cell class="text-end tabular-nums">{bytes(p.dataLength)}</Table.Cell>
 							<Table.Cell class="text-end tabular-nums">{bytes(p.indexLength)}</Table.Cell>
 							<Table.Cell>{p.comment}</Table.Cell>
@@ -68,7 +72,7 @@
 								<Table.Cell>{p.ordinal}.{s.ordinal}</Table.Cell>
 								<Table.Cell class="pl-6 font-mono text-muted-foreground">{s.name}</Table.Cell>
 								{#if rangeOrList}<Table.Cell></Table.Cell>{/if}
-								<Table.Cell class="text-end tabular-nums">{formatNumber(s.rows)}</Table.Cell>
+								<Table.Cell class="text-end tabular-nums">{fmt.number(s.rows)}</Table.Cell>
 								<Table.Cell class="text-end tabular-nums">{bytes(s.dataLength)}</Table.Cell>
 								<Table.Cell class="text-end tabular-nums">{bytes(s.indexLength)}</Table.Cell>
 								<Table.Cell>{s.comment}</Table.Cell>

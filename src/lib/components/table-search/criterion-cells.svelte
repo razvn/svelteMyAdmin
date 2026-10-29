@@ -5,6 +5,8 @@
 	import { isRangeOperator, isUnaryOperator } from '#lib/sql/table-operators.ts';
 	import type { SearchColumn } from '#lib/server/table/search.ts';
 	import NativeSelect from './native-select.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		column: SearchColumn;
@@ -38,7 +40,7 @@
 {#if withGeometry}
 	<Table.Cell>
 		{#if column.isGeometry}
-			<NativeSelect name="geom_{key}" bind:value={geomFunc} aria-label="Function for {label}">
+			<NativeSelect name="geom_{key}" bind:value={geomFunc} aria-label={t('Function for {name}', { name: label })}>
 				<option value=""></option>
 				{#each column.geomFuncs as f (f.name)}
 					<option value={f.name}>{f.name}</option>
@@ -48,7 +50,7 @@
 	</Table.Cell>
 {/if}
 <Table.Cell>
-	<NativeSelect name="op_{key}" bind:value={operator} aria-label="Operator for {label}">
+	<NativeSelect name="op_{key}" bind:value={operator} aria-label={t('Operator for {name}', { name: label })}>
 		{#each column.operators as o (o)}
 			<option value={o}>{o}</option>
 		{/each}
@@ -62,15 +64,15 @@
 			<Input
 				name="val_{key}"
 				value={first}
-				aria-label="Minimum for {label}"
+				aria-label={t('Minimum for {name}', { name: label })}
 				class="w-36"
 				autocomplete="off"
 			/>
-			<span class="text-muted-foreground">and</span>
+			<span class="text-muted-foreground">{t('and')}</span>
 			<Input
 				name="val2_{key}"
 				value={initial.value2 ?? ''}
-				aria-label="Maximum for {label}"
+				aria-label={t('Maximum for {name}', { name: label })}
 				class="w-36"
 				autocomplete="off"
 			/>
@@ -81,14 +83,14 @@
 			multiple
 			size={Math.min(3, Math.max(column.enumValues.length, 1))}
 			class="h-auto min-w-40"
-			aria-label="Value for {label}"
+			aria-label={t('Value for {name}', { name: label })}
 		>
 			{#each column.enumValues as v (v)}
 				<option value={v} selected={initial.values?.includes(v)}>{v}</option>
 			{/each}
 		</NativeSelect>
 	{:else if column.foreign && !geomFunc && op !== 'IN (...)' && op !== 'NOT IN (...)'}
-		<NativeSelect name="val_{key}" class="max-w-64" aria-label="Value for {label}">
+		<NativeSelect name="val_{key}" class="max-w-64" aria-label={t('Value for {name}', { name: label })}>
 			<option value=""></option>
 			{#each column.foreign as f (f.value)}
 				<option value={f.value} selected={f.value === first}>{f.label}</option>
@@ -100,7 +102,7 @@
 			value={first}
 			class="w-72"
 			autocomplete="off"
-			aria-label="Value for {label}"
+			aria-label={t('Value for {name}', { name: label })}
 			placeholder={column.isGeometry
 				? 'POINT(1 2)'
 				: op === 'IN (...)' || op === 'NOT IN (...)'

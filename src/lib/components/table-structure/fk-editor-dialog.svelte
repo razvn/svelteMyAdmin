@@ -20,6 +20,8 @@
 		type FkDef
 	} from '#lib/sql/foreign-key.ts';
 	import { alterEnhance } from './alter-enhance.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -61,7 +63,7 @@
 			: (original ? buildDropForeignKey(db, table, original.name) + '\n' : '') +
 					buildAddForeignKey(db, table, def)
 	);
-	const actionLabel = (a: FkAction) => (a === '' ? '(default)' : a);
+	const actionLabel = (a: FkAction) => (a === '' ? t('(default)') : a);
 
 	async function getJson<T>(params: Record<string, string>): Promise<T | null> {
 		try {
@@ -121,21 +123,23 @@
 			busy = false;
 			open = false;
 			toast.success(
-				original ? 'The foreign key has been modified.' : 'The foreign key has been added.'
+				original
+					? t('The foreign key has been modified.')
+					: t('The foreign key has been added.')
 			);
 			if (page.params.db) void navState.load(page.params.db, true);
 		}
-	});
+	}, t);
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] max-w-3xl overflow-y-auto" data-testid="fk-editor">
 		<Dialog.Header>
 			<Dialog.Title>
-				{original ? `Edit foreign key ${original.name}` : 'Add foreign key'}
+				{original ? t('Edit foreign key {name}', { name: original.name }) : t('Add foreign key')}
 			</Dialog.Title>
 			<Dialog.Description>
-				The referenced columns must be indexed. Editing drops and re-creates the constraint.
+				{t('The referenced columns must be indexed. Editing drops and re-creates the constraint.')}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -147,11 +151,11 @@
 			/>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div class="flex flex-col gap-1.5">
-					<Label for="fk-name">Constraint name</Label>
+					<Label for="fk-name">{t('Constraint name')}</Label>
 					<Input
 						id="fk-name"
 						bind:value={def.name}
-						placeholder="Constraint name (optional)"
+						placeholder={t('Constraint name (optional)')}
 						maxlength={64}
 						autocomplete="off"
 						class="font-mono"
@@ -159,10 +163,10 @@
 				</div>
 				<div></div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="fk-db-label">Referenced database</Label>
+					<Label id="fk-db-label">{t('Referenced database')}</Label>
 					<Select.Root type="single" value={def.refDb} onValueChange={setRefDb}>
 						<Select.Trigger class="w-full" aria-labelledby="fk-db-label">
-							<span class="truncate font-mono">{def.refDb || 'Choose a database'}</span>
+							<span class="truncate font-mono">{def.refDb || t('Choose a database')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each databases as d (d)}
@@ -172,7 +176,7 @@
 					</Select.Root>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="fk-table-label">Referenced table</Label>
+					<Label id="fk-table-label">{t('Referenced table')}</Label>
 					<Select.Root
 						type="single"
 						value={def.refTable}
@@ -180,11 +184,11 @@
 						disabled={def.refDb === ''}
 					>
 						<Select.Trigger class="w-full" aria-labelledby="fk-table-label">
-							<span class="truncate font-mono">{def.refTable || 'Choose a table'}</span>
+							<span class="truncate font-mono">{def.refTable || t('Choose a table')}</span>
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
-							{#each tables as t (t)}
-								<Select.Item value={t} label={t}>{t}</Select.Item>
+							{#each tables as tbl (tbl)}
+								<Select.Item value={tbl} label={tbl}>{tbl}</Select.Item>
 							{/each}
 						</Select.Content>
 					</Select.Root>
@@ -226,16 +230,16 @@
 			</div>
 
 			<div class="flex flex-col gap-2" data-testid="fk-pairs">
-				<span class="text-sm font-medium">Columns</span>
+				<span class="text-sm font-medium">{t('Columns')}</span>
 				{#each def.columns as col, i (i)}
-					<div class="flex items-center gap-2" role="group" aria-label="Column pair {i + 1}">
+					<div class="flex items-center gap-2" role="group" aria-label={t('Column pair {n}', { n: i + 1 })}>
 						<Select.Root
 							type="single"
 							value={def.columns[i]}
 							onValueChange={(v) => (def.columns[i] = v)}
 						>
-							<Select.Trigger class="min-w-0 flex-1" aria-label="Column">
-								<span class="truncate font-mono">{col || 'Column'}</span>
+							<Select.Trigger class="min-w-0 flex-1" aria-label={t('Column')}>
+								<span class="truncate font-mono">{col || t('Column')}</span>
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each columns as c (c)}
@@ -250,8 +254,8 @@
 							onValueChange={(v) => (def.refColumns[i] = v)}
 							disabled={def.refTable === ''}
 						>
-							<Select.Trigger class="min-w-0 flex-1" aria-label="Referenced column">
-								<span class="truncate font-mono">{def.refColumns[i] || 'Referenced column'}</span>
+							<Select.Trigger class="min-w-0 flex-1" aria-label={t('Referenced column')}>
+								<span class="truncate font-mono">{def.refColumns[i] || t('Referenced column')}</span>
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each refColumns as c (c)}
@@ -263,7 +267,7 @@
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Remove column pair {i + 1}"
+							aria-label={t('Remove column pair {n}', { n: i + 1 })}
 							disabled={def.columns.length <= 1}
 							onclick={() => removePair(i)}
 						>
@@ -272,7 +276,7 @@
 					</div>
 				{/each}
 				<Button type="button" variant="outline" size="sm" class="self-start" onclick={addPair}>
-					<Plus /> Add column
+					<Plus /> {t('Add column')}
 				</Button>
 			</div>
 
@@ -280,7 +284,7 @@
 				<span class="text-sm font-medium">SQL</span>
 				<pre
 					class="mt-1 max-h-40 overflow-auto rounded-lg border bg-muted p-3 font-mono text-sm whitespace-pre-wrap"
-					data-testid="fk-sql">{sql || problem}</pre>
+					data-testid="fk-sql">{sql || (problem ? t(problem) : '')}</pre>
 			</div>
 
 			{#if error}
@@ -290,8 +294,8 @@
 			{/if}
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
-				<Button type="submit" disabled={busy || problem !== null}>Save</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="submit" disabled={busy || problem !== null}>{t('Save')}</Button>
 			</Dialog.Footer>
 		</form>
 	</Dialog.Content>

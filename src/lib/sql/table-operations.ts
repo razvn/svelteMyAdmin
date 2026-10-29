@@ -4,6 +4,7 @@
  * `table-operations.test.ts`, shared by the server actions and the live SQL preview.
  */
 import { escapeId, escapeQualified, escapeString } from '#lib/sql/escape.ts';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export type OrderDirection = 'asc' | 'desc';
 
@@ -18,10 +19,10 @@ export function buildRenameSql(db: string, table: string, newDb: string, newTabl
 }
 
 /** Table::isValidName($name, true): non empty, no trailing space, <= 64 chars, no path characters. */
-export function validateTableName(name: string): string | null {
-	if (name.length === 0) return 'The table name is empty!';
+export function validateTableName(name: string, tr: Pick<Translator, 't'> = SOURCE_TRANSLATOR): string | null {
+	if (name.length === 0) return tr.t('The table name is empty!');
 	if ([...name].length > 64 || /[\0/\\.]/.test(name) || /\s$/.test(name)) {
-		return `Invalid table name: ${name}`;
+		return tr.t('Invalid table name: {name}', { name });
 	}
 	return null;
 }
@@ -245,13 +246,13 @@ export const MAINTENANCE_ACTIONS = [
 export type MaintenanceAction = (typeof MAINTENANCE_ACTIONS)[number];
 
 export const MAINTENANCE_LABELS: Record<MaintenanceAction, string> = {
-	analyze: 'Analyze table',
-	check: 'Check table',
-	checksum: 'Checksum table',
-	defragment: 'Defragment table',
-	flush: 'Flush the table (FLUSH)',
-	optimize: 'Optimize table',
-	repair: 'Repair table'
+	analyze: N_('Analyze table'),
+	check: N_('Check table'),
+	checksum: N_('Checksum table'),
+	defragment: N_('Defragment table'),
+	flush: N_('Flush the table (FLUSH)'),
+	optimize: N_('Optimize table'),
+	repair: N_('Repair table')
 };
 
 /** Which maintenance actions the template offers for `engine` (templates/table/operations/index.twig). */

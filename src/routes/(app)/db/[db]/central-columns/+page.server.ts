@@ -14,9 +14,11 @@ import { withStorageTable } from '#lib/server/pmadb/index.ts';
 import { fromColumnDef, toColumnDef, type CentralColumn } from '#lib/sql/central-columns.ts';
 import type { ColumnDef } from '#lib/sql/column-definition.ts';
 import type { Actions, PageServerLoad } from './$types';
+import { N_ } from '#lib/i18n/translator.ts';
 
-const UNAVAILABLE =
-	'The configuration storage is not ready for the central list of columns feature.';
+const UNAVAILABLE = N_(
+	'The configuration storage is not ready for the central list of columns feature.'
+);
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const dbi = await locals.dbi;
@@ -26,8 +28,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const from = url.searchParams.get('from') ?? '';
 
 	const tables = (await dbi.listTables(params.db))
-		.filter((t) => t.type === 'BASE TABLE')
-		.map((t) => t.name);
+		.filter((tbl) => tbl.type === 'BASE TABLE')
+		.map((tbl) => tbl.name);
 	const listed = await withStorageTable(locals, 'central_columns', async (conn, q) => {
 		const [columns, total, all] = await Promise.all([
 			listCentral(conn, q, params.db, { pos, num: size, filter }),
@@ -72,11 +74,11 @@ async function parseDefinition(
 	try {
 		parsed = definition.parse(JSON.parse(raw));
 	} catch {
-		return 'Invalid column definition.';
+		return locals.i18n.t('Invalid column definition.');
 	}
-	if (!parsed.column.name.trim()) return 'The column name is empty!';
+	if (!parsed.column.name.trim()) return locals.i18n.t('The column name is empty!');
 	const { caps } = await getColumnEditorContext(await locals.dbi);
-	const norm = normalizeColumns([parsed.column], caps);
+	const norm = normalizeColumns([parsed.column], caps, locals.i18n);
 	if (!norm.ok) return norm.error;
 	return { original: parsed.original, column: fromColumnDef(norm.columns[0] as ColumnDef) };
 }
@@ -97,35 +99,50 @@ export const actions: Actions = {
 			try {
 				if (def.original) {
 					await updateCentral(conn, q, params.db, def.original, def.column);
-					return { message: `Column ${def.column.name} has been updated.` };
+					return {
+						message: locals.i18n.t('Column {name} has been updated.', { name: def.column.name })
+					};
 				}
 				const res = await addCentral(conn, q, params.db, [def.column]);
 				if (res.existing.length) {
 					return {
-						error: `Could not add ${res.existing.join(', ')} as it already exists in the central list!`
+						error: locals.i18n.t(
+							'Could not add {columns} as it already exists in the central list!',
+							{ columns: res.existing.join(', ') }
+						)
 					};
 				}
-				return { message: `Column ${def.column.name} has been added to the central list.` };
+				return {
+					message: locals.i18n.t('Column {name} has been added to the central list.', {
+						name: def.column.name
+					})
+				};
 			} catch (e) {
-				return { error: (e as { sqlMessage?: string }).sqlMessage ?? 'Could not save the column.' };
+				return { error: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Could not save the column.') };
 			}
 		});
-		if (!done) return fail(400, { error: UNAVAILABLE });
+		if (!done) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		if ('error' in done) return fail(400, { error: done.error });
 		return done;
 	},
 
 	delete: async ({ request, locals, params }) => {
 		const list = names(await request.formData());
-		if (list.length === 0) return fail(400, { error: 'No columns selected.' });
+		if (list.length === 0) return fail(400, { error: locals.i18n.t('No columns selected.') });
 		const missing = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			deleteCentral(conn, q, params.db, list)
 		);
-		if (!missing) return fail(400, { error: UNAVAILABLE });
+		if (!missing) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {
 			message:
-				`${list.length - missing.length} column(s) removed from the central list.` +
-				(missing.length ? ` Not in the list: ${missing.join(', ')}.` : '')
+				locals.i18n.tn(
+					'{n} column removed from the central list.',
+					'{n} columns removed from the central list.',
+					list.length - missing.length
+				) +
+				(missing.length
+					? ' ' + locals.i18n.t('Not in the list: {columns}.', { columns: missing.join(', ') })
+					: '')
 		};
 	},
 
@@ -134,16 +151,23 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const table = String(fd.get('table') ?? '');
 		const list = names(fd);
-		if (!table || list.length === 0) return fail(400, { error: 'No columns selected.' });
+		if (!table || list.length === 0) return fail(400, { error: locals.i18n.t('No columns selected.') });
 		const dbi = await locals.dbi;
 		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			addTableColumns(conn, q, dbi, params.db, table, list)
 		);
-		if (!res) return fail(400, { error: UNAVAILABLE });
+		if (!res) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {
 			message:
-				`${res.added.length} column(s) added to the central list.` +
-				(res.existing.length ? ` Already in the list: ${res.existing.join(', ')}.` : '')
+				locals.i18n.tn(
+					'{n} column added to the central list.',
+					'{n} columns added to the central list.',
+					res.added.length
+				) +
+				(res.existing.length
+					? ' ' +
+						locals.i18n.t('Already in the list: {columns}.', { columns: res.existing.join(', ') })
+					: '')
 		};
 	}
 };

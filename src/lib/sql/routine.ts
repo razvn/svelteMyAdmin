@@ -17,6 +17,7 @@ import {
 	type SecurityType,
 	type SqlDataAccess
 } from './routine-types.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export interface RoutineParam {
 	direction: ParamDirection;
@@ -56,12 +57,19 @@ const LIST_RE = /^\s*'(?:[^'\\]|\\.|'')*'(\s*,\s*'(?:[^'\\]|\\.|'')*')*\s*$/;
 const CHARSET_RE = /^[A-Za-z0-9_]{1,64}$/;
 
 /** Length/values suffix "(...)" validated so it cannot break out of the parameter list. */
-function lengthSuffix(type: string, length: string, errors: string[]): string {
+function lengthSuffix(
+	type: string,
+	length: string,
+	errors: string[],
+	tr: Translator
+): string {
 	const len = length.trim();
 	if (len === '') {
 		if (requiresLength(type)) {
 			errors.push(
-				'You must provide length/values for routine parameters of type ENUM, SET, VARCHAR and VARBINARY.'
+				tr.t(
+					'You must provide length/values for routine parameters of type ENUM, SET, VARCHAR and VARBINARY.'
+				)
 			);
 		}
 		return '';
@@ -70,18 +78,18 @@ function lengthSuffix(type: string, length: string, errors: string[]): string {
 	const upper = type.toUpperCase();
 	const ok = upper === 'ENUM' || upper === 'SET' ? LIST_RE.test(len) : LENGTH_RE.test(len);
 	if (!ok) {
-		errors.push(`Invalid length/values "${len}" for type ${upper}.`);
+		errors.push(tr.t('Invalid length/values "{len}" for type {type}.', { len, type: upper }));
 		return '';
 	}
 	return `(${len})`;
 }
 
-function optionsSuffix(type: string, opts: string, errors: string[]): string {
+function optionsSuffix(type: string, opts: string, errors: string[], tr: Translator): string {
 	const o = opts.trim();
 	if (o === '') return '';
 	if (isCharsetType(type)) {
 		if (!CHARSET_RE.test(o)) {
-			errors.push(`Invalid character set "${o}".`);
+			errors.push(tr.t('Invalid character set "{name}".', { name: o }));
 			return '';
 		}
 		return ` CHARSET ${o.toLowerCase()}`;
@@ -89,7 +97,7 @@ function optionsSuffix(type: string, opts: string, errors: string[]): string {
 	if (isNumericType(type)) {
 		const up = o.toUpperCase();
 		if (!['UNSIGNED', 'ZEROFILL', 'UNSIGNED ZEROFILL'].includes(up)) {
-			errors.push(`Invalid numeric option "${o}".`);
+			errors.push(tr.t('Invalid numeric option "{name}".', { name: o }));
 			return '';
 		}
 		return ` ${up}`;
@@ -105,64 +113,73 @@ function validType(type: string): boolean {
 export function buildParamList(
 	type: RoutineType,
 	params: RoutineParam[],
-	errors: string[] = []
+	errors: string[] = [],
+	tr: Translator = SOURCE_TRANSLATOR
 ): string {
 	const parts: string[] = [];
 	for (const p of params) {
 		if (p.name.trim() === '' || p.type.trim() === '') {
-			errors.push('You must provide a name and a type for each routine parameter.');
+			errors.push(tr.t('You must provide a name and a type for each routine parameter.'));
 			break;
 		}
 		if (!validType(p.type)) {
-			errors.push(`Invalid type "${p.type}" for parameter ${p.name}.`);
+			errors.push(tr.t('Invalid type "{type}" for parameter {name}.', { type: p.type, name: p.name }));
 			continue;
 		}
 		let part = '';
 		if (type === 'PROCEDURE') {
 			if (!(PARAM_DIRECTIONS as readonly string[]).includes(p.direction)) {
-				errors.push(`Invalid direction "${p.direction}" given for parameter.`);
+				errors.push(tr.t('Invalid direction "{direction}" given for parameter.', { direction: p.direction }));
 				continue;
 			}
 			part += `${p.direction} `;
 		}
 		part += `${escapeId(p.name)} ${p.type.toUpperCase()}`;
-		part += lengthSuffix(p.type, p.length, errors);
-		part += optionsSuffix(p.type, p.opts, errors);
+		part += lengthSuffix(p.type, p.length, errors, tr);
+		part += optionsSuffix(p.type, p.opts, errors, tr);
 		parts.push(part);
 	}
 	return parts.join(', ');
 }
 
 /** "RETURNS INT(11) UNSIGNED " */
-export function buildReturns(returns: RoutineReturns, errors: string[] = []): string {
+export function buildReturns(
+	returns: RoutineReturns,
+	errors: string[] = [],
+	tr: Translator = SOURCE_TRANSLATOR
+): string {
 	if (!validType(returns.type)) {
-		errors.push('You must provide a valid return type for the routine.');
+		errors.push(tr.t('You must provide a valid return type for the routine.'));
 		return '';
 	}
 	let sql = `RETURNS ${returns.type.toUpperCase()}`;
-	sql += lengthSuffix(returns.type, returns.length, errors);
-	sql += optionsSuffix(returns.type, returns.opts, errors);
+	sql += lengthSuffix(returns.type, returns.length, errors, tr);
+	sql += optionsSuffix(returns.type, returns.opts, errors, tr);
 	return sql + ' ';
 }
 
 /** CREATE statement for a routine in `db` (Routines::getQueryFromRequest). */
-export function buildCreateRoutine(db: string, def: RoutineDef): BuildResult {
+export function buildCreateRoutine(
+	db: string,
+	def: RoutineDef,
+	tr: Translator = SOURCE_TRANSLATOR
+): BuildResult {
 	const errors: string[] = [];
 	let sql = 'CREATE ';
-	const definer = buildDefinerClause(def.definer);
+	const definer = buildDefinerClause(def.definer, tr);
 	if (definer.error) errors.push(definer.error);
 	sql += definer.clause;
 
 	if (def.type !== 'PROCEDURE' && def.type !== 'FUNCTION') {
-		errors.push(`Invalid routine type: "${def.type}"`);
+		errors.push(tr.t('Invalid routine type: "{type}"', { type: def.type }));
 	}
 	sql += `${def.type} `;
 
-	if (def.name.trim() === '') errors.push('You must provide a routine name!');
+	if (def.name.trim() === '') errors.push(tr.t('You must provide a routine name!'));
 	else sql += escapeQualified(db, def.name);
 
-	sql += `(${buildParamList(def.type, def.params, errors)}) `;
-	if (def.type === 'FUNCTION') sql += buildReturns(def.returns, errors);
+	sql += `(${buildParamList(def.type, def.params, errors, tr)}) `;
+	if (def.type === 'FUNCTION') sql += buildReturns(def.returns, errors, tr);
 
 	if (def.comment !== '') sql += `COMMENT '${escapeString(def.comment)}' `;
 	sql += def.deterministic ? 'DETERMINISTIC ' : 'NOT DETERMINISTIC ';
@@ -175,7 +192,7 @@ export function buildCreateRoutine(db: string, def: RoutineDef): BuildResult {
 	if (def.securityType === 'DEFINER' || def.securityType === 'INVOKER') {
 		sql += `SQL SECURITY ${def.securityType} `;
 	}
-	if (def.definition.trim() === '') errors.push('You must provide a routine definition.');
+	if (def.definition.trim() === '') errors.push(tr.t('You must provide a routine definition.'));
 	else sql += def.definition;
 	return { sql, errors };
 }

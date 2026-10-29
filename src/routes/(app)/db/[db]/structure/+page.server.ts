@@ -36,18 +36,18 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 async function prepare(request: Request, locals: App.Locals, db: string, forExecution: boolean) {
 	const parsed = parseOperation(await request.formData());
-	if (!parsed.success) return { error: parsed.error.issues[0].message } as const;
+	if (!parsed.success) return { error: locals.i18n.t(parsed.error.issues[0].message) } as const;
 	const input = parsed.data;
 	const readOnly = input.op === 'show_create' || ['check', 'checksum'].includes(input.op);
 	if (isSystemSchema(db) && !readOnly) {
-		return { error: 'Tables of a system database cannot be modified.' } as const;
+		return { error: locals.i18n.t('Tables of a system database cannot be modified.') } as const;
 	}
 	const dbi = await locals.dbi;
 	const tables = (await loadRawTables(dbi, db)).map((t) => ({
 		name: t.name,
 		isView: isViewType(t.type)
 	}));
-	const res = buildPlan(input, tables, forExecution ? db : null);
+	const res = buildPlan(input, tables, forExecution ? db : null, locals.i18n);
 	if (!res.ok) return { error: res.error } as const;
 	return { dbi, input, plan: res.plan } as const;
 }

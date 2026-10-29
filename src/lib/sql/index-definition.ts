@@ -6,6 +6,7 @@
  * Structure/{Primary,Unique,Spatial,Fulltext,AddKey}Controller.php and IndexRenameController.php.
  */
 import { escapeStr, isMariaDb, quoteId, type ServerCaps } from './column-definition.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export type IndexKind = 'PRIMARY' | 'UNIQUE' | 'INDEX' | 'FULLTEXT' | 'SPATIAL';
 export const INDEX_KINDS: readonly IndexKind[] = [
@@ -65,34 +66,38 @@ export const supportsRenameIndex = (caps: ServerCaps): boolean =>
 	isMariaDb(caps) ? caps.version >= 100502 : caps.version >= 50700;
 
 /** Validation shared by the editor dialog and the server action. Returns an error or null. */
-export function validateIndexDef(def: IndexDef, tableColumns?: string[]): string | null {
-	if (def.columns.length === 0) return 'The index needs at least one column.';
-	if (def.columns.some((c) => c.name === '')) return 'Choose a column for every index part.';
+export function validateIndexDef(
+	def: IndexDef,
+	tableColumns?: string[],
+	tr: Pick<Translator, 't'> = SOURCE_TRANSLATOR
+): string | null {
+	if (def.columns.length === 0) return tr.t('The index needs at least one column.');
+	if (def.columns.some((c) => c.name === '')) return tr.t('Choose a column for every index part.');
 	const seen = new Set<string>();
 	for (const c of def.columns) {
-		if (seen.has(c.name)) return `Column ${c.name} is used twice.`;
+		if (seen.has(c.name)) return tr.t('Column {name} is used twice.', { name: c.name });
 		seen.add(c.name);
 		if (c.size !== '' && !/^[1-9]\d{0,5}$/.test(c.size)) {
-			return `Invalid sub-part length for ${c.name}.`;
+			return tr.t('Invalid sub-part length for {name}.', { name: c.name });
 		}
 		if (c.size !== '' && (def.kind === 'FULLTEXT' || def.kind === 'SPATIAL')) {
-			return `${def.kind} index parts cannot have a length.`;
+			return tr.t('{kind} index parts cannot have a length.', { kind: def.kind });
 		}
-		if (tableColumns && !tableColumns.includes(c.name)) return `Unknown column ${c.name}.`;
+		if (tableColumns && !tableColumns.includes(c.name)) return tr.t('Unknown column {name}.', { name: c.name });
 	}
-	if (def.name.length > 64) return 'The index name is too long.';
+	if (def.name.length > 64) return tr.t('The index name is too long.');
 	if (def.kind === 'PRIMARY' && def.name !== '' && def.name !== 'PRIMARY') {
-		return 'The name of a PRIMARY KEY must be "PRIMARY".';
+		return tr.t('The name of a PRIMARY KEY must be "PRIMARY".');
 	}
 	if (def.keyBlockSize !== '' && !/^\d{1,5}$/.test(def.keyBlockSize)) {
-		return 'Invalid key block size.';
+		return tr.t('Invalid key block size.');
 	}
-	if (def.parser !== '' && def.kind !== 'FULLTEXT') return 'A parser is only for FULLTEXT indexes.';
-	if (def.parser !== '' && !/^[A-Za-z0-9_$]+$/.test(def.parser)) return 'Invalid parser name.';
+	if (def.parser !== '' && def.kind !== 'FULLTEXT') return tr.t('A parser is only for FULLTEXT indexes.');
+	if (def.parser !== '' && !/^[A-Za-z0-9_$]+$/.test(def.parser)) return tr.t('Invalid parser name.');
 	if (def.indexType !== '' && (def.kind === 'FULLTEXT' || def.kind === 'SPATIAL')) {
-		return `${def.kind} indexes have no BTREE/HASH type.`;
+		return tr.t('{kind} indexes have no BTREE/HASH type.', { kind: def.kind });
 	}
-	if (def.kind === 'PRIMARY' && def.invisible) return 'A PRIMARY KEY cannot be invisible.';
+	if (def.kind === 'PRIMARY' && def.invisible) return tr.t('A PRIMARY KEY cannot be invisible.');
 	return null;
 }
 

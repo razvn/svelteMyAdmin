@@ -35,42 +35,43 @@ async function listTableNames(conn: Connection, db: string): Promise<string[]> {
 export function triggerActions() {
 	const get: Action = async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid trigger.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid trigger.') });
 		const trigger = await getTrigger(await locals.db, params.db!, ref.data.name, params.table);
-		if (!trigger) return fail(404, { error: `No trigger with name ${ref.data.name} found.` });
+		if (!trigger) return fail(404, { error: locals.i18n.t('No trigger with name {name} found.', { name: ref.data.name }) });
 		return { trigger };
 	};
 	const exportAction: Action = async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid trigger.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid trigger.') });
 		try {
 			const sql = await exportTrigger(await locals.db, params.db!, ref.data.name);
-			if (sql === null) return fail(404, { error: 'The trigger definition is not available.' });
+			if (sql === null) return fail(404, { error: locals.i18n.t('The trigger definition is not available.') });
 			return { sql };
 		} catch {
-			return fail(400, { error: 'The trigger could not be exported.' });
+			return fail(400, { error: locals.i18n.t('The trigger could not be exported.') });
 		}
 	};
 	const save: Action = async ({ request, params, locals }) => {
 		const form = await request.formData();
 		const def = parseJsonField(triggerDefSchema, form.get('payload'));
-		if (!def) return fail(400, { error: 'Invalid trigger data.' });
+		if (!def) return fail(400, { error: locals.i18n.t('Invalid trigger data.') });
 		if (params.table !== undefined) def.table = params.table;
 		const original = form.get('original');
 		const result = await saveTrigger(
 			await locals.db,
 			params.db!,
 			def,
-			typeof original === 'string' && original !== '' ? original : null
+			typeof original === 'string' && original !== '' ? original : null,
+			locals.i18n
 		);
 		if (!result.ok) return fail(400, { error: result.errors.join(' '), errors: result.errors });
 		return { saved: def.name, queries: result.queries };
 	};
 	const drop: Action = async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid trigger.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid trigger.') });
 		const result = await dropTrigger(await locals.db, params.db!, ref.data.name);
-		if (!result.ok) return fail(400, { error: result.error ?? 'Drop failed.' });
+		if (!result.ok) return fail(400, { error: result.error ?? locals.i18n.t('Drop failed.') });
 		return { dropped: ref.data.name, query: result.query };
 	};
 	return { get, export: exportAction, save, drop };

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
@@ -24,6 +25,7 @@
 		type IndexStorageType
 	} from '#lib/sql/index-definition.ts';
 	import { alterEnhance } from './alter-enhance.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -57,14 +59,14 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	const problem = $derived(validateIndexDef(def, tableColumns));
+	const problem = $derived(validateIndexDef(def, tableColumns, { t }));
 	const sql = $derived(problem ? '' : buildSaveIndex(db, table, def, original, caps));
 	const isPrimary = $derived(def.kind === 'PRIMARY');
 	const storageTypes: { value: IndexStorageType; label: string }[] = [
-		{ value: '', label: '(default)' },
+		{ value: '', label: N_('(default)') },
 		{ value: 'BTREE', label: 'BTREE' },
 		{ value: 'HASH', label: 'HASH' }
-	];
+	] as const;
 
 	function setKind(value: string) {
 		def.kind = value as IndexKind;
@@ -99,19 +101,20 @@
 		success: () => {
 			busy = false;
 			open = false;
-			toast.success(original ? 'The index has been modified.' : 'The index has been created.');
+			toast.success(
+				original ? t('The index has been modified.') : t('The index has been created.')
+			);
 			if (page.params.db) void navState.load(page.params.db, true);
 		}
-	});
+	}, t);
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] max-w-3xl overflow-y-auto" data-testid="index-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? `Edit index ${original.name}` : 'Add index'}</Dialog.Title>
+			<Dialog.Title>{original ? t('Edit index {name}', { name: original.name }) : t('Add index')}</Dialog.Title>
 			<Dialog.Description>
-				Table {table}. Choose the columns, in order; a sub-part limits how many characters are
-				indexed.
+				{t('Table {table}. Choose the columns, in order; a sub-part limits how many characters are indexed.', { table })}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -123,11 +126,11 @@
 			/>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div class="flex flex-col gap-1.5">
-					<Label for="ix-name">Index name</Label>
+					<Label for="ix-name">{t('Index name')}</Label>
 					<Input
 						id="ix-name"
 						bind:value={def.name}
-						placeholder={isPrimary ? 'PRIMARY' : 'Index name (optional)'}
+						placeholder={isPrimary ? 'PRIMARY' : t('Index name (optional)')}
 						disabled={isPrimary}
 						maxlength={64}
 						autocomplete="off"
@@ -135,7 +138,7 @@
 					/>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="ix-kind-label">Index choice</Label>
+					<Label id="ix-kind-label">{t('Index choice')}</Label>
 					<Select.Root type="single" value={def.kind} onValueChange={setKind}>
 						<Select.Trigger class="w-full" aria-labelledby="ix-kind-label">
 							{def.kind}
@@ -148,17 +151,17 @@
 					</Select.Root>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label for="ix-kbs">Key block size</Label>
+					<Label for="ix-kbs">{t('Key block size')}</Label>
 					<Input
 						id="ix-kbs"
 						bind:value={def.keyBlockSize}
 						inputmode="numeric"
-						placeholder="(default)"
+						placeholder={t('(default)')}
 						autocomplete="off"
 					/>
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label id="ix-type-label">Index type</Label>
+					<Label id="ix-type-label">{t('Index type')}</Label>
 					<Select.Root
 						type="single"
 						value={def.indexType}
@@ -166,29 +169,29 @@
 						disabled={def.kind === 'FULLTEXT' || def.kind === 'SPATIAL'}
 					>
 						<Select.Trigger class="w-full" aria-labelledby="ix-type-label">
-							{def.indexType || '(default)'}
+							{def.indexType || t('(default)')}
 						</Select.Trigger>
 						<Select.Content>
-							{#each storageTypes as t (t.value)}
-								<Select.Item value={t.value} label={t.label}>{t.label}</Select.Item>
+							{#each storageTypes as tbl (tbl.value)}
+								<Select.Item value={tbl.value} label={t(tbl.label)}>{t(tbl.label)}</Select.Item>
 							{/each}
 						</Select.Content>
 					</Select.Root>
 				</div>
 				{#if def.kind === 'FULLTEXT'}
 					<div class="flex flex-col gap-1.5">
-						<Label for="ix-parser">Parser</Label>
+						<Label for="ix-parser">{t('Parser')}</Label>
 						<Input
 							id="ix-parser"
 							bind:value={def.parser}
-							placeholder="(none)"
+							placeholder={t('(none)')}
 							autocomplete="off"
 							class="font-mono"
 						/>
 					</div>
 				{/if}
 				<div class="flex flex-col gap-1.5 {def.kind === 'FULLTEXT' ? '' : 'md:col-span-2'}">
-					<Label for="ix-comment">Comment</Label>
+					<Label for="ix-comment">{t('Comment')}</Label>
 					<Input id="ix-comment" bind:value={def.comment} maxlength={1024} autocomplete="off" />
 				</div>
 				{#if canInvisible && !isPrimary}
@@ -204,12 +207,12 @@
 			</div>
 
 			<div class="flex flex-col gap-2" data-testid="index-columns">
-				<span class="text-sm font-medium">Columns</span>
+				<span class="text-sm font-medium">{t('Columns')}</span>
 				{#each def.columns as c, i (i)}
-					<div class="flex items-center gap-2" role="group" aria-label="Index column {i + 1}">
+					<div class="flex items-center gap-2" role="group" aria-label={t('Index column {n}', { n: i + 1 })}>
 						<Select.Root type="single" value={c.name} onValueChange={(v) => (c.name = v)}>
-							<Select.Trigger class="min-w-0 flex-1" aria-label="Column">
-								<span class="truncate font-mono">{c.name || 'Choose a column'}</span>
+							<Select.Trigger class="min-w-0 flex-1" aria-label={t('Column')}>
+								<span class="truncate font-mono">{c.name || t('Choose a column')}</span>
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each tableColumns as name (name)}
@@ -219,8 +222,8 @@
 						</Select.Root>
 						<Input
 							bind:value={c.size}
-							aria-label="Sub-part size"
-							placeholder="Size"
+							aria-label={t('Sub-part size')}
+							placeholder={t('Size')}
 							inputmode="numeric"
 							disabled={def.kind === 'FULLTEXT' || def.kind === 'SPATIAL'}
 							class="w-24"
@@ -229,7 +232,7 @@
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Move column {i + 1} up"
+							aria-label={t('Move column {n} up', { n: i + 1 })}
 							disabled={i === 0}
 							onclick={() => move(i, -1)}
 						>
@@ -239,7 +242,7 @@
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Move column {i + 1} down"
+							aria-label={t('Move column {n} down', { n: i + 1 })}
 							disabled={i === def.columns.length - 1}
 							onclick={() => move(i, 1)}
 						>
@@ -249,7 +252,7 @@
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Remove column {i + 1}"
+							aria-label={t('Remove column {n}', { n: i + 1 })}
 							disabled={def.columns.length <= 1}
 							onclick={() => def.columns.splice(i, 1)}
 						>
@@ -258,7 +261,7 @@
 					</div>
 				{/each}
 				<Button type="button" variant="outline" size="sm" class="self-start" onclick={addColumn}>
-					<Plus /> Add column
+					<Plus /> {t('Add column')}
 				</Button>
 			</div>
 
@@ -276,8 +279,8 @@
 			{/if}
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
-				<Button type="submit" disabled={busy || problem !== null}>Save</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="submit" disabled={busy || problem !== null}>{t('Save')}</Button>
 			</Dialog.Footer>
 		</form>
 	</Dialog.Content>

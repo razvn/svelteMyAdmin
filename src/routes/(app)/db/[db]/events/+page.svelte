@@ -22,6 +22,8 @@
 	import { callAction } from '#lib/forms/call-action.ts';
 	import type { EventDef } from '#lib/sql/event.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -75,7 +77,7 @@
 
 	async function openEdit(name: string) {
 		const res = await callAction<{ event: EventDef }>(page.url.pathname, 'get', { name });
-		if (!res.ok || !res.data?.event) return void toast.error(res.message ?? 'Event not found.');
+		if (!res.ok || !res.data?.event) return void toast.error(res.message ?? t('Event not found.'));
 		editorDef = res.data.event;
 		editorOriginal = name;
 		editorOpen = true;
@@ -83,8 +85,8 @@
 
 	async function openExport(name: string) {
 		const res = await callAction<{ sql: string }>(page.url.pathname, 'export', { name });
-		if (!res.ok || !res.data?.sql) return void toast.error(res.message ?? 'Export failed.');
-		exportTitle = `Export of event ${name}`;
+		if (!res.ok || !res.data?.sql) return void toast.error(res.message ?? t('Export failed.'));
+		exportTitle = t('Export of event {name}', { name });
 		exportSql = res.data.sql;
 		exportOpen = true;
 	}
@@ -94,43 +96,43 @@
 		const res = await callAction(page.url.pathname, 'drop', { name: dropName });
 		dropping = false;
 		if (res.ok) {
-			toast.success(`Event ${dropName} has been dropped.`);
+			toast.success(t('Event {name} has been dropped.', { name: dropName }));
 			dropOpen = false;
 			await refreshAll();
-		} else toast.error(res.message ?? 'Drop failed.');
+		} else toast.error(res.message ?? t('Drop failed.'));
 	}
 
 	async function toggleScheduler(on: boolean) {
 		toggling = true;
 		const res = await callAction(page.url.pathname, 'scheduler', { state: on ? 'ON' : 'OFF' });
 		toggling = false;
-		if (!res.ok) toast.error(res.message ?? 'Changing the event scheduler failed.');
+		if (!res.ok) toast.error(res.message ?? t('Changing the event scheduler failed.'));
 		await refreshAll();
 	}
 
 	async function saved(name: string) {
-		toast.success(`Event ${name} has been saved.`);
+		toast.success(t('Event {name} has been saved.', { name }));
 		await refreshAll();
 	}
 
 	function schedule(e: (typeof data.events)[number]): string {
-		if (e.type === 'RECURRING') return `every ${e.intervalValue} ${e.intervalField}`;
+		if (e.type === 'RECURRING') return t('every {value} {unit}', { value: e.intervalValue ?? '', unit: e.intervalField ?? '' });
 		return e.executeAt ?? '';
 	}
 </script>
 
 <svelte:head>
-	<title>Events - {page.params.db} - svelteMyAdmin</title>
+	<title>{t('Events')} - {page.params.db} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={CalendarClock}
-		title="Events"
-		description="Scheduled events of {page.params.db}."
+		title={t('Events')}
+		description={t('Scheduled events of {db}.', { db: page.params.db ?? '' })}
 	>
 		{#snippet actions()}
-			<Button onclick={openAdd} data-testid="event-add"><Plus /> Add event</Button>
+			<Button onclick={openAdd} data-testid="event-add"><Plus /> {t('Add event')}</Button>
 		{/snippet}
 	</PageHeader>
 
@@ -143,20 +145,20 @@
 					disabled={toggling ||
 						!data.scheduler.canToggle ||
 						(data.scheduler.state !== 'ON' && data.scheduler.state !== 'OFF')}
-					aria-label="Event scheduler"
+					aria-label={t('Event scheduler')}
 					onCheckedChange={toggleScheduler}
 				/>
 				<label for="scheduler-switch" class="text-sm">
-					Event scheduler:
+					{t('Event scheduler:')}
 					<Badge
 						variant={data.scheduler.state === 'ON' ? 'success' : 'muted'}
 						data-testid="scheduler-state"
 					>
-						{data.scheduler.state ?? 'unknown'}
+						{data.scheduler.state ?? t('unknown')}
 					</Badge>
 				</label>
 				{#if !data.scheduler.canToggle}
-					<span class="text-xs text-muted-foreground">You cannot change it (needs SUPER).</span>
+					<span class="text-xs text-muted-foreground">{t('You cannot change it (needs SUPER).')}</span>
 				{/if}
 			</div>
 			<div class="relative w-full max-w-xs">
@@ -164,8 +166,8 @@
 				<Input
 					type="search"
 					class="ps-8"
-					placeholder="Filter events"
-					aria-label="Filter events"
+					placeholder={t('Filter events')}
+					aria-label={t('Filter events')}
 					data-testid="events-filter"
 					bind:value={filter}
 				/>
@@ -176,14 +178,14 @@
 				<Table.Root data-testid="events-table">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Name</Table.Head>
-							<Table.Head>Status</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Schedule</Table.Head>
-							<Table.Head>Starts</Table.Head>
-							<Table.Head>Ends</Table.Head>
-							<Table.Head>Definer</Table.Head>
-							<Table.Head class="text-end">Actions</Table.Head>
+							<Table.Head>{t('Name')}</Table.Head>
+							<Table.Head>{t('Status')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Schedule')}</Table.Head>
+							<Table.Head>{t('Starts')}</Table.Head>
+							<Table.Head>{t('Ends')}</Table.Head>
+							<Table.Head>{t('Definer')}</Table.Head>
+							<Table.Head class="text-end">{t('Actions')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -206,7 +208,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Edit {e.name}"
+											aria-label={t('Edit {name}', { name: e.name })}
 											onclick={() => openEdit(e.name)}
 										>
 											<Pencil />
@@ -214,7 +216,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Export {e.name}"
+											aria-label={t('Export {name}', { name: e.name })}
 											onclick={() => openExport(e.name)}
 										>
 											<Download />
@@ -222,7 +224,7 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Drop {e.name}"
+											aria-label={t('Drop {name}', { name: e.name })}
 											onclick={() => {
 												dropName = e.name;
 												dropOpen = true;
@@ -237,8 +239,8 @@
 							<Table.Row>
 								<Table.Cell colspan={8} class="py-8 text-center text-muted-foreground">
 									{data.events.length === 0
-										? 'No events in this database.'
-										: 'No events match the filter.'}
+										? t('No events in this database.')
+										: t('No events match the filter.')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -258,7 +260,7 @@
 <SqlDialog bind:open={exportOpen} title={exportTitle} sql={exportSql} />
 <ConfirmDrop
 	bind:open={dropOpen}
-	subject="event {dropName}"
+	title={t('Drop event {name}?', { name: dropName })}
 	busy={dropping}
 	onconfirm={confirmDrop}
 />

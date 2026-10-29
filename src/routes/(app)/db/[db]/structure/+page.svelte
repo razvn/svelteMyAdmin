@@ -34,8 +34,9 @@
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import FavoriteStar from '#lib/components/table/favorite-star.svelte';
-	import { formatByteDown, formatNumber } from '#lib/format.ts';
-	import type { PageProps } from './$types';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
+		import type { PageProps } from './$types';
+	const { t, tn, fmt } = useI18n();
 
 	type Op =
 		| 'empty'
@@ -55,17 +56,17 @@
 	const navState = getNavState();
 
 	const OP_LABELS: Record<Op, string> = {
-		empty: 'Empty',
-		drop: 'Drop',
-		check: 'Check table',
-		optimize: 'Optimize table',
-		repair: 'Repair table',
-		analyze: 'Analyze table',
-		checksum: 'Checksum table',
-		add_prefix: 'Add prefix to table',
-		replace_prefix: 'Replace table prefix',
-		copy_prefix: 'Copy table with prefix',
-		show_create: 'Show create'
+		empty: N_('Empty'),
+		drop: N_('Drop'),
+		check: N_('Check table'),
+		optimize: N_('Optimize table'),
+		repair: N_('Repair table'),
+		analyze: N_('Analyze table'),
+		checksum: N_('Checksum table'),
+		add_prefix: N_('Add prefix to table'),
+		replace_prefix: N_('Replace table prefix'),
+		copy_prefix: N_('Copy table with prefix'),
+		show_create: N_('Show create')
 	};
 
 	let filter = $state('');
@@ -94,17 +95,17 @@
 	let runForm = $state<HTMLFormElement>();
 
 	const visible = $derived(
-		data.rows.filter((t) => t.name.toLowerCase().includes(filter.trim().toLowerCase()))
+		data.rows.filter((tbl) => tbl.name.toLowerCase().includes(filter.trim().toLowerCase()))
 	);
-	const visibleNames = $derived(visible.map((t) => t.name));
+	const visibleNames = $derived(visible.map((tbl) => tbl.name));
 	const allChecked = $derived(
 		visibleNames.length > 0 && visibleNames.every((n) => selected.includes(n))
 	);
-	const sumSize = $derived(formatByteDown(data.sums.size, 3, 1));
+	const sumSize = $derived(fmt.byteDown(data.sums.size, 3, 1));
 	const sumOverhead = $derived(
-		formatByteDown(data.sums.overhead, 3, data.sums.overhead > 0 ? 1 : 0)
+		fmt.byteDown(data.sums.overhead, 3, data.sums.overhead > 0 ? 1 : 0)
 	);
-	const hasOverhead = $derived(data.rows.some((t) => t.overhead > 0));
+	const hasOverhead = $derived(data.rows.some((tbl) => tbl.overhead > 0));
 
 	const prefixOps: Op[] = ['add_prefix', 'replace_prefix', 'copy_prefix'];
 
@@ -167,9 +168,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toast.success('Copied to clipboard.');
+			toast.success(t('Copied to clipboard.'));
 		} catch {
-			toast.error('Could not copy.');
+			toast.error(t('Could not copy.'));
 		}
 	}
 
@@ -180,9 +181,9 @@
 {#snippet sortMark(col: string)}
 	{#if data.sort === col}
 		{#if data.sortOrder === 'asc'}
-			<ArrowUp class="size-3.5" aria-label="Ascending" />
+			<ArrowUp class="size-3.5" aria-label={t('Ascending')} />
 		{:else}
-			<ArrowDown class="size-3.5" aria-label="Descending" />
+			<ArrowDown class="size-3.5" aria-label={t('Descending')} />
 		{/if}
 	{/if}
 {/snippet}
@@ -209,40 +210,40 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Table2}
-		title="Structure"
-		description="{data.db} · {data.total} {data.total === 1 ? 'table' : 'tables'}"
+		title={t('Structure')}
+		description="{data.db} · {tn('{n} table', '{n} tables', data.total)}"
 	>
 		{#snippet actions()}
 			<Button variant="outline" href="/db/{encodeURIComponent(data.db)}/data-dictionary">
-				<BookOpen class="size-4" /> Data dictionary
+				<BookOpen class="size-4" /> {t('Data dictionary')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		<StatCard
-			label="Tables"
-			value={formatNumber(data.sums.tables)}
+			label={t('Tables')}
+			value={fmt.number(data.sums.tables)}
 			icon={Table2}
 			data-testid="stat-tables"
 		/>
 		<StatCard
-			label="Rows"
-			value="{data.sums.approxRows ? '~' : ''}{formatNumber(data.sums.rows)}"
+			label={t('Rows')}
+			value="{data.sums.approxRows ? '~' : ''}{fmt.number(data.sums.rows)}"
 			icon={Rows3}
 			tone="info"
 			data-testid="stat-rows"
 		/>
 		{#if data.showStats}
 			<StatCard
-				label="Total size"
+				label={t('Total size')}
 				value={sumSize ? `${sumSize[0]} ${sumSize[1]}` : '0 B'}
 				icon={HardDrive}
 				tone="success"
 				data-testid="stat-size"
 			/>
 			<StatCard
-				label="Overhead"
+				label={t('Overhead')}
 				value={sumOverhead ? `${sumOverhead[0]} ${sumOverhead[1]}` : '0 B'}
 				icon={Wrench}
 				tone={data.sums.overhead > 0 ? 'warning' : 'primary'}
@@ -258,7 +259,7 @@
 	{/if}
 
 	{#if data.total === 0}
-		<Alert><AlertDescription>No tables found in database.</AlertDescription></Alert>
+		<Alert><AlertDescription>{t('No tables found in database.')}</AlertDescription></Alert>
 	{:else}
 		<Card.Root class="gap-0 py-0">
 			<div class="flex flex-wrap items-center gap-3 border-b p-5">
@@ -266,42 +267,42 @@
 					id="check-all"
 					checked={allChecked}
 					onCheckedChange={(v) => toggleAll(v === true)}
-					aria-label="Check all"
+					aria-label={t('Check all')}
 				/>
-				<label for="check-all" class="text-sm">Check all</label>
+				<label for="check-all" class="text-sm">{t('Check all')}</label>
 				<Select.Root
 					type="single"
 					bind:value={opChoice}
 					onValueChange={onChoose}
 					disabled={selected.length === 0}
 				>
-					<Select.Trigger class="w-56" aria-label="With selected" data-testid="bulk-op">
-						With selected:
+					<Select.Trigger class="w-56" aria-label={t('With selected')} data-testid="bulk-op">
+						{t('With selected:')}
 					</Select.Trigger>
 					<Select.Content class="max-h-96">
-						<Select.Item value="show_create" label={OP_LABELS.show_create}>
-							{OP_LABELS.show_create}
+						<Select.Item value="show_create" label={t(OP_LABELS.show_create)}>
+							{t(OP_LABELS.show_create)}
 						</Select.Item>
 						{#if !data.isSystem}
 							<Select.Group>
-								<Select.GroupHeading>Delete data or table</Select.GroupHeading>
-								<Select.Item value="empty" label={OP_LABELS.empty}>{OP_LABELS.empty}</Select.Item>
-								<Select.Item value="drop" label={OP_LABELS.drop}>{OP_LABELS.drop}</Select.Item>
+								<Select.GroupHeading>{t('Delete data or table')}</Select.GroupHeading>
+								<Select.Item value="empty" label={t(OP_LABELS.empty)}>{t(OP_LABELS.empty)}</Select.Item>
+								<Select.Item value="drop" label={t(OP_LABELS.drop)}>{t(OP_LABELS.drop)}</Select.Item>
 							</Select.Group>
 						{/if}
 						<Select.Group>
-							<Select.GroupHeading>Table maintenance</Select.GroupHeading>
+							<Select.GroupHeading>{t('Table maintenance')}</Select.GroupHeading>
 							{#each ['analyze', 'check', 'checksum', 'optimize', 'repair'] as const as m (m)}
 								{#if !data.isSystem || m === 'check' || m === 'checksum'}
-									<Select.Item value={m} label={OP_LABELS[m]}>{OP_LABELS[m]}</Select.Item>
+									<Select.Item value={m} label={t(OP_LABELS[m])}>{t(OP_LABELS[m])}</Select.Item>
 								{/if}
 							{/each}
 						</Select.Group>
 						{#if !data.isSystem}
 							<Select.Group>
-								<Select.GroupHeading>Prefix</Select.GroupHeading>
+								<Select.GroupHeading>{t('Prefix')}</Select.GroupHeading>
 								{#each prefixOps as p (p)}
-									<Select.Item value={p} label={OP_LABELS[p]}>{OP_LABELS[p]}</Select.Item>
+									<Select.Item value={p} label={t(OP_LABELS[p])}>{t(OP_LABELS[p])}</Select.Item>
 								{/each}
 							</Select.Group>
 						{/if}
@@ -311,24 +312,24 @@
 					<Button
 						variant="link"
 						size="sm"
-						onclick={() => (selected = data.rows.filter((t) => t.overhead > 0).map((t) => t.name))}
+						onclick={() => (selected = data.rows.filter((tbl) => tbl.overhead > 0).map((tbl) => tbl.name))}
 					>
-						Check tables having overhead
+						{t('Check tables having overhead')}
 					</Button>
 				{/if}
 				<Input
 					bind:value={filter}
 					type="search"
-					placeholder="Filter tables"
-					aria-label="Filter tables"
+					placeholder={t('Filter tables')}
+					aria-label={t('Filter tables')}
 					class="ml-auto w-56"
 				/>
 			</div>
 
 			{#if data.maxTableList > 0 && data.total > data.maxTableList}
-				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label="Pagination">
+				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label={t('Pagination')}>
 					<Button variant="outline" size="sm" href={href({ pos: null })} disabled={data.pos === 0}>
-						Start
+						{t('Start')}
 					</Button>
 					<Button
 						variant="outline"
@@ -336,10 +337,10 @@
 						href={href({ pos: Math.max(0, data.pos - data.maxTableList) || null })}
 						disabled={data.pos === 0}
 					>
-						Previous
+						{t('Previous')}
 					</Button>
 					<span class="text-muted-foreground">
-						Showing {data.pos + 1} - {Math.min(data.total, data.pos + data.maxTableList)} of {data.total}
+						{t('Showing {from} - {to} of {total}', { from: data.pos + 1, to: Math.min(data.total, data.pos + data.maxTableList), total: data.total })}
 					</span>
 					<Button
 						variant="outline"
@@ -347,7 +348,7 @@
 						href={href({ pos: data.pos + data.maxTableList })}
 						disabled={data.pos + data.maxTableList >= data.total}
 					>
-						Next
+						{t('Next')}
 					</Button>
 				</nav>
 			{/if}
@@ -356,40 +357,40 @@
 				<Table.Header>
 					<Table.Row>
 						<Table.Head class="w-8"></Table.Head>
-						<Table.Head>{@render sortHeader('name', 'Table')}</Table.Head>
-						<Table.Head class="text-center">Action</Table.Head>
-						<Table.Head class="text-end">{@render sortHeader('rows', 'Rows')}</Table.Head>
-						<Table.Head>{@render sortHeader('engine', 'Type')}</Table.Head>
-						<Table.Head>{@render sortHeader('collation', 'Collation')}</Table.Head>
+						<Table.Head>{@render sortHeader('name', t('Table'))}</Table.Head>
+						<Table.Head class="text-center">{t('Action')}</Table.Head>
+						<Table.Head class="text-end">{@render sortHeader('rows', t('Rows'))}</Table.Head>
+						<Table.Head>{@render sortHeader('engine', t('Type'))}</Table.Head>
+						<Table.Head>{@render sortHeader('collation', t('Collation'))}</Table.Head>
 						{#if data.showStats}
-							<Table.Head class="text-end">{@render sortHeader('size', 'Size')}</Table.Head>
-							<Table.Head class="text-end">{@render sortHeader('overhead', 'Overhead')}</Table.Head>
+							<Table.Head class="text-end">{@render sortHeader('size', t('Size'))}</Table.Head>
+							<Table.Head class="text-end">{@render sortHeader('overhead', t('Overhead'))}</Table.Head>
 						{/if}
-						<Table.Head>{@render sortHeader('comment', 'Comment')}</Table.Head>
+						<Table.Head>{@render sortHeader('comment', t('Comment'))}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
-					{#each visible as t (t.name)}
-						{@const size = t.size === null ? null : formatByteDown(t.size, 3, t.size > 0 ? 1 : 0)}
-						{@const over = t.overhead > 0 ? formatByteDown(t.overhead, 3, 1) : null}
-						<Table.Row data-testid="table-row-{t.name}">
+					{#each visible as tbl (tbl.name)}
+						{@const size = tbl.size === null ? null : fmt.byteDown(tbl.size, 3, tbl.size > 0 ? 1 : 0)}
+						{@const over = tbl.overhead > 0 ? fmt.byteDown(tbl.overhead, 3, 1) : null}
+						<Table.Row data-testid="table-row-{tbl.name}">
 							<Table.Cell>
 								<Checkbox
-									checked={selected.includes(t.name)}
-									onCheckedChange={(v) => toggle(t.name, v === true)}
-									aria-label="Select {t.name}"
+									checked={selected.includes(tbl.name)}
+									onCheckedChange={(v) => toggle(tbl.name, v === true)}
+									aria-label={t('Select {name}', { name: tbl.name })}
 								/>
 							</Table.Cell>
 							<Table.Cell class="font-mono">
 								<div class="flex items-center gap-1">
 									<a
-										href={tableHref(t.name, 'browse')}
+										href={tableHref(tbl.name, 'browse')}
 										class="font-medium text-foreground hover:text-primary hover:underline"
-										title={t.comment}
+										title={tbl.comment}
 									>
-										{t.name}
+										{tbl.name}
 									</a>
-									<FavoriteStar db={data.db} table={t.name} class="size-6" />
+									<FavoriteStar db={data.db} table={tbl.name} class="size-6" />
 								</div>
 							</Table.Cell>
 							<Table.Cell>
@@ -397,27 +398,27 @@
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										href={tableHref(t.name, 'browse')}
-										aria-label="Browse {t.name}"
-										title="Browse"
+										href={tableHref(tbl.name, 'browse')}
+										aria-label={t('Browse {name}', { name: tbl.name })}
+										title={t('Browse')}
 									>
 										<Eye />
 									</Button>
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										href={tableHref(t.name, 'structure')}
-										aria-label="Structure of {t.name}"
-										title="Structure"
+										href={tableHref(tbl.name, 'structure')}
+										aria-label={t('Structure of {name}', { name: tbl.name })}
+										title={t('Structure')}
 									>
 										<TableProperties />
 									</Button>
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										href={tableHref(t.name, 'search')}
-										aria-label="Search {t.name}"
-										title="Search"
+										href={tableHref(tbl.name, 'search')}
+										aria-label={t('Search {name}', { name: tbl.name })}
+										title={t('Search')}
 									>
 										<Search />
 									</Button>
@@ -425,19 +426,21 @@
 										<Button
 											variant="ghost"
 											size="icon-sm"
-											href={tableHref(t.name, t.isView ? 'structure' : 'insert')}
-											aria-label={t.isView ? `Edit ${t.name}` : `Insert into ${t.name}`}
-											title={t.isView ? 'Edit' : 'Insert'}
+											href={tableHref(tbl.name, tbl.isView ? 'structure' : 'insert')}
+											aria-label={tbl.isView
+												? t('Edit {name}', { name: tbl.name })
+												: t('Insert into {name}', { name: tbl.name })}
+											title={tbl.isView ? t('Edit') : t('Insert')}
 										>
 											<SquarePlus />
 										</Button>
-										{#if !t.isView}
+										{#if !tbl.isView}
 											<Button
 												variant="ghost"
 												size="icon-sm"
-												aria-label="Empty {t.name}"
-												title="Empty"
-												onclick={() => startOp('empty', [t.name])}
+												aria-label={t('Empty {name}', { name: tbl.name })}
+												title={t('Empty')}
+												onclick={() => startOp('empty', [tbl.name])}
 											>
 												<Eraser />
 											</Button>
@@ -446,43 +449,43 @@
 											variant="ghost"
 											size="icon-sm"
 											class="text-destructive"
-											aria-label="Drop {t.name}"
-											title="Drop"
-											onclick={() => startOp('drop', [t.name])}
+											aria-label={t('Drop {name}', { name: tbl.name })}
+											title={t('Drop')}
+											onclick={() => startOp('drop', [tbl.name])}
 										>
 											<Trash2 />
 										</Button>
 									{/if}
 								</div>
 							</Table.Cell>
-							{#if t.inUse}
+							{#if tbl.inUse}
 								<Table.Cell
 									colspan={data.showStats ? 6 : 4}
-									class="text-center text-muted-foreground">in use</Table.Cell
+									class="text-center text-muted-foreground">{t('in use')}</Table.Cell
 								>
 							{:else}
-								<Table.Cell class="text-end tabular-nums" data-testid="rows-{t.name}">
-									{#if t.rows === null}
+								<Table.Cell class="text-end tabular-nums" data-testid="rows-{tbl.name}">
+									{#if tbl.rows === null}
 										-
 									{:else}
-										{t.approx ? '~' : ''}{formatNumber(t.rows)}
+										{tbl.approx ? '~' : ''}{fmt.number(tbl.rows)}
 									{/if}
-									{#if t.viewHint}
+									{#if tbl.viewHint}
 										<span
 											class="text-muted-foreground"
-											title="This view has at least this number of rows.">*</span
+											title={t('This view has at least this number of rows.')}>*</span
 										>
 									{/if}
 								</Table.Cell>
 								<Table.Cell>
-									{#if t.isView}
-										<Badge variant="info">View</Badge>
-									{:else if t.engine}
-										{t.engine}
+									{#if tbl.isView}
+										<Badge variant="info">{t('View')}</Badge>
+									{:else if tbl.engine}
+										{tbl.engine}
 									{/if}
 								</Table.Cell>
 								<Table.Cell>
-									{#if t.collation}<Badge variant="muted">{t.collation}</Badge>{:else}---{/if}
+									{#if tbl.collation}<Badge variant="muted">{tbl.collation}</Badge>{:else}---{/if}
 								</Table.Cell>
 								{#if data.showStats}
 									<Table.Cell class="text-end tabular-nums">
@@ -495,7 +498,7 @@
 										{:else}-{/if}
 									</Table.Cell>
 								{/if}
-								<Table.Cell class="whitespace-normal text-muted-foreground">{t.comment}</Table.Cell>
+								<Table.Cell class="whitespace-normal text-muted-foreground">{tbl.comment}</Table.Cell>
 							{/if}
 						</Table.Row>
 					{/each}
@@ -504,10 +507,10 @@
 					<Table.Row>
 						<Table.Cell colspan={3} class="font-semibold">
 							<span data-testid="table-count">{data.total}</span>
-							{data.total === 1 ? 'table' : 'tables'}
+							{tn('table', 'tables', data.total)}
 						</Table.Cell>
 						<Table.Cell class="text-end font-semibold tabular-nums">
-							Sum: {data.sums.approxRows ? '~' : ''}{formatNumber(data.sums.rows)}
+							{t('Sum')}: {data.sums.approxRows ? '~' : ''}{fmt.number(data.sums.rows)}
 						</Table.Cell>
 						<Table.Cell></Table.Cell>
 						<Table.Cell></Table.Cell>
@@ -528,7 +531,7 @@
 
 	{#if !data.isSystem}
 		<Card.Root>
-			<Card.Header><Card.Title>Create new table</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Create new table')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="GET"
@@ -536,11 +539,11 @@
 					class="flex flex-wrap items-end gap-3"
 				>
 					<div class="flex flex-col gap-1.5">
-						<label for="new-table-name" class="text-sm">Table name</label>
+						<label for="new-table-name" class="text-sm">{t('Table name')}</label>
 						<Input id="new-table-name" name="name" required maxlength={64} class="w-64" />
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<label for="new-table-cols" class="text-sm">Number of columns</label>
+						<label for="new-table-cols" class="text-sm">{t('Number of columns')}</label>
 						<Input
 							id="new-table-cols"
 							name="num_fields"
@@ -552,7 +555,7 @@
 							class="w-32"
 						/>
 					</div>
-					<Button type="submit">Create</Button>
+					<Button type="submit">{t('Create')}</Button>
 				</form>
 			</Card.Content>
 		</Card.Root>
@@ -574,7 +577,7 @@
 				statements = p.statements;
 				confirmOpen = true;
 			} else if (result.type === 'failure') {
-				errorMsg = String(result.data?.error ?? 'Could not prepare the operation.');
+				errorMsg = String(result.data?.error ?? t('Could not prepare the operation.'));
 				toast.error(errorMsg);
 			}
 		};
@@ -602,7 +605,9 @@
 					results = done.results;
 					resultsOpen = true;
 				} else {
-					toast.success(`${OP_LABELS[done.op]}: done (${done.count}).`);
+					toast.success(
+						t('{operation}: done ({count}).', { operation: t(OP_LABELS[done.op]), count: done.count })
+					);
 				}
 				const mutated = !['show_create', 'check', 'checksum'].includes(done.op);
 				if (['empty', 'drop', 'add_prefix', 'replace_prefix', 'copy_prefix'].includes(done.op)) {
@@ -611,7 +616,7 @@
 				await update({ reset: false });
 				if (mutated) await navState.reload();
 			} else if (result.type === 'failure') {
-				const msg = String(result.data?.error ?? 'The operation failed.');
+				const msg = String(result.data?.error ?? t('The operation failed.'));
 				confirmOpen = false;
 				if (prefixOpen) dialogError = msg;
 				else errorMsg = msg;
@@ -628,26 +633,25 @@
 <Dialog.Root bind:open={prefixOpen}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>{OP_LABELS[op]}</Dialog.Title>
+			<Dialog.Title>{t(OP_LABELS[op])}</Dialog.Title>
 			<Dialog.Description>
-				{targets.length}
-				{targets.length === 1 ? 'table' : 'tables'} selected.
+				{tn('{n} table selected.', '{n} tables selected.', targets.length)}
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="flex flex-col gap-3">
 			{#if op === 'add_prefix'}
 				<label class="flex flex-col gap-1.5 text-sm">
-					Add prefix
-					<Input bind:value={prefix} name="prefix_input" maxlength={64} aria-label="Prefix" />
+					{t('Add prefix')}
+					<Input bind:value={prefix} name="prefix_input" maxlength={64} aria-label={t('Prefix')} />
 				</label>
 			{:else}
 				<label class="flex flex-col gap-1.5 text-sm">
-					{op === 'copy_prefix' ? 'From prefix' : 'Replace prefix'}
-					<Input bind:value={fromPrefix} maxlength={64} aria-label="From prefix" />
+					{op === 'copy_prefix' ? t('From prefix') : t('Replace prefix')}
+					<Input bind:value={fromPrefix} maxlength={64} aria-label={t('From prefix')} />
 				</label>
 				<label class="flex flex-col gap-1.5 text-sm">
-					With
-					<Input bind:value={toPrefix} maxlength={64} aria-label="To prefix" />
+					{t('With')}
+					<Input bind:value={toPrefix} maxlength={64} aria-label={t('To prefix')} />
 				</label>
 			{/if}
 			{#if op === 'copy_prefix'}
@@ -657,7 +661,7 @@
 						checked={dropIfExists}
 						onCheckedChange={(v) => (dropIfExists = v === true)}
 					/>
-					<label for="drop-if-exists" class="text-sm">Add DROP TABLE IF EXISTS</label>
+					<label for="drop-if-exists" class="text-sm">{t('Add DROP TABLE IF EXISTS')}</label>
 				</div>
 			{/if}
 			{#if dialogError}
@@ -665,13 +669,13 @@
 			{/if}
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (prefixOpen = false)}>Cancel</Button>
+			<Button variant="outline" onclick={() => (prefixOpen = false)}>{t('Cancel')}</Button>
 			<Button
 				disabled={busy}
 				onclick={() => {
 					dialogError = '';
 					previewForm?.requestSubmit();
-				}}>Continue</Button
+				}}>{t('Continue')}</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -681,8 +685,8 @@
 <AlertDialog.Root bind:open={confirmOpen}>
 	<AlertDialog.Content class="sm:max-w-xl">
 		<AlertDialog.Header>
-			<AlertDialog.Title>Do you really want to execute the following query?</AlertDialog.Title>
-			<AlertDialog.Description>This cannot be undone.</AlertDialog.Description>
+			<AlertDialog.Title>{t('Do you really want to execute the following query?')}</AlertDialog.Title>
+			<AlertDialog.Description>{t('This cannot be undone.')}</AlertDialog.Description>
 		</AlertDialog.Header>
 		<pre
 			class="max-h-60 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap"
@@ -694,11 +698,11 @@
 					checked={fkChecks}
 					onCheckedChange={(v) => (fkChecks = v === true)}
 				/>
-				<label for="fk-checks" class="text-sm">Enable foreign key checks</label>
+				<label for="fk-checks" class="text-sm">{t('Enable foreign key checks')}</label>
 			</div>
 		{/if}
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={busy}
@@ -707,7 +711,7 @@
 					runForm?.requestSubmit();
 				}}
 			>
-				Yes
+				{t('Yes')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
@@ -717,7 +721,7 @@
 <Dialog.Root bind:open={resultsOpen}>
 	<Dialog.Content class="max-h-[85vh] overflow-auto sm:max-w-3xl" data-testid="results-dialog">
 		<Dialog.Header>
-			<Dialog.Title>{OP_LABELS[op]}</Dialog.Title>
+			<Dialog.Title>{t(OP_LABELS[op])}</Dialog.Title>
 		</Dialog.Header>
 		{#each results as r (r.statement)}
 			{#if op === 'show_create'}
@@ -726,7 +730,7 @@
 						<div class="flex items-center justify-between gap-2">
 							<span class="font-mono text-sm font-medium">{createName(row)}</span>
 							<Button variant="outline" size="sm" onclick={() => copy(createSql(row))}>
-								<Copy /> Copy
+								<Copy /> {t('Copy')}
 							</Button>
 						</div>
 						<pre class="overflow-auto rounded-lg bg-muted p-3 font-mono text-xs">{createSql(
@@ -741,7 +745,7 @@
 		<Dialog.Footer>
 			<Dialog.Close>
 				{#snippet child({ props })}
-					<Button variant="outline" {...props}>Close</Button>
+					<Button variant="outline" {...props}>{t('Close')}</Button>
 				{/snippet}
 			</Dialog.Close>
 		</Dialog.Footer>

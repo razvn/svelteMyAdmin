@@ -16,6 +16,8 @@
 	import * as Sheet from '#lib/components/ui/sheet/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -64,14 +66,14 @@
 </script>
 
 <svelte:head>
-	<title>Zoom search - {table} - svelteMyAdmin</title>
+	<title>{t('Zoom search')} - {table} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={ChartScatter}
-		title="Zoom search"
-		description="Plot the rows of {table} matching up to four criteria; the first two columns are the X and Y axes."
+		title={t('Zoom search')}
+		description={t('Plot the rows of {table} matching up to four criteria; the first two columns are the X and Y axes.', { table })}
 	/>
 	<SearchNav {db} {table} current="zoom-search" />
 
@@ -79,18 +81,20 @@
 		<input type="hidden" name="go" value="1" />
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Do a "query by example" (wildcard: "%") for two different columns</Card.Title>
+				<Card.Title>
+					{t('Do a "query by example" (wildcard: "%") for two different columns')}
+				</Card.Title>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-6 overflow-x-auto">
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Column</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Collation</Table.Head>
-							{#if hasGeometry}<Table.Head>Function</Table.Head>{/if}
-							<Table.Head>Operator</Table.Head>
-							<Table.Head>Value</Table.Head>
+							<Table.Head>{t('Column')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Collation')}</Table.Head>
+							{#if hasGeometry}<Table.Head>{t('Function')}</Table.Head>{/if}
+							<Table.Head>{t('Operator')}</Table.Head>
+							<Table.Head>{t('Value')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -102,7 +106,7 @@
 										colspan={hasGeometry ? 6 : 5}
 										class="bg-muted/50 font-medium text-muted-foreground"
 									>
-										Additional search criteria
+										{t('Additional search criteria')}
 									</Table.Cell>
 								</Table.Row>
 							{/if}
@@ -112,19 +116,19 @@
 										name="col_{k}"
 										bind:value={chosen[k]}
 										aria-label={k === 0
-											? 'X axis column'
+											? t('X axis column')
 											: k === 1
-												? 'Y axis column'
-												: `Additional column ${k - 1}`}
+												? t('Y axis column')
+												: t('Additional column {n}', { n: k - 1 })}
 									>
-										<option value="">{k < 2 ? 'Select a column' : 'None'}</option>
+										<option value="">{k < 2 ? t('Select a column') : t('None')}</option>
 										{#each data.columns as c (c.name)}
 											<option value={c.name}>{c.name}</option>
 										{/each}
 									</NativeSelect>
 									{#if k < 2}
 										<span class="ms-2 text-xs text-muted-foreground"
-											>{k === 0 ? 'X axis' : 'Y axis'}</span
+											>{k === 0 ? t('X axis') : t('Y axis')}</span
 										>
 									{/if}
 								</Table.Cell>
@@ -151,16 +155,16 @@
 
 				<div class="flex flex-wrap items-end gap-6">
 					<div class="flex flex-col gap-2">
-						<Label for="zoom-label">Use this column to label each point</Label>
+						<Label for="zoom-label">{t('Use this column to label each point')}</Label>
 						<NativeSelect id="zoom-label" name="label" value={data.form.label}>
-							<option value="">None</option>
+							<option value="">{t('None')}</option>
 							{#each data.columns as c (c.name)}
 								<option value={c.name}>{c.name}</option>
 							{/each}
 						</NativeSelect>
 					</div>
 					<div class="flex flex-col gap-2">
-						<Label for="zoom-limit">Maximum rows to plot</Label>
+						<Label for="zoom-limit">{t('Maximum rows to plot')}</Label>
 						<Input
 							id="zoom-limit"
 							name="limit"
@@ -174,7 +178,7 @@
 				</div>
 			</Card.Content>
 			<Card.Footer>
-				<Button type="submit">Go</Button>
+				<Button type="submit">{t('Go')}</Button>
 			</Card.Footer>
 		</Card.Root>
 	</form>
@@ -186,17 +190,21 @@
 	{#if plot}
 		<Card.Root data-testid="zoom-result">
 			<Card.Header>
-				<Card.Title>{plot.y.name} by {plot.x.name}</Card.Title>
+				<Card.Title>{t('{y} by {x}', { y: plot.y.name, x: plot.x.name })}</Card.Title>
 				<Card.Description>
-					{plot.points.length} point{plot.points.length === 1 ? '' : 's'} plotted
-					{#if plot.total >= plot.limit}(limited to {plot.limit} rows){/if}
-					{#if plot.skipped > 0}, {plot.skipped} row{plot.skipped === 1 ? '' : 's'} without a usable value
-						skipped{/if}. Click a point to see the row.
+					{tn('{n} point plotted.', '{n} points plotted.', plot.points.length)}
+					{#if plot.total >= plot.limit}{t('(limited to {n} rows)', { n: plot.limit })}{/if}
+					{#if plot.skipped > 0}{tn(
+							'{n} row without a usable value skipped.',
+							'{n} rows without a usable value skipped.',
+							plot.skipped
+						)}{/if}
+					{t('Click a point to see the row.')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				{#if plot.points.length === 0}
-					<p class="text-sm text-muted-foreground">No rows to plot.</p>
+					<p class="text-sm text-muted-foreground">{t('No rows to plot.')}</p>
 				{:else}
 					<ScatterChart
 						points={chartPoints}
@@ -217,8 +225,8 @@
 		<Sheet.Root bind:open={sheetOpen}>
 			<Sheet.Content side="right" class="w-full overflow-y-auto sm:max-w-md">
 				<Sheet.Header>
-					<Sheet.Title>Row details</Sheet.Title>
-					<Sheet.Description>All column values of the selected point.</Sheet.Description>
+					<Sheet.Title>{t('Row details')}</Sheet.Title>
+					<Sheet.Description>{t('All column values of the selected point.')}</Sheet.Description>
 				</Sheet.Header>
 				{#if selectedPoint}
 					<dl class="flex flex-col gap-3 px-4 text-sm" data-testid="zoom-row">
@@ -239,7 +247,7 @@
 						<Sheet.Footer>
 							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- signed URL built on the server -->
 							<a href={selectedPoint.editHref} class={buttonVariants()}>
-								<SquarePen /> Edit this row
+								<SquarePen /> {t('Edit this row')}
 							</a>
 						</Sheet.Footer>
 					{/if}

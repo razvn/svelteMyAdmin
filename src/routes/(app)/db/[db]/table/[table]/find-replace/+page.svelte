@@ -13,6 +13,8 @@
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -25,14 +27,14 @@
 </script>
 
 <svelte:head>
-	<title>Find and replace - {table} - svelteMyAdmin</title>
+	<title>{t('Find and replace')} - {table} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Replace}
-		title="Find and replace"
-		description="Replace text in one column of {table}. Matching is case sensitive."
+		title={t('Find and replace')}
+		description={t('Replace text in one column of {table}. Matching is case sensitive.', { table })}
 	/>
 	<SearchNav {db} {table} current="find-replace" />
 
@@ -50,14 +52,14 @@
 	>
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Find and replace</Card.Title>
+				<Card.Title>{t('Find and replace')}</Card.Title>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				{#if data.columns.length === 0}
-					<Alert><AlertDescription>This table has no text columns.</AlertDescription></Alert>
+					<Alert><AlertDescription>{t('This table has no text columns.')}</AlertDescription></Alert>
 				{/if}
 				<div class="flex flex-col gap-2">
-					<Label for="fr-find">Find:</Label>
+					<Label for="fr-find">{t('Find:')}</Label>
 					<Input
 						id="fr-find"
 						name="find"
@@ -68,7 +70,7 @@
 					/>
 				</div>
 				<div class="flex flex-col gap-2">
-					<Label for="fr-replace">Replace with:</Label>
+					<Label for="fr-replace">{t('Replace with:')}</Label>
 					<Input
 						id="fr-replace"
 						name="replaceWith"
@@ -78,7 +80,7 @@
 					/>
 				</div>
 				<div class="flex flex-col gap-2">
-					<Label for="fr-column">Column:</Label>
+					<Label for="fr-column">{t('Column:')}</Label>
 					<NativeSelect
 						id="fr-column"
 						name="column"
@@ -92,16 +94,15 @@
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox id="fr-regex" name="useRegex" checked={form?.values?.useRegex ?? false} />
-					<Label for="fr-regex" class="font-normal">Use regular expression</Label>
+					<Label for="fr-regex" class="font-normal">{t('Use regular expression')}</Label>
 				</div>
 				<p class="text-xs text-muted-foreground">
-					Regular expressions use REGEXP_REPLACE: MySQL (ICU) references groups as <code>$1</code>,
-					MariaDB (PCRE) as <code>\1</code>.
+					{t('Regular expressions use REGEXP_REPLACE: MySQL (ICU) references groups as $1, MariaDB (PCRE) as \\1.')}
 				</p>
 			</Card.Content>
 			<Card.Footer class="flex gap-2">
 				<Button type="submit" variant="secondary" disabled={busy || data.columns.length === 0}>
-					Preview
+					{t('Preview')}
 				</Button>
 				<Button
 					type="submit"
@@ -109,7 +110,7 @@
 					disabled={busy || data.columns.length === 0}
 					data-testid="replace-button"
 				>
-					Replace
+					{t('Replace')}
 				</Button>
 			</Card.Footer>
 		</Card.Root>
@@ -122,8 +123,8 @@
 	{#if replaced}
 		<Alert data-testid="replace-result">
 			<AlertDescription>
-				Your SQL query has been executed successfully. {replaced.affected}
-				row{replaced.affected === 1 ? '' : 's'} affected.
+				{t('Your SQL query has been executed successfully.')}
+				{tn('{n} row affected.', '{n} rows affected.', replaced.affected)}
 			</AlertDescription>
 		</Alert>
 	{/if}
@@ -131,19 +132,21 @@
 	{#if preview}
 		<Card.Root data-testid="replace-preview">
 			<Card.Header>
-				<Card.Title>Find and replace - preview</Card.Title>
+				<Card.Title>{t('Find and replace - preview')}</Card.Title>
 				<Card.Description>
-					{preview.rows} row{preview.rows === 1 ? '' : 's'} would be changed.
-					{#if preview.truncated}Showing the first {preview.samples.length} distinct values.{/if}
+					{tn('{n} row would be changed.', '{n} rows would be changed.', preview.rows)}
+					{#if preview.truncated}{t('Showing the first {n} distinct values.', {
+							n: preview.samples.length
+						})}{/if}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="text-end">Count</Table.Head>
-							<Table.Head>Original string</Table.Head>
-							<Table.Head>Replaced string</Table.Head>
+							<Table.Head class="text-end">{t('Count')}</Table.Head>
+							<Table.Head>{t('Original string')}</Table.Head>
+							<Table.Head>{t('Replaced string')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -155,7 +158,7 @@
 							</Table.Row>
 						{:else}
 							<Table.Row>
-								<Table.Cell colspan={3} class="text-muted-foreground">No matches.</Table.Cell>
+								<Table.Cell colspan={3} class="text-muted-foreground">{t('No matches.')}</Table.Cell>
 							</Table.Row>
 						{/each}
 					</Table.Body>

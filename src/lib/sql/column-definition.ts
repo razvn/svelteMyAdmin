@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/translator.ts';
 /**
  * Column definition model and CREATE TABLE builder.
  *
@@ -111,15 +112,15 @@ export function getTypeGroups(caps: ServerCaps): TypeGroup[] {
 	];
 	if (maria && caps.version >= 100500) string.push('INET6');
 	const groups: TypeGroup[] = [
-		{ label: 'Numeric', types: NUMERIC_TYPES },
-		{ label: 'Date and time', types: DATETIME_TYPES },
-		{ label: 'String', types: string },
-		{ label: 'Spatial', types: SPATIAL_TYPES }
+		{ label: N_('Numeric'), types: NUMERIC_TYPES },
+		{ label: N_('Date and time'), types: DATETIME_TYPES },
+		{ label: N_('String'), types: string },
+		{ label: N_('Spatial'), types: SPATIAL_TYPES }
 	];
 	if ((maria && caps.version > 100207) || (!maria && caps.version >= 50708)) {
-		groups.push({ label: 'JSON', types: ['JSON'] });
+		groups.push({ label: N_('JSON'), types: ['JSON'] });
 	}
-	if (isUuidSupported(caps)) groups.push({ label: 'UUID', types: ['UUID'] });
+	if (isUuidSupported(caps)) groups.push({ label: N_('UUID'), types: ['UUID'] });
 	return groups;
 }
 

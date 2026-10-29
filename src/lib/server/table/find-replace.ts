@@ -9,10 +9,11 @@ import {
 	isReplaceableType,
 	type FindReplaceRequest
 } from '#lib/sql/find-replace.ts';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export const requestSchema = z.object({
 	column: z.string().min(1),
-	find: z.string().min(1, 'Enter the text to find.'),
+	find: z.string().min(1, N_('Enter the text to find.')),
 	replaceWith: z.string().default(''),
 	useRegex: z.boolean().default(false)
 });
@@ -40,7 +41,7 @@ async function prepare(
 ) {
 	const columns = await loadReplaceColumns(dbi, db, table);
 	if (!columns.some((c) => c.name === input.column)) {
-		throw new UserError('Choose one of the text columns.');
+		throw new UserError(N_('Choose one of the text columns.'));
 	}
 	const info = await dbi.getServerInfo();
 	const request: FindReplaceRequest = { db, table, ...input };
@@ -51,18 +52,18 @@ async function prepare(
 			charset: info.charset
 		});
 	} catch (e) {
-		throw new UserError(e instanceof Error ? e.message : 'Invalid request.');
+		throw new UserError(e instanceof Error ? e.message : N_('Invalid request.'));
 	}
 }
 
 export class UserError extends Error {}
 
 /** MySQL rejects a bad pattern with a descriptive message; show it, hide anything else. */
-export function describeError(e: unknown): string {
-	if (e instanceof UserError) return e.message;
+export function describeError(e: unknown, tr: Translator = SOURCE_TRANSLATOR): string {
+	if (e instanceof UserError) return tr.t(e.message);
 	const err = e as { code?: string; sqlMessage?: string };
 	if (err?.code?.startsWith('ER_') && err.sqlMessage) return err.sqlMessage;
-	return 'The statement could not be executed.';
+	return tr.t('The statement could not be executed.');
 }
 
 export interface Preview {

@@ -7,11 +7,12 @@ import {
 import type { PageServerLoad } from './$types';
 
 /** Transformations overview (Controllers/Transformation/OverviewController). */
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ locals }) => {
+	const { t } = locals.i18n;
 	const row = (p: (typeof OUTPUT_PLUGINS)[number] | (typeof INPUT_PLUGINS)[number]) => ({
 		name: pluginListName(p),
-		title: p.title,
-		description: p.description,
+		title: t(p.title),
+		description: t(p.description),
 		unsupported: !!p.unsupported
 	});
 	return {

@@ -4,6 +4,7 @@
  */
 import { quoteId } from './column-definition.ts';
 import type { ParsedIndex } from './index-definition.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 /** '' = clause omitted (server default, same as RESTRICT / NO ACTION). */
 export const FK_ACTIONS = ['', 'RESTRICT', 'CASCADE', 'SET NULL', 'NO ACTION'] as const;
@@ -36,16 +37,16 @@ export function newFkDef(overrides: Partial<FkDef> = {}): FkDef {
 const tableRef = (db: string, table: string): string => `${quoteId(db)}.${quoteId(table)}`;
 
 export function validateFkDef(def: FkDef): string | null {
-	if (def.columns.length === 0) return 'Choose at least one column.';
+	if (def.columns.length === 0) return N_('Choose at least one column.');
 	if (def.columns.length !== def.refColumns.length) {
-		return 'The number of columns and referenced columns must match.';
+		return N_('The number of columns and referenced columns must match.');
 	}
 	if (def.columns.some((c) => c === '') || def.refColumns.some((c) => c === '')) {
-		return 'Choose a column and a referenced column for every pair.';
+		return N_('Choose a column and a referenced column for every pair.');
 	}
-	if (new Set(def.columns).size !== def.columns.length) return 'A column is used twice.';
-	if (def.refDb === '' || def.refTable === '') return 'Choose the referenced table.';
-	if (def.name.length > 64) return 'The constraint name is too long.';
+	if (new Set(def.columns).size !== def.columns.length) return N_('A column is used twice.');
+	if (def.refDb === '' || def.refTable === '') return N_('Choose the referenced table.');
+	if (def.name.length > 64) return N_('The constraint name is too long.');
 	return null;
 }
 

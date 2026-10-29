@@ -6,13 +6,15 @@
 	import * as Collapsible from '#lib/components/ui/collapsible/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
 	let result = $state<SaveResult | null>(null);
 
 	const title = $derived(
-		data.mode === 'edit' ? 'Edit row' : data.mode === 'copy' ? 'Copy row' : 'Insert'
+		data.mode === 'edit' ? t('Edit row') : data.mode === 'copy' ? t('Copy row') : t('Insert')
 	);
 </script>
 
@@ -21,13 +23,13 @@
 </svelte:head>
 
 <div class="flex flex-col gap-4 p-4 md:p-6">
-	<PageHeader {title} description="Table {page.params.table}" />
+	<PageHeader {title} description={t('Table {table}', { table: page.params.table ?? '' })} />
 
 	{#each data.missing as clause (clause)}
 		<Alert.Root variant="warning">
 			<Alert.Description>
-				MySQL returned an empty result set (i.e. zero rows) for
-				<code class="font-mono">{clause}</code>.
+				{t('MySQL returned an empty result set (i.e. zero rows).')}
+				<code class="font-mono">{clause}</code>
 			</Alert.Description>
 		</Alert.Root>
 	{/each}
@@ -55,7 +57,7 @@
 					<Collapsible.Root open={result.kind !== 'success'}>
 						<Collapsible.Trigger>
 							{#snippet child({ props })}
-								<Button {...props} variant="link" size="sm" class="h-auto p-0">SQL query</Button>
+								<Button {...props} variant="link" size="sm" class="h-auto p-0">{t('SQL query')}</Button>
 							{/snippet}
 						</Collapsible.Trigger>
 						<Collapsible.Content>

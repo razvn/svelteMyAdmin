@@ -13,6 +13,8 @@
 	import ColumnRow from './column-row.svelte';
 	import type { CollationGroup } from './types.ts';
 	import EnumValuesDialog from './enum-values-dialog.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	interface Props {
 		columns: ColumnDef[];
@@ -89,7 +91,7 @@
 <div class="flex flex-col gap-3" data-testid="column-editor">
 	{#if isIntegersLengthRestricted(caps)}
 		<p class="text-xs text-muted-foreground">
-			The width of integer types is ignored by this MySQL version, except for TINYINT(1).
+			{t('The width of integer types is ignored by this MySQL version, except for TINYINT(1).')}
 		</p>
 	{/if}
 	{#if centralDb && !fixed}
@@ -120,11 +122,11 @@
 				min={1}
 				max={4096}
 				bind:value={toAdd}
-				aria-label="Number of columns to add"
+				aria-label={t('Number of columns to add')}
 				class="w-20"
 			/>
 			<Button type="button" variant="outline" onclick={add}>
-				<Plus /> Add {addCount} column(s)
+				<Plus /> {tn('Add {n} column', 'Add {n} columns', addCount)}
 			</Button>
 		</div>
 	{/if}

@@ -2,7 +2,8 @@
 	import * as Popover from '#lib/components/ui/popover/index.ts';
 	import type { ColumnKind } from '#lib/table/column-kind.ts';
 	import {
-		binaryTitle,
+		binarySize,
+	binaryTitle,
 		formatBinary,
 		isBinaryCell,
 		prettyJson,
@@ -10,6 +11,8 @@
 		type Cell
 	} from './format.ts';
 	import type { CellLink } from './types.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		cell: Cell;
@@ -43,18 +46,18 @@
 	<span class="text-muted-foreground italic">NULL</span>
 {:else if isBinaryCell(cell)}
 	<span class="font-mono text-xs text-muted-foreground" title={binaryTitle(cell)}
-		>{formatBinary(cell)}</span
+		>{t('[BLOB - {size}]', { size: binarySize(cell) })}</span
 	>
 	{#if download && cell.bytes > 0}
 		<a class="ms-2 text-xs text-primary underline-offset-2 hover:underline" href={download} download
-			>Download</a
+			>{t('Download')}</a
 		>
 	{/if}
 {:else if json !== null && shown}
 	<Popover.Root>
 		<Popover.Trigger
 			class="max-w-xs cursor-pointer truncate text-start font-mono text-xs underline decoration-dotted underline-offset-2"
-			title="Show formatted JSON"
+			title={t('Show formatted JSON')}
 		>
 			{shown.text}{shown.truncated ? '…' : ''}
 		</Popover.Trigger>
@@ -88,7 +91,7 @@
 				ontoggle?.();
 			}}
 		>
-			{expanded ? 'less' : 'more'}
+			{expanded ? t('less') : t('more')}
 		</button>
 	{/if}
 {/if}

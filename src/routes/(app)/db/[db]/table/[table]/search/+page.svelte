@@ -12,6 +12,8 @@
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -20,32 +22,32 @@
 </script>
 
 <svelte:head>
-	<title>Search - {table} - svelteMyAdmin</title>
+	<title>{t('Search')} - {table} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Search}
-		title="Search"
-		description="Do a &quot;query by example&quot; on {table} (wildcard: &quot;%&quot;)."
+		title={t('Search')}
+		description={t('Do a "query by example" on {table} (wildcard: "%").', { table })}
 	/>
 	<SearchNav {db} {table} current="search" />
 
 	<form method="POST" use:enhance data-testid="table-search-form" class="flex flex-col gap-6">
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Do a "query by example" (wildcard: "%")</Card.Title>
+				<Card.Title>{t('Do a "query by example" (wildcard: "%")')}</Card.Title>
 			</Card.Header>
 			<Card.Content class="overflow-x-auto">
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Column</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Collation</Table.Head>
-							{#if data.hasGeometry}<Table.Head>Function</Table.Head>{/if}
-							<Table.Head>Operator</Table.Head>
-							<Table.Head>Value</Table.Head>
+							<Table.Head>{t('Column')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Collation')}</Table.Head>
+							{#if data.hasGeometry}<Table.Head>{t('Function')}</Table.Head>{/if}
+							<Table.Head>{t('Operator')}</Table.Head>
+							<Table.Head>{t('Value')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -66,14 +68,14 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Options</Card.Title>
+				<Card.Title>{t('Options')}</Card.Title>
 				<Card.Description>
-					These choices are passed to Browse; the selected columns are only a hint.
+					{t('These choices are passed to Browse; the selected columns are only a hint.')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-6 md:grid-cols-2">
 				<div class="flex flex-col gap-2">
-					<Label for="columnsToDisplay">Select columns (at least one):</Label>
+					<Label for="columnsToDisplay">{t('Select columns (at least one):')}</Label>
 					<NativeSelect
 						id="columnsToDisplay"
 						name="columnsToDisplay"
@@ -89,12 +91,12 @@
 				<div class="flex flex-col gap-4">
 					<div class="flex flex-col gap-2">
 						<Label for="customWhere">
-							<em>Or</em> add search conditions (body of the "where" clause):
+							{t('Or add search conditions (body of the "where" clause):')}
 						</Label>
 						<Input id="customWhere" name="customWhere" autocomplete="off" placeholder="id &gt; 3" />
 					</div>
 					<div class="flex flex-col gap-2">
-						<Label for="maxRows">Number of rows per page</Label>
+						<Label for="maxRows">{t('Number of rows per page')}</Label>
 						<Input
 							id="maxRows"
 							name="maxRows"
@@ -105,7 +107,7 @@
 						/>
 					</div>
 					<div class="flex flex-col gap-2">
-						<Label for="orderBy">Display order:</Label>
+						<Label for="orderBy">{t('Display order:')}</Label>
 						<div class="flex flex-wrap items-center gap-3">
 							<NativeSelect id="orderBy" name="orderBy">
 								<option value=""></option>
@@ -114,17 +116,17 @@
 								{/each}
 							</NativeSelect>
 							<label class="flex items-center gap-1.5 text-sm">
-								<input type="radio" name="order" value="ASC" checked /> Ascending
+								<input type="radio" name="order" value="ASC" checked /> {t('Ascending')}
 							</label>
 							<label class="flex items-center gap-1.5 text-sm">
-								<input type="radio" name="order" value="DESC" /> Descending
+								<input type="radio" name="order" value="DESC" /> {t('Descending')}
 							</label>
 						</div>
 					</div>
 				</div>
 			</Card.Content>
 			<Card.Footer>
-				<Button type="submit">Go</Button>
+				<Button type="submit">{t('Go')}</Button>
 			</Card.Footer>
 		</Card.Root>
 	</form>

@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
+import { N_ } from '#lib/i18n/translator.ts';
 import {
 	createVersion,
 	deleteTracking,
@@ -21,20 +22,20 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	});
 	const defaults = locals.server.tracking_default_statements;
 	if (!res.ok) return { available: false as const, db: params.db, error: res.error, defaults };
-	const trackedNames = new Set(res.value.tracked.map((t) => t.table));
+	const trackedNames = new Set(res.value.tracked.map((tbl) => tbl.table));
 	return {
 		available: true as const,
 		db: params.db,
 		defaults,
 		tracked: res.value.tracked,
-		untracked: tables.filter((t) => !trackedNames.has(t.name)).map((t) => t.name),
+		untracked: tables.filter((tbl) => !trackedNames.has(tbl.name)).map((tbl) => tbl.name),
 		log: res.value.log
 	};
 };
 
 const versionForm = z.object({
 	version: z.coerce.number().int().min(1).max(4_294_967_295),
-	tables: z.array(z.string().min(1).max(64)).min(1, 'No tables selected.'),
+	tables: z.array(z.string().min(1).max(64)).min(1, N_('No tables selected.')),
 	statements: z.array(z.string())
 });
 
@@ -52,14 +53,19 @@ export const actions: Actions = {
 			tables: tableNames(fd),
 			statements: fd.getAll('statement').map(String)
 		});
-		if (!parsed.success) return fail(400, { error: parsed.error.issues[0].message });
+		if (!parsed.success) return fail(400, { error: locals.i18n.t(parsed.error.issues[0].message) });
 		const { version, tables, statements } = parsed.data;
 		const src = await locals.db;
 		const dbi = await locals.dbi;
 		const res = await withTracking(locals, async (ctx) => {
 			for (const table of tables) {
 				if ((await getVersion(ctx, params.db, table)) >= version) {
-					throw new Error(`Version ${version} of ${table} already exists or is older.`);
+					throw new Error(
+						locals.i18n.t('Version {version} of {table} already exists or is older.', {
+							version,
+							table
+						})
+					);
 				}
 				const type = await dbi.getTableType(params.db, table);
 				await createVersion(ctx, src, {
@@ -73,17 +79,20 @@ export const actions: Actions = {
 		});
 		if (!res.ok) return fail(400, { error: res.error });
 		return {
-			message: `Version ${version} was created for the selected tables, tracking is active for them.`
+			message: locals.i18n.t(
+				'Version {version} was created for the selected tables, tracking is active for them.',
+				{ version }
+			)
 		};
 	},
 
 	deleteTracking: async ({ request, locals, params }) => {
 		const tables = tableNames(await request.formData());
-		if (tables.length === 0) return fail(400, { error: 'No tables selected.' });
+		if (tables.length === 0) return fail(400, { error: locals.i18n.t('No tables selected.') });
 		const res = await withTracking(locals, async (ctx) => {
-			for (const t of tables) await deleteTracking(ctx, params.db, t);
+			for (const tbl of tables) await deleteTracking(ctx, params.db, tbl);
 		});
 		if (!res.ok) return fail(400, { error: res.error });
-		return { message: 'Tracking data deleted successfully.' };
+		return { message: locals.i18n.t('Tracking data deleted successfully.') };
 	}
 };

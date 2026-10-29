@@ -4,6 +4,8 @@
 	import type { CentralColumn } from '#lib/sql/central-columns.ts';
 	import { toColumnDef } from '#lib/sql/central-columns.ts';
 	import type { ColumnDef } from '#lib/sql/column-definition.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		db: string;
@@ -43,11 +45,11 @@
 	<div class="flex items-center gap-2" data-testid="central-picker">
 		<NativeSelect
 			bind:value
-			aria-label="Pick from central columns"
+			aria-label={t('Pick from central columns')}
 			class="max-w-xs"
 			onchange={() => pick(value)}
 		>
-			<NativeSelectOption value="">Pick from central columns</NativeSelectOption>
+			<NativeSelectOption value="">{t('Pick from central columns')}</NativeSelectOption>
 			{#each list as c (c.name)}
 				<NativeSelectOption value={c.name}>{c.name} ({c.type})</NativeSelectOption>
 			{/each}

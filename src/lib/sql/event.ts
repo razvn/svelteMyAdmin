@@ -9,6 +9,7 @@ import {
 	type EventStatus,
 	type EventType
 } from './event-types.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export * from './event-types.ts';
 
@@ -35,14 +36,18 @@ function intervalExpr(value: string): string | null {
 	return null;
 }
 
-export function buildCreateEvent(db: string, def: EventDef): { sql: string; errors: string[] } {
+export function buildCreateEvent(
+	db: string,
+	def: EventDef,
+	tr: Translator = SOURCE_TRANSLATOR
+): { sql: string; errors: string[] } {
 	const errors: string[] = [];
 	let sql = 'CREATE ';
-	const definer = buildDefinerClause(def.definer);
+	const definer = buildDefinerClause(def.definer, tr);
 	if (definer.error) errors.push(definer.error);
 	sql += definer.clause;
 	sql += 'EVENT ';
-	if (def.name.trim() === '') errors.push('You must provide an event name!');
+	if (def.name.trim() === '') errors.push(tr.t('You must provide an event name!'));
 	else sql += escapeQualified(db, def.name) + ' ';
 
 	sql += 'ON SCHEDULE ';
@@ -50,21 +55,21 @@ export function buildCreateEvent(db: string, def: EventDef): { sql: string; erro
 		const expr = intervalExpr(def.intervalValue);
 		if (expr !== null && (EVENT_INTERVALS as readonly string[]).includes(def.intervalField)) {
 			sql += `EVERY ${expr} ${def.intervalField} `;
-		} else errors.push('You must provide a valid interval value for the event.');
+		} else errors.push(tr.t('You must provide a valid interval value for the event.'));
 		if (def.starts.trim() !== '') sql += `STARTS '${escapeString(def.starts.trim())}' `;
 		if (def.ends.trim() !== '') sql += `ENDS '${escapeString(def.ends.trim())}' `;
 	} else if (def.type === 'ONE TIME') {
 		if (def.executeAt.trim() !== '') sql += `AT '${escapeString(def.executeAt.trim())}' `;
-		else errors.push('You must provide a valid execution time for the event.');
+		else errors.push(tr.t('You must provide a valid execution time for the event.'));
 	} else {
-		errors.push('You must provide a valid type for the event.');
+		errors.push(tr.t('You must provide a valid type for the event.'));
 	}
 
 	sql += def.preserve ? 'ON COMPLETION PRESERVE ' : 'ON COMPLETION NOT PRESERVE ';
 	if (def.status in EVENT_STATUS_SQL) sql += EVENT_STATUS_SQL[def.status] + ' ';
 	if (def.comment !== '') sql += `COMMENT '${escapeString(def.comment)}' `;
 	sql += 'DO ';
-	if (def.definition.trim() === '') errors.push('You must provide an event definition.');
+	if (def.definition.trim() === '') errors.push(tr.t('You must provide an event definition.'));
 	else sql += def.definition;
 	return { sql, errors };
 }

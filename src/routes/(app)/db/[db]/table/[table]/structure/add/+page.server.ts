@@ -7,7 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, url, parent }) => {
 	const { tableType } = await parent();
-	if (tableType === 'view') error(400, 'A view has no columns to add.');
+	if (tableType === 'view') error(400, locals.i18n.t('A view has no columns to add.'));
 	const dbi = await locals.dbi;
 	const ctx = await getColumnEditorContext(dbi);
 	const existing = (await loadColumns(dbi, params.db, params.table, ctx.caps)).map(

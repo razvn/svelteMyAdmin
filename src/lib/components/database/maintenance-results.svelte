@@ -3,6 +3,8 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		results: { statement: string; rows: Record<string, string>[] }[];
@@ -13,9 +15,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toast.success('Copied to clipboard.');
+			toast.success(t('Copied to clipboard.'));
 		} catch {
-			toast.error('Could not copy.');
+			toast.error(t('Could not copy.'));
 		}
 	}
 
@@ -26,7 +28,7 @@
 	<div class="flex items-center justify-between gap-2">
 		<code class="font-mono text-xs text-muted-foreground">{r.statement}</code>
 		<Button variant="outline" size="sm" onclick={() => copy(r.statement)}>
-			<Copy /> Copy
+			<Copy /> {t('Copy')}
 		</Button>
 	</div>
 	<Table.Root data-testid="maintenance-result">

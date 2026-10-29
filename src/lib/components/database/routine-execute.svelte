@@ -10,6 +10,8 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface ResultSet {
 		columns: string[];
@@ -59,7 +61,7 @@
 		if (res.ok && res.data?.result) result = res.data.result;
 		else {
 			result = null;
-			failure = res.message ?? 'Execution failed.';
+			failure = res.message ?? t('Execution failed.');
 		}
 	}
 </script>
@@ -85,7 +87,7 @@
 				{:else}
 					<Table.Row>
 						<Table.Cell colspan={Math.max(1, set.columns.length)} class="text-muted-foreground">
-							Empty result set.
+							{t('Empty result set.')}
 						</Table.Cell>
 					</Table.Row>
 				{/each}
@@ -97,8 +99,12 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[92vh] overflow-y-auto sm:max-w-3xl" data-testid="routine-execute">
 		<Dialog.Header>
-			<Dialog.Title>Execute {routine.type.toLowerCase()} {routine.name}</Dialog.Title>
-			<Dialog.Description>Enter values for the input parameters.</Dialog.Description>
+			<Dialog.Title>
+				{routine.type === 'PROCEDURE'
+					? t('Execute procedure {name}', { name: routine.name })
+					: t('Execute function {name}', { name: routine.name })}
+			</Dialog.Title>
+			<Dialog.Description>{t('Enter values for the input parameters.')}</Dialog.Description>
 		</Dialog.Header>
 
 		<form class="grid gap-3" onsubmit={run}>
@@ -110,14 +116,14 @@
 						</Label>
 						<Input
 							id="exec-{i}"
-							aria-label="Value of {param.name}"
+							aria-label={t('Value of {name}', { name: param.name })}
 							disabled={values[i]?.isNull}
 							bind:value={values[i].value}
 						/>
 						<div class="flex items-center gap-1.5 text-sm">
 							<Checkbox
 								id="exec-null-{i}"
-								aria-label="NULL for {param.name}"
+								aria-label={t('NULL for {name}', { name: param.name })}
 								bind:checked={values[i].isNull}
 							/>
 							<Label for="exec-null-{i}">NULL</Label>
@@ -125,17 +131,18 @@
 					</div>
 				{:else}
 					<p class="text-sm text-muted-foreground">
-						<span class="font-mono">{param.name}</span> is an OUT parameter; its value is shown after
-						the call.
+						{t('{name} is an OUT parameter; its value is shown after the call.', {
+							name: param.name
+						})}
 					</p>
 				{/if}
 			{:else}
-				<p class="text-sm text-muted-foreground">This routine takes no parameters.</p>
+				<p class="text-sm text-muted-foreground">{t('This routine takes no parameters.')}</p>
 			{/each}
 			<div>
 				<Button type="submit" disabled={running} data-testid="routine-run">
 					<Play />
-					{running ? 'Running...' : 'Execute'}
+					{running ? t('Running...') : t('Execute')}
 				</Button>
 			</div>
 		</form>
@@ -147,9 +154,11 @@
 			<div class="grid gap-3" data-testid="routine-result">
 				{#if result.ok}
 					<Alert.Root variant="success">
-						Your SQL query has been executed successfully.
+						{t('Your SQL query has been executed successfully.')}
 						{#if result.affectedRows !== null}
-							{result.affectedRows} row(s) affected by the last statement inside the procedure.
+							{t('{n} row(s) affected by the last statement inside the procedure.', {
+								n: result.affectedRows
+							})}
 						{/if}
 					</Alert.Root>
 				{:else}
@@ -166,7 +175,7 @@
 				{/each}
 				{#if result.outParams.length > 0}
 					<div>
-						<h3 class="mb-1 text-sm font-medium">Output parameters</h3>
+						<h3 class="mb-1 text-sm font-medium">{t('Output parameters')}</h3>
 						{@render grid(
 							{
 								columns: result.outParams.map((o) => o.name),

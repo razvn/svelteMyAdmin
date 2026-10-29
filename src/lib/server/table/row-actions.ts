@@ -3,6 +3,7 @@ import type { Connection, ResultSetHeader } from 'mysql2/promise';
 import type { Cell } from '#lib/components/results/format.ts';
 import { escapeId, escapeQualified } from '#lib/server/db/escape.ts';
 import { fetchRows, toCell, type TableMeta } from '#lib/server/table/browse.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export function deleteStatement(db: string, table: string, clause: string): string {
 	return `DELETE FROM ${escapeQualified(db, table)} WHERE ${clause} LIMIT 1`;
@@ -47,13 +48,14 @@ export async function updateCell(
 	meta: TableMeta,
 	clause: string,
 	column: string,
-	value: string | null
+	value: string | null,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<RowActionResult<{ cell: Cell; keyChanged: boolean; statement: string }>> {
 	const idx = meta.columns.findIndex((c) => c.name === column);
-	if (idx < 0) return { ok: false, error: `Unknown column ${column}.` };
+	if (idx < 0) return { ok: false, error: tr.t('Unknown column {name}.', { name: column }) };
 	const col = meta.columns[idx];
-	if (!col.editable) return { ok: false, error: `Column ${column} cannot be edited here.` };
-	if (value === null && !col.nullable) return { ok: false, error: `Column ${column} is NOT NULL.` };
+	if (!col.editable) return { ok: false, error: tr.t('Column {name} cannot be edited here.', { name: column }) };
+	if (value === null && !col.nullable) return { ok: false, error: tr.t('Column {name} is NOT NULL.', { name: column }) };
 
 	const qualified = escapeQualified(db, table);
 	const statement = `UPDATE ${qualified} SET ${escapeId(column)} = ? WHERE ${clause} LIMIT 1`;
@@ -71,7 +73,7 @@ export async function updateCell(
 			conn,
 			`SELECT ${escapeId(column)} FROM ${qualified} WHERE ${clause} LIMIT 1`
 		);
-		if (!rows.length) return { ok: false, error: 'The row was not found after the update.' };
+		if (!rows.length) return { ok: false, error: tr.t('The row was not found after the update.') };
 		return { ok: true, cell: toCell(rows[0][0], meta.condCols[idx]), keyChanged, statement };
 	} catch (e) {
 		return { ok: false, error: errorMessage(e) };

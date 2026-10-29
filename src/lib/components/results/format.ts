@@ -12,11 +12,16 @@ export type Cell = string | null | BinaryCell;
 
 export const isBinaryCell = (c: Cell): c is BinaryCell => typeof c === 'object' && c !== null;
 
-/** `[BLOB - 12 B]`, `[BLOB - 1.5 KiB]`. */
-export function formatBinary(cell: BinaryCell): string {
-	if (cell.bytes < 1024) return `[BLOB - ${cell.bytes} B]`;
+/** `12 B`, `1.5 KiB`. */
+export function binarySize(cell: BinaryCell): string {
+	if (cell.bytes < 1024) return `${cell.bytes} B`;
 	const [v, unit] = formatByteDown(cell.bytes, 3, 1) ?? [String(cell.bytes), 'B'];
-	return `[BLOB - ${v} ${unit}]`;
+	return `${v} ${unit}`;
+}
+
+/** `[BLOB - 12 B]`, `[BLOB - 1.5 KiB]` (English; the UI uses `binarySize` with a translated template). */
+export function formatBinary(cell: BinaryCell): string {
+	return `[BLOB - ${binarySize(cell)}]`;
 }
 
 /** Hex preview with `0x` and an ellipsis when the value is longer than the preview. */

@@ -16,6 +16,8 @@
 	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
 	import GisEditorDialog from '#lib/gis/gis-editor-dialog.svelte';
 	import FkSelect from './fk-select.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		column: FormColumn;
@@ -33,7 +35,7 @@
 
 	const disabled = $derived(cell.isNull);
 	const error = $derived(jsonError(column, cell));
-	const label = $derived(`Value of ${column.name}`);
+	const label = $derived(t('Value of {name}', { name: column.name }));
 	const kind = $derived(column.kind);
 	const isDateLike = $derived(
 		kind === 'date' || kind === 'datetime' || kind === 'timestamp' || kind === 'time'
@@ -102,7 +104,7 @@
 				name={fileName}
 				{disabled}
 				accept={widget === 'image' ? 'image/*' : undefined}
-				aria-label="Upload {column.name}"
+				aria-label={t('Upload {name}', { name: column.name })}
 				class="text-xs"
 			/>
 		</div>
@@ -123,13 +125,15 @@
 {:else if column.protected}
 	<div class="flex flex-wrap items-center gap-2 text-sm">
 		<span class="text-muted-foreground">
-			Binary - do not edit{size !== null ? ` (${size} B)` : ''}
+			{size !== null
+				? t('Binary - do not edit ({size} B)', { size })
+				: t('Binary - do not edit')}
 		</span>
 		<input
 			type="file"
 			name={fileName}
 			{disabled}
-			aria-label="Upload {column.name}"
+			aria-label={t('Upload {name}', { name: column.name })}
 			class="text-xs"
 		/>
 	</div>
@@ -191,7 +195,7 @@
 			class="font-mono"
 		/>
 		{#if error}
-			<p class="text-xs text-destructive" role="alert">Invalid JSON: {error}</p>
+			<p class="text-xs text-destructive" role="alert">{t('Invalid JSON: {error}', { error })}</p>
 		{/if}
 	</div>
 {:else if kind === 'blob'}
@@ -202,14 +206,14 @@
 			{disabled}
 			aria-label={label}
 			rows={3}
-			placeholder="0x hexadecimal"
+			placeholder={t('0x hexadecimal')}
 			class="font-mono"
 		/>
 		<input
 			type="file"
 			name={fileName}
 			{disabled}
-			aria-label="Upload {column.name}"
+			aria-label={t('Upload {name}', { name: column.name })}
 			class="text-xs"
 		/>
 	</div>
@@ -241,7 +245,7 @@
 			variant="ghost"
 			size="icon"
 			{disabled}
-			aria-label="Pick {column.name} date"
+			aria-label={t('Pick {name} date', { name: column.name })}
 			onclick={() => picker?.showPicker?.()}
 		>
 			<Calendar class="size-4" />
@@ -296,7 +300,7 @@
 			variant="outline"
 			size="sm"
 			{disabled}
-			aria-label="GIS editor for {column.name}"
+			aria-label={t('GIS editor for {name}', { name: column.name })}
 			onclick={() => (gisOpen = true)}
 		>
 			GIS
@@ -319,9 +323,9 @@
 		size={sizeAttr}
 		class={kind === 'binary' ? 'font-mono' : ''}
 		placeholder={kind === 'binary'
-			? '0x hexadecimal'
+			? t('0x hexadecimal')
 			: column.foreign && !column.foreign.options
-				? 'Referenced key (too many values to list)'
+				? t('Referenced key (too many values to list)')
 				: ''}
 	/>
 {/if}

@@ -24,6 +24,7 @@ import {
 	type ProtectBinary,
 	type Statement
 } from '#lib/sql/insert-edit.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 type Row = Record<string, unknown>;
 
@@ -413,7 +414,7 @@ export async function parseSubmission(form: FormData, columns: FormColumn[]): Pr
 		: 'save';
 	const n = Number(form.get('rows'));
 	if (!Number.isInteger(n) || n < 1 || n > MAX_ROWS)
-		throw new InsertEditError('Invalid row count.');
+		throw new InsertEditError(N_('Invalid row count.'));
 	const text = (k: string) => {
 		const v = form.get(k);
 		return typeof v === 'string' ? v : null;
@@ -512,10 +513,10 @@ export async function buildStatements(
 	const insertRows: CellInput[][] = [];
 	for (const row of sub.rows) {
 		if (row.where !== null && !verify(row.where, row.sig)) {
-			throw new InsertEditError('The row reference is invalid or has been tampered with.');
+			throw new InsertEditError(N_('The row reference is invalid or has been tampered with.'));
 		}
 		if (row.source && !verify(row.source.where, row.source.sig)) {
-			throw new InsertEditError('The row reference is invalid or has been tampered with.');
+			throw new InsertEditError(N_('The row reference is invalid or has been tampered with.'));
 		}
 		if (!hasWhere && row.ignore) {
 			skipped++;

@@ -11,6 +11,8 @@
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
 	import SelectField from './select-field.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	interface Props {
 		open: boolean;
@@ -38,7 +40,7 @@
 			open = false;
 			onsaved(def.name);
 		} else {
-			errors = res.data?.errors ?? [res.message ?? 'Saving the event failed.'];
+			errors = res.data?.errors ?? [res.message ?? t('Saving the event failed.')];
 		}
 	}
 </script>
@@ -46,9 +48,9 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[92vh] overflow-y-auto sm:max-w-2xl" data-testid="event-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? `Edit event ${original}` : 'Add event'}</Dialog.Title>
+			<Dialog.Title>{original ? t('Edit event {name}', { name: original }) : t('Add event')}</Dialog.Title>
 			<Dialog.Description>
-				Editing drops and re-creates the event; the original is restored if creation fails.
+				{t('Editing drops and re-creates the event; the original is restored if creation fails.')}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -62,20 +64,20 @@
 			{/if}
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div class="grid gap-1.5">
-					<Label for="event-name">Event name</Label>
+					<Label for="event-name">{t('Event name')}</Label>
 					<Input id="event-name" bind:value={def.name} autocomplete="off" />
 				</div>
 				<div class="grid gap-1.5">
-					<Label>Status</Label>
-					<SelectField label="Status" bind:value={def.status} options={EVENT_STATUSES} />
+					<Label>{t('Status')}</Label>
+					<SelectField label={t('Status')} bind:value={def.status} options={EVENT_STATUSES} />
 				</div>
 				<div class="grid gap-1.5">
-					<Label>Event type</Label>
-					<SelectField label="Event type" bind:value={def.type} options={EVENT_TYPES} />
+					<Label>{t('Event type')}</Label>
+					<SelectField label={t('Event type')} bind:value={def.type} options={EVENT_TYPES} />
 				</div>
 				{#if def.type === 'ONE TIME'}
 					<div class="grid gap-1.5">
-						<Label for="event-execute-at">Execute at</Label>
+						<Label for="event-execute-at">{t('Execute at')}</Label>
 						<Input
 							id="event-execute-at"
 							placeholder="YYYY-MM-DD HH:MM:SS"
@@ -84,53 +86,53 @@
 					</div>
 				{:else}
 					<div class="grid gap-1.5">
-						<Label for="event-interval-value">Execute every</Label>
+						<Label for="event-interval-value">{t('Execute every')}</Label>
 						<div class="flex gap-2">
 							<Input id="event-interval-value" class="w-24" bind:value={def.intervalValue} />
 							<SelectField
-								label="Interval field"
+								label={t('Interval field')}
 								bind:value={def.intervalField}
 								options={EVENT_INTERVALS}
 							/>
 						</div>
 					</div>
 					<div class="grid gap-1.5">
-						<Label for="event-starts">Start</Label>
+						<Label for="event-starts">{t('Start')}</Label>
 						<Input id="event-starts" placeholder="YYYY-MM-DD HH:MM:SS" bind:value={def.starts} />
 					</div>
 					<div class="grid gap-1.5">
-						<Label for="event-ends">End</Label>
+						<Label for="event-ends">{t('End')}</Label>
 						<Input id="event-ends" placeholder="YYYY-MM-DD HH:MM:SS" bind:value={def.ends} />
 					</div>
 				{/if}
 			</div>
 			<div class="grid gap-1.5">
-				<Label>Definition</Label>
+				<Label>{t('Definition')}</Label>
 				<SqlEditor
 					id="event-definition"
-					aria-label="Definition"
+					aria-label={t('Definition')}
 					minLines={6}
 					bind:value={def.definition}
 				/>
 			</div>
 			<div class="flex items-center gap-2">
 				<Checkbox id="event-preserve" bind:checked={def.preserve} />
-				<Label for="event-preserve">On completion preserve</Label>
+				<Label for="event-preserve">{t('On completion preserve')}</Label>
 			</div>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div class="grid gap-1.5">
-					<Label for="event-definer">Definer (user@host)</Label>
+					<Label for="event-definer">{t('Definer (user@host)')}</Label>
 					<Input id="event-definer" bind:value={def.definer} placeholder="root@localhost" />
 				</div>
 				<div class="grid gap-1.5">
-					<Label for="event-comment">Comment</Label>
+					<Label for="event-comment">{t('Comment')}</Label>
 					<Input id="event-comment" bind:value={def.comment} />
 				</div>
 			</div>
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
 				<Button type="submit" disabled={saving} data-testid="event-save">
-					{saving ? 'Saving...' : 'Save'}
+					{saving ? t('Saving...') : t('Save')}
 				</Button>
 			</Dialog.Footer>
 		</form>

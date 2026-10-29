@@ -26,34 +26,35 @@ const nameSchema = z.object({ name: z.string().min(1).max(64) });
 export const actions: Actions = {
 	get: async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid event.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid event.') });
 		const event = await getEvent(await locals.db, params.db, ref.data.name);
-		if (!event) return fail(404, { error: `No event with name ${ref.data.name} found.` });
+		if (!event) return fail(404, { error: locals.i18n.t('No event with name {name} found.', { name: ref.data.name }) });
 		return { event };
 	},
 
 	export: async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid event.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid event.') });
 		try {
 			const sql = await exportEvent(await locals.db, params.db, ref.data.name);
-			if (sql === null) return fail(404, { error: 'The event definition is not available.' });
+			if (sql === null) return fail(404, { error: locals.i18n.t('The event definition is not available.') });
 			return { sql };
 		} catch {
-			return fail(400, { error: 'The event could not be exported.' });
+			return fail(400, { error: locals.i18n.t('The event could not be exported.') });
 		}
 	},
 
 	save: async ({ request, params, locals }) => {
 		const form = await request.formData();
 		const def = parseJsonField(eventDefSchema, form.get('payload'));
-		if (!def) return fail(400, { error: 'Invalid event data.' });
+		if (!def) return fail(400, { error: locals.i18n.t('Invalid event data.') });
 		const original = form.get('original');
 		const result = await saveEvent(
 			await locals.db,
 			params.db,
 			def,
-			typeof original === 'string' && original !== '' ? original : null
+			typeof original === 'string' && original !== '' ? original : null,
+			locals.i18n
 		);
 		if (!result.ok) return fail(400, { error: result.errors.join(' '), errors: result.errors });
 		return { saved: def.name, queries: result.queries };
@@ -61,9 +62,9 @@ export const actions: Actions = {
 
 	drop: async ({ request, params, locals }) => {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!ref.success) return fail(400, { error: 'Invalid event.' });
+		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid event.') });
 		const result = await dropEvent(await locals.db, params.db, ref.data.name);
-		if (!result.ok) return fail(400, { error: result.error ?? 'Drop failed.' });
+		if (!result.ok) return fail(400, { error: result.error ?? locals.i18n.t('Drop failed.') });
 		return { dropped: ref.data.name, query: result.query };
 	},
 
@@ -72,14 +73,16 @@ export const actions: Actions = {
 		const parsed = z
 			.object({ state: z.enum(['ON', 'OFF']) })
 			.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) return fail(400, { error: 'Invalid state.' });
+		if (!parsed.success) return fail(400, { error: locals.i18n.t('Invalid state.') });
 		const conn = await locals.db;
 		const state = await getSchedulerState(conn);
 		if (!state.canToggle) {
-			return fail(403, { error: 'You do not have the privilege to change the event scheduler.' });
+			return fail(403, {
+				error: locals.i18n.t('You do not have the privilege to change the event scheduler.')
+			});
 		}
 		const result = await setScheduler(conn, parsed.data.state === 'ON');
-		if (!result.ok) return fail(400, { error: result.error ?? 'Failed.' });
+		if (!result.ok) return fail(400, { error: result.error ?? locals.i18n.t('Failed.') });
 		return { scheduler: parsed.data.state, query: result.query };
 	}
 };

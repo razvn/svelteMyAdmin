@@ -74,13 +74,17 @@ export const actions: Actions = {
 	create: async ({ request, locals, params }) => {
 		const fd = await request.formData();
 		const version = versionNo.safeParse(fd.get('version'));
-		if (!version.success) return fail(400, { error: 'Invalid version.' });
+		if (!version.success) return fail(400, { error: locals.i18n.t('Invalid version.') });
 		const dbi = await locals.dbi;
 		const src = await locals.db;
 		const type = await dbi.getTableType(params.db, params.table);
 		const res = await withTracking(locals, async (ctx) => {
 			if ((await getVersion(ctx, params.db, params.table)) >= version.data) {
-				throw new Error(`Version ${version.data} already exists or is older than the last one.`);
+				throw new Error(
+					locals.i18n.t('Version {version} already exists or is older than the last one.', {
+						version: version.data
+					})
+				);
 			}
 			await createVersion(ctx, src, {
 				db: params.db,
@@ -92,7 +96,10 @@ export const actions: Actions = {
 		});
 		if (!res.ok) return fail(400, { error: res.error });
 		return {
-			message: `Version ${version.data} was created, tracking for ${params.db}.${params.table} is active.`
+			message: locals.i18n.t('Version {version} was created, tracking for {table} is active.', {
+				version: version.data,
+				table: `${params.db}.${params.table}`
+			})
 		};
 	},
 
@@ -101,12 +108,17 @@ export const actions: Actions = {
 
 	deleteVersion: async ({ request, locals, params }) => {
 		const version = versionNo.safeParse((await request.formData()).get('version'));
-		if (!version.success) return fail(400, { error: 'Invalid version.' });
+		if (!version.success) return fail(400, { error: locals.i18n.t('Invalid version.') });
 		const res = await withTracking(locals, (ctx) =>
 			deleteTracking(ctx, params.db, params.table, version.data)
 		);
 		if (!res.ok) return fail(400, { error: res.error });
-		return { message: `Version ${version.data} of ${params.db}.${params.table} was deleted.` };
+		return {
+			message: locals.i18n.t('Version {version} of {table} was deleted.', {
+				version: version.data,
+				table: `${params.db}.${params.table}`
+			})
+		};
 	},
 
 	/** Remove one row of the DDL / DML log. */
@@ -116,11 +128,11 @@ export const actions: Actions = {
 		const which = fd.get('which') === 'ddl' ? 'ddl' : 'dml';
 		const id = Number(fd.get('id'));
 		if (!version.success || !Number.isInteger(id) || id < 0) {
-			return fail(400, { error: 'Invalid request.' });
+			return fail(400, { error: locals.i18n.t('Invalid request.') });
 		}
 		const res = await withTracking(locals, async (ctx) => {
 			const data = await getTrackedData(ctx, params.db, params.table, version.data);
-			if (!data) throw new Error('Version not found.');
+			if (!data) throw new Error(locals.i18n.t('Version not found.'));
 			const log = which === 'ddl' ? data.ddlog : data.dmlog;
 			await saveLog(
 				ctx,
@@ -135,8 +147,8 @@ export const actions: Actions = {
 		return {
 			message:
 				which === 'ddl'
-					? 'Tracking data definition successfully deleted'
-					: 'Tracking data manipulation successfully deleted'
+					? locals.i18n.t('Tracking data definition successfully deleted')
+					: locals.i18n.t('Tracking data manipulation successfully deleted')
 		};
 	},
 
@@ -144,11 +156,11 @@ export const actions: Actions = {
 	execute: async ({ request, locals, params }) => {
 		const fd = await request.formData();
 		const version = versionNo.safeParse(fd.get('version'));
-		if (!version.success) return fail(400, { error: 'Invalid version.' });
+		if (!version.success) return fail(400, { error: locals.i18n.t('Invalid version.') });
 		const filter = reportParams((k) => fd.get(k)?.toString());
 		const entries = await withTracking(locals, async (ctx) => {
 			const data = await getTrackedData(ctx, params.db, params.table, version.data);
-			if (!data) throw new Error('Version not found.');
+			if (!data) throw new Error(locals.i18n.t('Version not found.'));
 			return reportEntries(data.ddlog, data.dmlog, filter.logtype, filter);
 		});
 		if (!entries.ok) return fail(400, { error: entries.error });
@@ -157,9 +169,15 @@ export const actions: Actions = {
 			await conn.query(`USE \`${params.db.replaceAll('`', '``')}\``);
 			for (const e of entries.value) await conn.query(`/*NOTRACK*/\n${e.statement}`);
 		} catch (e) {
-			return fail(400, { error: (e as { sqlMessage?: string }).sqlMessage ?? 'Execution failed.' });
+			return fail(400, { error: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Execution failed.') });
 		}
-		return { message: `${entries.value.length} statement(s) executed.` };
+		return {
+			message: locals.i18n.tn(
+				'{n} statement executed.',
+				'{n} statements executed.',
+				entries.value.length
+			)
+		};
 	}
 };
 
@@ -170,12 +188,20 @@ async function toggle(
 	active: boolean
 ) {
 	const version = versionNo.safeParse((await request.formData()).get('version'));
-	if (!version.success) return fail(400, { error: 'Invalid version.' });
+	if (!version.success) return fail(400, { error: locals.i18n.t('Invalid version.') });
 	const res = await withTracking(locals, (ctx) =>
 		setActive(ctx, params.db, params.table, version.data, active)
 	);
 	if (!res.ok) return fail(400, { error: res.error });
 	return {
-		message: `Tracking for ${params.db}.${params.table} was ${active ? 'activated' : 'deactivated'} at version ${version.data}.`
+		message: active
+			? locals.i18n.t('Tracking for {table} was activated at version {version}.', {
+					table: `${params.db}.${params.table}`,
+					version: version.data
+				})
+			: locals.i18n.t('Tracking for {table} was deactivated at version {version}.', {
+					table: `${params.db}.${params.table}`,
+					version: version.data
+				})
 	};
 }

@@ -5,24 +5,26 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
-	<title>Transformations - svelteMyAdmin</title>
+	<title>{t('Transformations')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Wand}
-		title="Transformations"
-		description="Media types and the display and input transformations available for table columns."
+		title={t('Transformations')}
+		description={t('Media types and the display and input transformations available for table columns.')}
 	/>
 
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Available media types</Card.Title>
+			<Card.Title>{t('Available media types')}</Card.Title>
 		</Card.Header>
 		<Card.Content>
 			<ul class="flex flex-wrap gap-2" data-testid="mime-types">
@@ -33,7 +35,7 @@
 		</Card.Content>
 	</Card.Root>
 
-	{#each [{ id: 'transformation', title: 'Available browser display transformations', head: 'Browser display transformation', rows: data.transformations }, { id: 'input_transformation', title: 'Available input transformations', head: 'Input transformation', rows: data.inputTransformations }] as section (section.id)}
+	{#each [{ id: 'transformation', title: t('Available browser display transformations'), head: t('Browser display transformation'), rows: data.transformations }, { id: 'input_transformation', title: t('Available input transformations'), head: t('Input transformation'), rows: data.inputTransformations }] as section (section.id)}
 		<Card.Root id={section.id} class="gap-0 py-0">
 			<Card.Header class="border-b py-5">
 				<Card.Title>{section.title}</Card.Title>
@@ -42,7 +44,7 @@
 				<Table.Header>
 					<Table.Row>
 						<Table.Head class="w-64">{section.head}</Table.Head>
-						<Table.Head>Description</Table.Head>
+						<Table.Head>{t('Description')}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -50,7 +52,7 @@
 						<Table.Row>
 							<Table.Cell class="align-top font-medium">
 								{row.name}
-								{#if row.unsupported}<Badge variant="warning" class="ms-2">not supported</Badge
+								{#if row.unsupported}<Badge variant="warning" class="ms-2">{t('not supported')}</Badge
 									>{/if}
 							</Table.Cell>
 							<Table.Cell class="whitespace-normal text-muted-foreground"

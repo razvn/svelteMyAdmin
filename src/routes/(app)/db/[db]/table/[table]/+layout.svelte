@@ -4,6 +4,8 @@
 	import { currentTabPath, tabHref, tableTabs } from '#lib/nav/tabs.ts';
 	import { filterTabs } from '#lib/nav/user-groups.ts';
 	import type { LayoutProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data, children }: LayoutProps = $props();
 
@@ -15,7 +17,7 @@
 </script>
 
 <TabBar
-	label={data.tableType === 'view' ? 'View' : 'Table'}
+	label={data.tableType === 'view' ? t('View') : t('Table')}
 	{tabs}
 	{current}
 	hrefFor={(tab) => tabHref('table', ctx, tab.path)}

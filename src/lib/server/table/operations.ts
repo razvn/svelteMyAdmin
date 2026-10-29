@@ -45,6 +45,7 @@ import {
 	type TableOptions,
 	type TableOptionsRequest
 } from '#lib/sql/table-operations.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 
@@ -424,16 +425,17 @@ export interface TargetInput {
 /** Validate target db + name; returns the normalized name. */
 async function checkTarget(
 	dbi: DatabaseInterface,
-	input: TargetInput
+	input: TargetInput,
+	tr: Translator
 ): Promise<{ ok: true; name: string } | { ok: false; error: string }> {
 	const name = (await lowerCaseNames(dbi)) ? input.newName.toLowerCase() : input.newName;
-	const bad = validateTableName(name);
+	const bad = validateTableName(name, tr);
 	if (bad) return { ok: false, error: bad };
 	if (isSystemSchema(input.targetDb)) {
-		return { ok: false, error: 'Tables cannot be created in a system database.' };
+		return { ok: false, error: tr.t('Tables cannot be created in a system database.') };
 	}
 	if (!(await dbi.databaseExists(input.targetDb))) {
-		return { ok: false, error: `Target database ${input.targetDb} was not found!` };
+		return { ok: false, error: tr.t('Target database {db} was not found!', { db: input.targetDb }) };
 	}
 	return { ok: true, name };
 }
@@ -444,15 +446,16 @@ export async function moveTable(
 	db: string,
 	table: string,
 	input: TargetInput,
-	server: TableMetaServer
+	server: TableMetaServer,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
-	const t = await checkTarget(dbi, input);
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
+	const t = await checkTarget(dbi, input, tr);
 	if (!t.ok) return fail(t.error);
 	const to = { db: input.targetDb, table: t.name };
-	if (to.db === db && to.table === table) return { ok: true, message: 'No change', sql: [] };
+	if (to.db === db && to.table === table) return { ok: true, message: tr.t('No change'), sql: [] };
 	if ((await dbi.getTableType(to.db, to.table)) !== null) {
-		return fail(`Table ${to.table} already exists in ${to.db}.`);
+		return fail(tr.t('Table {table} already exists in {db}.', { table: to.table, db: to.db }));
 	}
 	const crossDb = to.db !== db;
 	const triggers = crossDb ? await loadTriggers(dbi, db, table) : [];
@@ -494,10 +497,17 @@ export async function moveTable(
 	} catch {
 		// the configuration storage is optional
 	}
-	const what = crossDb ? 'moved' : 'renamed';
 	return {
 		ok: true,
-		message: `Table ${db}.${table} has been ${what} to ${to.db}.${to.table}.`,
+		message: crossDb
+			? tr.t('Table {from} has been moved to {to}.', {
+					from: `${db}.${table}`,
+					to: `${to.db}.${to.table}`
+				})
+			: tr.t('Table {from} has been renamed to {to}.', {
+					from: `${db}.${table}`,
+					to: `${to.db}.${to.table}`
+				}),
 		sql,
 		goto: tableHref(to.db, to.table),
 		reload: true
@@ -518,22 +528,27 @@ export async function copyTable(
 	db: string,
 	table: string,
 	input: CopyTableInput,
-	server: TableMetaServer
+	server: TableMetaServer,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	const t = await checkTarget(dbi, input);
+	const t = await checkTarget(dbi, input, tr);
 	if (!t.ok) return fail(t.error);
 	const to = { db: input.targetDb, table: t.name };
 	if (to.db === db && to.table === table) {
-		return fail('Cannot copy a table to itself. Change the name or the database and try again.');
+		return fail(tr.t('Cannot copy a table to itself. Change the name or the database and try again.'));
 	}
 	const src = await loadCopySource(dbi, db, table);
-	if (!src) return fail('Table not found.');
+	if (!src) return fail(tr.t('Table not found.'));
 	const targetType = await dbi.getTableType(to.db, to.table);
 	if (input.what !== 'dataonly' && targetType !== null && !input.dropTable) {
-		return fail(`Table ${to.table} already exists in ${to.db}.`);
+		return fail(tr.t('Table {table} already exists in {db}.', { table: to.table, db: to.db }));
 	}
 	if (input.what === 'dataonly' && targetType === null) {
-		return fail(`Table ${to.db}.${to.table} does not exist; copy the structure first.`);
+		return fail(
+			tr.t('Table {table} does not exist; copy the structure first.', {
+				table: `${to.db}.${to.table}`
+			})
+		);
 	}
 	const plan = planTableCopy(src, {
 		targetDb: to.db,
@@ -565,7 +580,10 @@ export async function copyTable(
 	}
 	return {
 		ok: true,
-		message: `Table ${db}.${table} has been copied to ${to.db}.${to.table}.`,
+		message: tr.t('Table {from} has been copied to {to}.', {
+			from: `${db}.${table}`,
+			to: `${to.db}.${to.table}`
+		}),
 		sql,
 		reload: true,
 		...(input.switchToNew ? { goto: tableHref(to.db, to.table) } : {})
@@ -585,9 +603,10 @@ export async function applyOptions(
 	db: string,
 	table: string,
 	input: OptionsInput,
-	server: TableMetaServer
+	server: TableMetaServer,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const sql: string[] = [];
 	let current = table;
 	let goto: string | undefined;
@@ -598,7 +617,8 @@ export async function applyOptions(
 			db,
 			table,
 			{ targetDb: db, newName: input.newName, adjustPrivileges: input.adjustPrivileges },
-			server
+			server,
+			tr
 		);
 		sql.push(...res.sql);
 		if (!res.ok) return { ...res, sql };
@@ -607,7 +627,7 @@ export async function applyOptions(
 		reload = true;
 	}
 	const status = await getTableStatus(dbi, db, current);
-	if (!status || status.isView) return fail('Table not found.', sql);
+	if (!status || status.isView) return fail(tr.t('Table not found.'), sql);
 	const statements = buildOptionStatements(
 		current,
 		status.options,
@@ -634,7 +654,10 @@ export async function applyOptions(
 	if (statements.length > 0) reload = true;
 	return {
 		ok: true,
-		message: statements.length === 0 && !goto ? 'No change' : `Table ${current} has been updated.`,
+		message:
+			statements.length === 0 && !goto
+				? tr.t('No change')
+				: tr.t('Table {table} has been updated.', { table: current }),
 		sql,
 		reload,
 		...(goto ? { goto } : {})
@@ -647,15 +670,16 @@ export async function reorderTable(
 	db: string,
 	table: string,
 	column: string,
-	order: 'asc' | 'desc'
+	order: 'asc' | 'desc',
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const cols = await dbi.getColumns(db, table);
-	if (!cols.some((c) => c.field === column)) return fail(`Unknown column: ${column}`);
+	if (!cols.some((c) => c.field === column)) return fail(tr.t('Unknown column: {name}', { name: column }));
 	const sql = buildReorderSql(table, column, order);
 	const run = await withSessionRestored(dbi, db, () => runStatements(dbi.conn, [sql]));
 	if (run.error) return fail(run.error, run.sql);
-	return { ok: true, message: `Table ${table} has been reordered by ${column}.`, sql: run.sql };
+	return { ok: true, message: tr.t('Table {table} has been reordered by {column}.', { table, column }), sql: run.sql };
 }
 
 function fromExec(res: ExecResult, sql: string[], message: string): TableOutcome {
@@ -676,22 +700,31 @@ export async function maintainTable(
 	db: string,
 	table: string,
 	action: MaintenanceAction,
-	isView: boolean
+	isView: boolean,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
 	if (isView && action !== 'check' && action !== 'checksum') {
-		return fail('This operation is not available for views.');
+		return fail(tr.t('This operation is not available for views.'));
 	}
 	if (isSystemSchema(db) && !['check', 'checksum'].includes(action)) {
-		return fail('Tables of a system database cannot be modified.');
+		return fail(tr.t('Tables of a system database cannot be modified.'));
 	}
 	const sql = [buildMaintenanceSql(action, db, table)];
 	const res = await executePlan(dbi, plan(sql));
 	const message =
 		action === 'flush'
-			? `Table ${table} has been flushed.`
+			? tr.t('Table {table} has been flushed.', { table })
 			: action === 'defragment'
-				? `Table ${table} has been defragmented.`
-				: `${action[0].toUpperCase()}${action.slice(1)} table: done.`;
+				? tr.t('Table {table} has been defragmented.', { table })
+				: action === 'analyze'
+					? tr.t('Analyze table: done.')
+					: action === 'check'
+						? tr.t('Check table: done.')
+						: action === 'checksum'
+							? tr.t('Checksum table: done.')
+							: action === 'optimize'
+								? tr.t('Optimize table: done.')
+								: tr.t('Repair table: done.');
 	return {
 		...fromExec(res, sql, message),
 		...(res.ok && ['defragment', 'flush'].includes(action) ? { reload: true } : {})
@@ -703,12 +736,13 @@ export async function emptyTable(
 	dbi: DatabaseInterface,
 	db: string,
 	table: string,
-	fkChecks: boolean
+	fkChecks: boolean,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const sql = [buildTruncateSql(db, table)];
 	const res = await executePlan(dbi, plan(sql, !fkChecks));
-	return { ...fromExec(res, sql, `Table ${table} has been emptied.`), reload: true };
+	return { ...fromExec(res, sql, tr.t('Table {table} has been emptied.', { table })), reload: true };
 }
 
 /** DROP TABLE / VIEW; goes to the database structure afterwards. */
@@ -717,16 +751,19 @@ export async function dropTable(
 	db: string,
 	table: string,
 	isView: boolean,
-	fkChecks: boolean
+	fkChecks: boolean,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const sql = [buildDropSql(db, table, isView)];
 	const res = await executePlan(dbi, plan(sql, !fkChecks));
 	return {
 		...fromExec(
 			res,
 			sql,
-			isView ? `View ${table} has been dropped.` : `Table ${table} has been dropped.`
+			isView
+				? tr.t('View {table} has been dropped.', { table })
+				: tr.t('Table {table} has been dropped.', { table })
 		),
 		goto: `/db/${encodeURIComponent(db)}/structure`,
 		reload: true
@@ -739,20 +776,26 @@ export async function maintainPartitions(
 	db: string,
 	table: string,
 	operation: PartitionOperation | null,
-	names: string[]
+	names: string[],
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<TableOutcome> {
-	if (isSystemSchema(db)) return fail('Tables of a system database cannot be modified.');
+	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const parts = await getPartitions(dbi, db, table);
-	if (!parts) return fail('The table is not partitioned.');
+	if (!parts) return fail(tr.t('The table is not partitioned.'));
 	let statement: string;
 	if (operation === null) {
 		statement = buildRemovePartitioningSql(table);
 	} else {
 		if (!partitionOperationsFor(parts.method).includes(operation)) {
-			return fail(`The operation ${operation} is not available for ${parts.method} partitioning.`);
+			return fail(
+				tr.t('The operation {operation} is not available for {method} partitioning.', {
+					operation,
+					method: parts.method
+				})
+			);
 		}
 		const valid = names.filter((n) => parts.names.includes(n));
-		if (valid.length === 0) return fail('No partition selected.');
+		if (valid.length === 0) return fail(tr.t('No partition selected.'));
 		statement = buildPartitionSql(table, operation, valid);
 	}
 	await dbi.conn.query(`USE ${escapeId(db)}`);
@@ -761,7 +804,9 @@ export async function maintainPartitions(
 		...fromExec(
 			res,
 			[statement],
-			operation === null ? 'Partitioning has been removed.' : `Partition ${operation}: done.`
+			operation === null
+				? tr.t('Partitioning has been removed.')
+				: tr.t('Partition {operation}: done.', { operation })
 		),
 		reload: true
 	};

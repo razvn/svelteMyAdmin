@@ -2,6 +2,7 @@
  * Database > Events (Controllers/Database/EventsController.php, Database/Events.php).
  */
 import type { Connection } from '../db/connection';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { definerToInput } from '#lib/sql/definer.ts';
 import {
 	buildCreateEvent,
@@ -103,11 +104,12 @@ export async function saveEvent(
 	conn: Connection,
 	db: string,
 	def: EventDef,
-	originalName: string | null
+	originalName: string | null,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<SaveResult> {
-	const built = buildCreateEvent(db, def);
+	const built = buildCreateEvent(db, def, tr);
 	if (built.errors.length > 0) return { ok: false, errors: built.errors, queries: [] };
-	if (originalName === null) return createOrReplace(conn, db, { createSql: built.sql });
+	if (originalName === null) return createOrReplace(conn, db, { createSql: built.sql, tr });
 	let originalSql: string | null;
 	try {
 		originalSql = await exportEvent(conn, db, originalName);
@@ -117,7 +119,8 @@ export async function saveEvent(
 	return createOrReplace(conn, db, {
 		createSql: built.sql,
 		dropSql: buildDropEvent(db, originalName),
-		originalSql
+		originalSql,
+		tr
 	});
 }
 

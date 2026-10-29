@@ -144,7 +144,7 @@ export async function saveSearch(
 	input: { id?: number; name: string; data: Record<string, unknown> }
 ): Promise<SaveResult> {
 	if (!savedSearchesConfigured(locals) || !locals.session) {
-		return { ok: false, error: 'Saved searches are not available.' };
+		return { ok: false, error: locals.i18n.t('Saved searches are not available.') };
 	}
 	const server = locals.server;
 	const table = escapeQualified(server.pmadb, server.savedsearches);
@@ -165,11 +165,11 @@ export async function saveSearch(
 			);
 			return { id: Number((r as { insertId: number }).insertId), affected: 1 };
 		});
-		if (!res) return { ok: false, error: 'The configuration storage is not reachable.' };
-		if (res.affected === 0) return { ok: false, error: 'The saved search no longer exists.' };
+		if (!res) return { ok: false, error: locals.i18n.t('The configuration storage is not reachable.') };
+		if (res.affected === 0) return { ok: false, error: locals.i18n.t('The saved search no longer exists.') };
 		return { ok: true, id: res.id };
 	} catch {
-		return { ok: false, error: 'Could not save the search (is the name already used?).' };
+		return { ok: false, error: locals.i18n.t('Could not save the search (is the name already used?).') };
 	}
 }
 

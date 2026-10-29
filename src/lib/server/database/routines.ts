@@ -14,6 +14,7 @@ import {
 	type RoutineDef
 } from '#lib/sql/routine.ts';
 import type { RoutineType, SecurityType, SqlDataAccess } from '#lib/sql/routine-types.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { createOrReplace, rows, showCreate, sqlErrorMessage, str, type SaveResult } from './common';
 
 export interface RoutineListItem {
@@ -134,11 +135,12 @@ export async function saveRoutine(
 	conn: Connection,
 	db: string,
 	def: RoutineDef,
-	original: { type: RoutineType; name: string } | null
+	original: { type: RoutineType; name: string } | null,
+	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<SaveResult> {
-	const built = buildCreateRoutine(db, def);
+	const built = buildCreateRoutine(db, def, tr);
 	if (built.errors.length > 0) return { ok: false, errors: built.errors, queries: [] };
-	if (!original) return createOrReplace(conn, db, { createSql: built.sql });
+	if (!original) return createOrReplace(conn, db, { createSql: built.sql, tr });
 	let originalSql: string | null;
 	try {
 		originalSql = await exportRoutine(conn, db, original.type, original.name);
@@ -148,7 +150,8 @@ export async function saveRoutine(
 	return createOrReplace(conn, db, {
 		createSql: built.sql,
 		dropSql: buildDropRoutine(db, original.type, original.name),
-		originalSql
+		originalSql,
+		tr
 	});
 }
 

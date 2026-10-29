@@ -4,6 +4,8 @@
 	import { currentTabPath, dbTabs, tabHref } from '#lib/nav/tabs.ts';
 	import { filterTabs } from '#lib/nav/user-groups.ts';
 	import type { LayoutProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t } = useI18n();
 
 	let { data, children }: LayoutProps = $props();
 
@@ -13,7 +15,7 @@
 
 {#if !page.params.table}
 	<TabBar
-		label="Database"
+		label={t('Database')}
 		{tabs}
 		{current}
 		hrefFor={(tab) => tabHref('db', { db: data.db }, tab.path)}

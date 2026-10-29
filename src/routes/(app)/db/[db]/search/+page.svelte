@@ -20,6 +20,8 @@
 	import { bare } from '#lib/nav/paths.ts';
 	import { tabHref } from '#lib/nav/tabs.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -47,6 +49,21 @@
 		return resolve(bare(tabHref('table', { db: data.db, table }, 'browse')));
 	}
 
+	function searchTypeLabel(value: number): string {
+		switch (value) {
+			case 1:
+				return t('at least one of the words');
+			case 2:
+				return t('all of the words');
+			case 3:
+				return t('the exact phrase as substring');
+			case 4:
+				return t('the exact phrase as whole field');
+			default:
+				return t('as regular expression');
+		}
+	}
+
 	// Results only exist for a submitted search, so the criteria are always the submitted ones.
 	const results = $derived(data.results);
 </script>
@@ -54,18 +71,18 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Search}
-		title="Search"
-		description="Search the words or values in the tables of database {data.db}."
+		title={t('Search')}
+		description={t('Search the words or values in the tables of database {db}.', { db: data.db })}
 	/>
 
 	<Card.Root>
 		<form method="GET" action={searchAction} class="flex flex-col gap-6" data-testid="search-form">
 			<Card.Header>
-				<Card.Title>Search in database</Card.Title>
+				<Card.Title>{t('Search in database')}</Card.Title>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-6">
 				<div class="flex flex-col gap-2">
-					<Label for="criteriaSearchString">Words or values to search for (wildcard: "%"):</Label>
+					<Label for="criteriaSearchString">{t('Words or values to search for (wildcard: "%"):')}</Label>
 					<Input
 						id="criteriaSearchString"
 						name="criteriaSearchString"
@@ -77,7 +94,7 @@
 				</div>
 
 				<fieldset class="flex flex-col gap-3">
-					<legend class="mb-1 text-sm font-medium">Find:</legend>
+					<legend class="mb-1 text-sm font-medium">{t('Find:')}</legend>
 					<RadioGroup.Root name="criteriaSearchType" bind:value={searchType} class="gap-2">
 						{#each data.searchTypes as type (type.value)}
 							<div class="flex items-center gap-2">
@@ -86,9 +103,9 @@
 									id="criteriaSearchTypeRadio{type.value}"
 								/>
 								<Label for="criteriaSearchTypeRadio{type.value}" class="font-normal">
-									{type.label}
+									{searchTypeLabel(type.value)}
 									{#if type.value === 1 || type.value === 2}
-										<span class="text-muted-foreground">(words are separated by a space)</span>
+										<span class="text-muted-foreground">{t('(words are separated by a space)')}</span>
 									{/if}
 								</Label>
 							</div>
@@ -98,7 +115,7 @@
 
 				<fieldset class="flex flex-col gap-3">
 					<legend class="mb-1 flex w-full items-center justify-between text-sm font-medium">
-						<span>Inside tables:</span>
+						<span>{t('Inside tables:')}</span>
 						<span class="flex items-center gap-2 font-normal">
 							<Button
 								variant="link"
@@ -106,9 +123,9 @@
 								class="h-auto p-0"
 								type="button"
 								disabled={allChecked}
-								onclick={() => (checked = data.tables.map((t) => t.name))}
+								onclick={() => (checked = data.tables.map((tbl) => tbl.name))}
 							>
-								Select all
+								{t('Select all')}
 							</Button>
 							/
 							<Button
@@ -119,7 +136,7 @@
 								disabled={checked.length === 0}
 								onclick={() => (checked = [])}
 							>
-								Unselect all
+								{t('Unselect all')}
 							</Button>
 						</span>
 					</legend>
@@ -137,17 +154,17 @@
 									{table.name}
 								</Label>
 								{#if table.isView}
-									<Badge variant="muted">view</Badge>
+									<Badge variant="muted">{t('view')}</Badge>
 								{/if}
 							</div>
 						{:else}
-							<p class="text-sm text-muted-foreground sm:col-span-2">No tables in this database.</p>
+							<p class="text-sm text-muted-foreground sm:col-span-2">{t('No tables in this database.')}</p>
 						{/each}
 					</div>
 				</fieldset>
 
 				<div class="flex flex-col gap-2">
-					<Label for="criteriaColumnName">Inside column:</Label>
+					<Label for="criteriaColumnName">{t('Inside column:')}</Label>
 					<Input
 						id="criteriaColumnName"
 						name="criteriaColumnName"
@@ -159,7 +176,7 @@
 				</div>
 			</Card.Content>
 			<Card.Footer class="border-t">
-				<Button type="submit" name="submit_search" value="Go">Go</Button>
+				<Button type="submit" name="submit_search" value="Go">{t('Go')}</Button>
 			</Card.Footer>
 		</form>
 	</Card.Root>
@@ -174,16 +191,19 @@
 		<Card.Root class="gap-0 py-0" data-testid="search-results">
 			<Card.Header class="border-b py-5">
 				<Card.Title>
-					Search results for "<em>{data.criteria.searchString}</em>" {data.searchTypeLabel}:
+					{t('Search results for "{search}" {type}:', {
+						search: data.criteria.searchString,
+						type: searchTypeLabel(Number(data.criteria.searchType))
+					})}
 				</Card.Title>
 			</Card.Header>
 			<Card.Content class="px-0">
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Matches</Table.Head>
-							<Table.Head class="text-end">Browse</Table.Head>
-							<Table.Head class="text-end">Delete</Table.Head>
+							<Table.Head>{t('Matches')}</Table.Head>
+							<Table.Head class="text-end">{t('Browse')}</Table.Head>
+							<Table.Head class="text-end">{t('Delete')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -193,13 +213,15 @@
 								data-testid="search-row-{row.table}"
 							>
 								<Table.Cell class="whitespace-normal">
-									{row.count}
-									{row.count === 1 ? 'match' : 'matches'} in
-									<strong class="font-mono">{row.table}</strong>
+									{tn('{n} match in {table}', '{n} matches in {table}', row.count, {
+										table: row.table
+									})}
 								</Table.Cell>
 								<Table.Cell class="text-end">
 									{#if row.count > 0}
-										<Button variant="outline" size="sm" href={browseHref(row.table)}>Browse</Button>
+										<Button variant="outline" size="sm" href={browseHref(row.table)}
+											>{t('Browse')}</Button
+										>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="text-end">
@@ -213,7 +235,7 @@
 												deleteOpen = true;
 											}}
 										>
-											<Trash2 /> Delete
+											<Trash2 /> {t('Delete')}
 										</Button>
 									{/if}
 								</Table.Cell>
@@ -223,8 +245,8 @@
 					<Table.Footer>
 						<Table.Row>
 							<Table.Cell class="font-semibold">
-								Total: <span data-testid="search-total">{results.total}</span>
-								{results.total === 1 ? 'match' : 'matches'}
+								{t('Total')}: <span data-testid="search-total">{results.total}</span>
+								{tn('match', 'matches', results.total)}
 							</Table.Cell>
 							<Table.Cell></Table.Cell>
 							<Table.Cell></Table.Cell>
@@ -244,10 +266,13 @@
 				return async ({ result, update }) => {
 					if (result.type === 'success') {
 						toast.success(
-							`${result.data?.deleted ?? 0} rows deleted from ${result.data?.deleteTable ?? ''}.`
+							t('{n} rows deleted from {table}.', {
+								n: Number(result.data?.deleted ?? 0),
+								table: String(result.data?.deleteTable ?? '')
+							})
 						);
 					} else if (result.type === 'failure') {
-						toast.error(String(result.data?.deleteError ?? 'Could not delete the rows.'));
+						toast.error(String(result.data?.deleteError ?? t('Could not delete the rows.')));
 					}
 					await update({ reset: false });
 					deleting = false;
@@ -263,17 +288,18 @@
 <AlertDialog.Root bind:open={deleteOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete matching rows?</AlertDialog.Title>
+			<AlertDialog.Title>{t('Delete matching rows?')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This runs the following SQL against table
-				<strong class="font-mono">{deleteTarget?.table}</strong>. It cannot be undone.
+				{t('This runs the following SQL against table {table}. It cannot be undone.', {
+					table: deleteTarget?.table ?? ''
+				})}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<pre
 			class="max-h-48 overflow-auto rounded-lg border bg-muted p-3 font-mono text-xs whitespace-pre-wrap"
 			data-testid="delete-sql">{deleteTarget?.sql}</pre>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={deleting}
@@ -284,7 +310,7 @@
 					deleteForm?.requestSubmit();
 				}}
 			>
-				Delete
+				{t('Delete')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

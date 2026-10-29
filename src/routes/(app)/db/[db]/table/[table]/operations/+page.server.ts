@@ -29,7 +29,7 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const dbi = await locals.dbi;
 	const status = await getTableStatus(dbi, params.db, params.table);
-	if (!status) error(404, 'Table not found');
+	if (!status) error(404, locals.i18n.t('Table not found'));
 	const systemSchema = isSystemSchema(params.db);
 	const [engines, collations, databases, columns, partitions] = await Promise.all([
 		status.isView ? [] : listUsableEngines(dbi),
@@ -60,22 +60,22 @@ const reply = (action: string, res: TableOutcome) => {
 	const body = { action, ...res };
 	return res.ok ? body : fail(400, body);
 };
-const invalid = (action: string) =>
-	fail(400, { action, ok: false, message: 'Invalid input.', sql: [] as string[] });
+const invalid = (action: string, i18nT: (m: string) => string) =>
+	fail(400, { action, ok: false, message: i18nT('Invalid input.'), sql: [] as string[] });
 
 export const actions: Actions = {
 	reorder: async ({ request, locals, params }) => {
 		const p = reorderSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('reorder');
+		if (!p.success) return invalid('reorder', locals.i18n.t);
 		const dbi = await locals.dbi;
 		return reply(
 			'reorder',
-			await reorderTable(dbi, params.db, params.table, p.data.order_field, p.data.order_order)
+			await reorderTable(dbi, params.db, params.table, p.data.order_field, p.data.order_order, locals.i18n)
 		);
 	},
 	move: async ({ request, locals, params }) => {
 		const p = moveSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('move');
+		if (!p.success) return invalid('move', locals.i18n.t);
 		const dbi = await locals.dbi;
 		return reply(
 			'move',
@@ -88,20 +88,21 @@ export const actions: Actions = {
 					newName: p.data.new_name,
 					adjustPrivileges: p.data.adjust_privileges
 				},
-				locals.server
+				locals.server,
+				locals.i18n
 			)
 		);
 	},
 	options: async ({ request, locals, params }) => {
 		const p = optionsSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('options');
+		if (!p.success) return invalid('options', locals.i18n.t);
 		const d = p.data;
 		const dbi = await locals.dbi;
 		const collation = d.tbl_collation
 			? (await dbi.listCollations()).find((c) => c.name === d.tbl_collation)
 			: undefined;
 		if (d.tbl_collation && !collation) {
-			return fail(400, { action: 'options', ok: false, message: 'Unknown collation.', sql: [] });
+			return fail(400, { action: 'options', ok: false, message: locals.i18n.t('Unknown collation.'), sql: [] });
 		}
 		return reply(
 			'options',
@@ -125,13 +126,14 @@ export const actions: Actions = {
 					autoIncrement: d.new_auto_increment,
 					rowFormat: d.new_row_format
 				},
-				locals.server
+				locals.server,
+				locals.i18n
 			)
 		);
 	},
 	copy: async ({ request, locals, params }) => {
 		const p = copySchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('copy');
+		if (!p.success) return invalid('copy', locals.i18n.t);
 		const d = p.data;
 		const dbi = await locals.dbi;
 		return reply(
@@ -150,36 +152,37 @@ export const actions: Actions = {
 					adjustPrivileges: d.adjust_privileges,
 					switchToNew: d.switch_to_new
 				},
-				locals.server
+				locals.server,
+				locals.i18n
 			)
 		);
 	},
 	maintenance: async ({ request, locals, params }) => {
 		const p = maintenanceSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('maintenance');
+		if (!p.success) return invalid('maintenance', locals.i18n.t);
 		const dbi = await locals.dbi;
 		const status = await getTableStatus(dbi, params.db, params.table);
-		if (!status) error(404, 'Table not found');
+		if (!status) error(404, locals.i18n.t('Table not found'));
 		return reply(
 			'maintenance',
-			await maintainTable(dbi, params.db, params.table, p.data.action, status.isView)
+			await maintainTable(dbi, params.db, params.table, p.data.action, status.isView, locals.i18n)
 		);
 	},
 	empty: async ({ request, locals, params }) => {
 		const p = dangerSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('empty');
+		if (!p.success) return invalid('empty', locals.i18n.t);
 		const dbi = await locals.dbi;
-		return reply('empty', await emptyTable(dbi, params.db, params.table, p.data.fk_checks));
+		return reply('empty', await emptyTable(dbi, params.db, params.table, p.data.fk_checks, locals.i18n));
 	},
 	drop: async ({ request, locals, params }) => {
 		const p = dangerSchema.safeParse(formToObject(await request.formData()));
-		if (!p.success) return invalid('drop');
+		if (!p.success) return invalid('drop', locals.i18n.t);
 		const dbi = await locals.dbi;
 		const status = await getTableStatus(dbi, params.db, params.table);
-		if (!status) error(404, 'Table not found');
+		if (!status) error(404, locals.i18n.t('Table not found'));
 		return reply(
 			'drop',
-			await dropTable(dbi, params.db, params.table, status.isView, p.data.fk_checks)
+			await dropTable(dbi, params.db, params.table, status.isView, p.data.fk_checks, locals.i18n)
 		);
 	},
 	partition: async ({ request, locals, params }) => {
@@ -188,15 +191,15 @@ export const actions: Actions = {
 			operation: data.get('operation'),
 			partitions: data.getAll('partitions').map(String)
 		});
-		if (!p.success) return invalid('partition');
+		if (!p.success) return invalid('partition', locals.i18n.t);
 		const dbi = await locals.dbi;
 		return reply(
 			'partition',
-			await maintainPartitions(dbi, params.db, params.table, p.data.operation, p.data.partitions)
+			await maintainPartitions(dbi, params.db, params.table, p.data.operation, p.data.partitions, locals.i18n)
 		);
 	},
 	unpartition: async ({ locals, params }) => {
 		const dbi = await locals.dbi;
-		return reply('unpartition', await maintainPartitions(dbi, params.db, params.table, null, []));
+		return reply('unpartition', await maintainPartitions(dbi, params.db, params.table, null, [], locals.i18n));
 	}
 };

@@ -17,7 +17,9 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
+	const { t } = useI18n();
 
 	let { data }: PageProps = $props();
 	const navState = getNavState();
@@ -124,12 +126,12 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Settings2}
-		title="Operations"
-		description="Rename, copy, change the collation of or remove {dbName}."
+		title={t('Operations')}
+		description={t('Rename, copy, change the collation of or remove {name}.', { name: dbName })}
 	>
 		{#snippet actions()}
 			<Button variant="outline" href="{dbHref(dbName)}/data-dictionary">
-				<BookOpen class="size-4" /> Data dictionary
+				<BookOpen class="size-4" /> {t('Data dictionary')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -137,23 +139,23 @@
 	{#if data.isSystemSchema}
 		<Alert variant="warning">
 			<AlertDescription>
-				Operations are not available for the system schema "{dbName}".
+				{t('Operations are not available for the system schema "{name}".', { name: dbName })}
 			</AlertDescription>
 		</Alert>
 	{:else}
 		{#if data.hasComment}
 			<Card.Root>
-				<Card.Header><Card.Title>Database comment</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Database comment')}</Card.Title></Card.Header>
 				<Card.Content>
 					<form method="POST" action="?/comment" use:enhance={submit('comment')} class="flex gap-2">
 						<Input
 							name="comment"
 							value={data.comment}
 							maxlength={255}
-							aria-label="Database comment"
+							aria-label={t('Database comment')}
 							class="max-w-md"
 						/>
-						<Button type="submit" disabled={busy === 'comment'}>Go</Button>
+						<Button type="submit" disabled={busy === 'comment'}>{t('Go')}</Button>
 					</form>
 					{@render outcome('comment')}
 				</Card.Content>
@@ -161,7 +163,7 @@
 		{/if}
 
 		<Card.Root>
-			<Card.Header><Card.Title>Create new table</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Create new table')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="GET"
@@ -169,11 +171,11 @@
 					class="flex flex-wrap items-end gap-3"
 				>
 					<div class="flex flex-col gap-1.5">
-						<Label for="create-table-name">Table name</Label>
+						<Label for="create-table-name">{t('Table name')}</Label>
 						<Input id="create-table-name" name="name" maxlength={64} required class="w-64" />
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<Label for="create-table-num">Number of columns</Label>
+						<Label for="create-table-num">{t('Number of columns')}</Label>
 						<Input
 							id="create-table-num"
 							name="num_fields"
@@ -184,14 +186,14 @@
 							class="w-36"
 						/>
 					</div>
-					<Button type="submit">Create</Button>
+					<Button type="submit">{t('Create')}</Button>
 				</form>
 			</Card.Content>
 		</Card.Root>
 
 		{#if dbName !== 'mysql'}
 			<Card.Root>
-				<Card.Header><Card.Title>Rename database to</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Rename database to')}</Card.Title></Card.Header>
 				<Card.Content>
 					<form
 						method="POST"
@@ -205,17 +207,17 @@
 							placeholder={dbName}
 							maxlength={64}
 							required
-							aria-label="New database name"
+							aria-label={t('New database name')}
 							class="max-w-md"
 						/>
 						{@render option(
 							'rename-priv',
 							'adjust_privileges',
-							'Adjust privileges',
+							t('Adjust privileges'),
 							data.canAdjustPrivileges,
 							!data.canAdjustPrivileges
 						)}
-						<div><Button type="submit" disabled={busy === 'rename'}>Go</Button></div>
+						<div><Button type="submit" disabled={busy === 'rename'}>{t('Go')}</Button></div>
 					</form>
 					{@render outcome('rename')}
 				</Card.Content>
@@ -224,7 +226,7 @@
 
 		{#if data.dropAllowed}
 			<Card.Root>
-				<Card.Header><Card.Title>Remove database</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Remove database')}</Card.Title></Card.Header>
 				<Card.Content>
 					<Button
 						variant="destructive"
@@ -232,7 +234,7 @@
 						data-testid="drop-db"
 						disabled={busy === 'drop'}
 					>
-						Drop the database (DROP)
+						{t('Drop the database (DROP)')}
 					</Button>
 					<form
 						bind:this={dropForm}
@@ -247,7 +249,7 @@
 		{/if}
 
 		<Card.Root>
-			<Card.Header><Card.Title>Copy database to</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Copy database to')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -261,11 +263,11 @@
 						placeholder={dbName}
 						maxlength={64}
 						required
-						aria-label="Copy to database name"
+						aria-label={t('Copy to database name')}
 						class="max-w-md"
 					/>
-					<div class="flex flex-col gap-2" role="radiogroup" aria-label="What to copy">
-						{#each [{ v: 'structure', t: 'Structure only' }, { v: 'data', t: 'Structure and data' }, { v: 'dataonly', t: 'Data only' }] as o (o.v)}
+					<div class="flex flex-col gap-2" role="radiogroup" aria-label={t('What to copy')}>
+						{#each [{ v: 'structure', label: N_('Structure only') }, { v: 'data', label: N_('Structure and data') }, { v: 'dataonly', label: N_('Data only') }] as o (o.v)}
 							<label class="flex items-center gap-2 text-sm">
 								<input
 									type="radio"
@@ -274,7 +276,7 @@
 									checked={o.v === 'data'}
 									class="size-4 accent-primary"
 								/>
-								{o.t}
+								{t(o.label)}
 							</label>
 						{/each}
 					</div>
@@ -282,29 +284,29 @@
 						{@render option(
 							'cp-create',
 							'create_database_before_copying',
-							'CREATE DATABASE before copying',
+							t('CREATE DATABASE before copying'),
 							true
 						)}
-						{@render option('cp-drop', 'drop_if_exists', 'Add DROP TABLE / DROP VIEW', false)}
-						{@render option('cp-ai', 'sql_auto_increment', 'Add AUTO_INCREMENT value', true)}
-						{@render option('cp-fk', 'add_constraints', 'Add constraints', true)}
+						{@render option('cp-drop', 'drop_if_exists', t('Add DROP TABLE / DROP VIEW'), false)}
+						{@render option('cp-ai', 'sql_auto_increment', t('Add AUTO_INCREMENT value'), true)}
+						{@render option('cp-fk', 'add_constraints', t('Add constraints'), true)}
 						{@render option(
 							'cp-priv',
 							'adjust_privileges',
-							'Adjust privileges',
+							t('Adjust privileges'),
 							data.canAdjustPrivileges,
 							!data.canAdjustPrivileges
 						)}
-						{@render option('cp-switch', 'switch_to_new', 'Switch to copied database', false)}
+						{@render option('cp-switch', 'switch_to_new', t('Switch to copied database'), false)}
 					</div>
-					<div><Button type="submit" disabled={busy === 'copy'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'copy'}>{t('Go')}</Button></div>
 				</form>
 				{@render outcome('copy')}
 			</Card.Content>
 		</Card.Root>
 
 		<Card.Root>
-			<Card.Header><Card.Title>Collation</Card.Title></Card.Header>
+			<Card.Header><Card.Title>{t('Collation')}</Card.Title></Card.Header>
 			<Card.Content>
 				<form
 					method="POST"
@@ -314,8 +316,8 @@
 					data-testid="collation-form"
 				>
 					<Select.Root type="single" name="db_collation" bind:value={collation}>
-						<Select.Trigger class="w-72" aria-label="Collation">
-							{collation || 'Collation'}
+						<Select.Trigger class="w-72" aria-label={t('Collation')}>
+							{collation || t('Collation')}
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each byCharset as group (group.charset)}
@@ -332,17 +334,17 @@
 						{@render option(
 							'co-tables',
 							'change_all_tables_collations',
-							'Change all tables collations',
+							t('Change all tables collations'),
 							false
 						)}
 						{@render option(
 							'co-cols',
 							'change_all_tables_columns_collations',
-							'Change all tables columns collations',
+							t('Change all tables columns collations'),
 							false
 						)}
 					</div>
-					<div><Button type="submit" disabled={busy === 'collation'}>Go</Button></div>
+					<div><Button type="submit" disabled={busy === 'collation'}>{t('Go')}</Button></div>
 				</form>
 				{@render outcome('collation')}
 			</Card.Content>
@@ -353,14 +355,15 @@
 <AlertDialog.Root bind:open={dropOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Confirm</AlertDialog.Title>
+			<AlertDialog.Title>{t('Confirm')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				You are about to DESTROY a complete database! This cannot be undone. Drop
-				<span class="font-mono font-medium">{dbName}</span>?
+				{t('You are about to DESTROY a complete database! This cannot be undone. Drop {name}?', {
+					name: dbName
+				})}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				onclick={(e: MouseEvent) => {
@@ -369,7 +372,7 @@
 					dropForm?.requestSubmit();
 				}}
 			>
-				Drop
+				{t('Drop')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

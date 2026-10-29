@@ -39,6 +39,8 @@
 		type ParsedIndex
 	} from '#lib/sql/index-definition.ts';
 	import type { PageProps } from './$types';
+	import { useI18n } from '#lib/i18n/index.ts';
+	const { t, tn } = useI18n();
 
 	let { data }: PageProps = $props();
 
@@ -92,38 +94,58 @@
 
 	function askDrop(names: string[]) {
 		ask({
-			title: names.length === 1 ? `Drop column ${names[0]}` : `Drop ${names.length} columns`,
-			description: 'Do you really want to execute the following query? The data is lost for good.',
+			title:
+				names.length === 1
+					? t('Drop column {name}', { name: names[0] })
+					: t('Drop {n} columns', { n: names.length }),
+			description: t(
+				'Do you really want to execute the following query? The data is lost for good.'
+			),
 			sql: buildDropColumns(data.db, data.table, names),
 			action: 'drop',
 			payload: { columns: names },
-			label: 'Drop',
+			label: t('Drop'),
 			destructive: true,
 			message:
-				names.length === 1 ? `Column ${names[0]} has been dropped.` : 'Columns have been dropped.'
+				names.length === 1
+					? t('Column {name} has been dropped.', { name: names[0] })
+					: t('Columns have been dropped.')
 		});
 	}
 
-	const KEY_LABEL: Record<IndexKind, string> = {
-		PRIMARY: 'primary key',
-		UNIQUE: 'unique index',
-		INDEX: 'index',
-		FULLTEXT: 'fulltext index',
-		SPATIAL: 'spatial index'
-	};
+	const addKeyTitle = (kind: IndexKind): string =>
+		kind === 'PRIMARY'
+			? t('Add primary key')
+			: kind === 'UNIQUE'
+				? t('Add unique index')
+				: kind === 'INDEX'
+					? t('Add index')
+					: kind === 'FULLTEXT'
+						? t('Add fulltext index')
+						: t('Add spatial index');
+	const addKeyDone = (kind: IndexKind): string =>
+		kind === 'PRIMARY'
+			? t('The primary key has been added.')
+			: kind === 'UNIQUE'
+				? t('The unique index has been added.')
+				: kind === 'INDEX'
+					? t('The index has been added.')
+					: kind === 'FULLTEXT'
+						? t('The fulltext index has been added.')
+						: t('The spatial index has been added.');
 	function askKey(kind: IndexKind, names: string[]) {
 		if (names.length === 0) return;
 		const replacePrimary = kind === 'PRIMARY' && hasPrimary;
 		ask({
-			title: `Add ${KEY_LABEL[kind]}`,
+			title: addKeyTitle(kind),
 			description: replacePrimary
-				? 'The table already has a primary key: it will be dropped and replaced.'
+				? t('The table already has a primary key: it will be dropped and replaced.')
 				: undefined,
 			sql: buildAddKey(data.db, data.table, kind, names, { replacePrimary }),
 			action: 'key',
 			payload: { kind, columns: names, replacePrimary },
-			label: 'Add',
-			message: `The ${KEY_LABEL[kind]} has been added.`
+			label: t('Add'),
+			message: addKeyDone(kind)
 		});
 	}
 
@@ -182,13 +204,13 @@
 	}
 	function askDropIndex(idx: ParsedIndex) {
 		ask({
-			title: `Drop index ${idx.name}`,
+			title: t('Drop index {name}', { name: idx.name }),
 			sql: buildDropIndex(data.db, data.table, idx.name, idx.kind),
 			action: 'dropIndex',
 			payload: { name: idx.name },
-			label: 'Drop',
+			label: t('Drop'),
 			destructive: true,
-			message: `Index ${idx.name} has been dropped.`
+			message: t('Index {name} has been dropped.', { name: idx.name })
 		});
 	}
 	let renaming = $state<ParsedIndex | null>(null);
@@ -204,12 +226,12 @@
 		const from = renaming.name;
 		renameOpen = false;
 		ask({
-			title: `Rename index ${from}`,
+			title: t('Rename index {name}', { name: from }),
 			sql: buildRenameIndex(data.db, data.table, from, newName.trim()),
 			action: 'renameIndex',
 			payload: { from, to: newName.trim() },
-			label: 'Rename',
-			message: 'The index has been renamed.'
+			label: t('Rename'),
+			message: t('The index has been renamed.')
 		});
 	}
 
@@ -224,31 +246,29 @@
 	};
 </script>
 
-<svelte:head><title>Structure - {data.table}</title></svelte:head>
+<svelte:head><title>{t('Structure')} - {data.table}</title></svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={TableProperties}
-		title="Structure"
-		description="{data.db}.{data.table} · {data.columns.length} {data.columns.length === 1
-			? 'column'
-			: 'columns'}"
+		title={t('Structure')}
+		description="{data.db}.{data.table} · {tn('{n} column', '{n} columns', data.columns.length)}"
 	>
 		{#snippet actions()}
 			{#if !data.isView}
 				<Button variant="outline" href="{base}/relation">
-					<ArrowLeftRight class="size-4" /> Relation view
+					<ArrowLeftRight class="size-4" /> {t('Relation view')}
 				</Button>
-				<Button variant="outline" href="{base}/normalization">Normalize</Button>
+				<Button variant="outline" href="{base}/normalization">{t('Normalize')}</Button>
 			{/if}
-			<Button variant="outline" href="/transformations">Transformations</Button>
+			<Button variant="outline" href="/transformations">{t('Transformations')}</Button>
 			{#if !readOnly}
 				<Button
 					variant="outline"
 					onclick={() => (moveOpen = true)}
 					disabled={data.columns.length < 2}
 				>
-					Move columns
+					{t('Move columns')}
 				</Button>
 			{/if}
 		{/snippet}
@@ -258,7 +278,7 @@
 		<div class="flex min-w-0 flex-col gap-6">
 			<Card.Root class="gap-0 py-0">
 				<Card.Header class="border-b py-5">
-					<Card.Title>Columns</Card.Title>
+					<Card.Title>{t('Columns')}</Card.Title>
 				</Card.Header>
 				<Table.Root data-testid="columns-table">
 					<Table.Header>
@@ -268,20 +288,20 @@
 									<Checkbox
 										checked={allChecked}
 										onCheckedChange={(v) => (selectedRaw = v === true ? [...columnNames] : [])}
-										aria-label="Select all columns"
+										aria-label={t('Select all columns')}
 									/>
 								</Table.Head>
 							{/if}
 							<Table.Head class="w-8">#</Table.Head>
-							<Table.Head>Name</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Collation</Table.Head>
-							<Table.Head>Attributes</Table.Head>
-							<Table.Head>Null</Table.Head>
-							<Table.Head>Default</Table.Head>
-							<Table.Head>Comments</Table.Head>
-							<Table.Head>Extra</Table.Head>
-							{#if !readOnly}<Table.Head class="text-end">Action</Table.Head>{/if}
+							<Table.Head>{t('Name')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Collation')}</Table.Head>
+							<Table.Head>{t('Attributes')}</Table.Head>
+							<Table.Head>{t('Null')}</Table.Head>
+							<Table.Head>{t('Default')}</Table.Head>
+							<Table.Head>{t('Comments')}</Table.Head>
+							<Table.Head>{t('Extra')}</Table.Head>
+							{#if !readOnly}<Table.Head class="text-end">{t('Action')}</Table.Head>{/if}
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -293,7 +313,7 @@
 										<Checkbox
 											checked={selected.includes(c.def.name)}
 											onCheckedChange={(v) => toggle(c.def.name, v === true)}
-											aria-label="Select {c.def.name}"
+											aria-label={t('Select {name}', { name: c.def.name })}
 										/>
 									</Table.Cell>
 								{/if}
@@ -302,13 +322,13 @@
 									<span class="inline-flex items-center gap-1.5">
 										{c.def.name}
 										{#if f?.primary}
-											<KeyRound class="size-3.5 text-warning" aria-label="Primary key" />
+											<KeyRound class="size-3.5 text-warning" aria-label={t('Primary key')} />
 										{/if}
 										{#if f?.unique}
-											<Fingerprint class="size-3.5 text-primary" aria-label="Unique" />
+											<Fingerprint class="size-3.5 text-primary" aria-label={t('Unique')} />
 										{/if}
 										{#if f?.index}
-											<ListTree class="size-3.5 text-muted-foreground" aria-label="Indexed" />
+											<ListTree class="size-3.5 text-muted-foreground" aria-label={t('Indexed')} />
 										{/if}
 									</span>
 								</Table.Cell>
@@ -321,7 +341,7 @@
 								<Table.Cell class="text-xs">
 									{c.def.attribute.toLowerCase()}
 								</Table.Cell>
-								<Table.Cell>{c.def.null ? 'Yes' : 'No'}</Table.Cell>
+								<Table.Cell>{c.def.null ? t('Yes') : t('No')}</Table.Cell>
 								<Table.Cell class="font-mono text-xs">
 									{#if display(c) === 'NULL' || display(c) === 'None'}
 										<span class="text-muted-foreground italic">{display(c)}</span>
@@ -340,16 +360,16 @@
 												variant="ghost"
 												size="icon-sm"
 												href={changeHref([c.def.name])}
-												aria-label="Change {c.def.name}"
-												title="Change"
+												aria-label={t('Change {name}', { name: c.def.name })}
+												title={t('Change')}
 											>
 												<Pencil />
 											</Button>
 											<Button
 												variant="ghost"
 												size="icon-sm"
-												aria-label="Drop {c.def.name}"
-												title="Drop"
+												aria-label={t('Drop {name}', { name: c.def.name })}
+												title={t('Drop')}
 												onclick={() => askDrop([c.def.name])}
 											>
 												<Trash2 />
@@ -361,7 +381,7 @@
 															{...props}
 															variant="ghost"
 															size="icon-sm"
-															aria-label="More actions for {c.def.name}"
+															aria-label={t('More actions for {name}', { name: c.def.name })}
 														>
 															<MoreHorizontal />
 														</Button>
@@ -372,33 +392,33 @@
 														disabled={f?.primary}
 														onclick={() => askKey('PRIMARY', [c.def.name])}
 													>
-														Primary
+														{t('Primary')}
 													</DropdownMenu.Item>
 													<DropdownMenu.Item
 														disabled={f?.unique}
 														onclick={() => askKey('UNIQUE', [c.def.name])}
 													>
-														Unique
+														{t('Unique')}
 													</DropdownMenu.Item>
 													<DropdownMenu.Item onclick={() => askKey('INDEX', [c.def.name])}>
-														Index
+														{t('Index')}
 													</DropdownMenu.Item>
 													<DropdownMenu.Item
 														disabled={!isSpatial(c.def.type)}
 														onclick={() => askKey('SPATIAL', [c.def.name])}
 													>
-														Spatial
+														{t('Spatial')}
 													</DropdownMenu.Item>
 													<DropdownMenu.Item
 														disabled={!isTextual(c.def.type)}
 														onclick={() => askKey('FULLTEXT', [c.def.name])}
 													>
-														Fulltext
+														{t('Fulltext')}
 													</DropdownMenu.Item>
 													<DropdownMenu.Separator />
 													<DropdownMenu.Item>
 														{#snippet child({ props })}
-															<a {...props} href={distinctHref(c.def.name)}>Distinct values</a>
+															<a {...props} href={distinctHref(c.def.name)}>{t('Distinct values')}</a>
 														{/snippet}
 													</DropdownMenu.Item>
 												</DropdownMenu.Content>
@@ -413,14 +433,14 @@
 
 				{#if !readOnly}
 					<div class="flex flex-wrap items-center gap-2 border-t p-4" data-testid="column-toolbar">
-						<span class="text-sm text-muted-foreground">With selected:</span>
+						<span class="text-sm text-muted-foreground">{t('With selected:')}</span>
 						<Button
 							variant="outline"
 							size="sm"
 							href={selected.length ? changeHref(selected) : undefined}
 							disabled={selected.length === 0}
 						>
-							Change
+							{t('Change')}
 						</Button>
 						<Button
 							variant="outline"
@@ -428,7 +448,7 @@
 							disabled={selected.length === 0}
 							onclick={() => askDrop(selected)}
 						>
-							Drop
+							{t('Drop')}
 						</Button>
 						<Button
 							variant="outline"
@@ -436,7 +456,7 @@
 							disabled={selected.length === 0}
 							onclick={() => askKey('PRIMARY', selected)}
 						>
-							Primary
+							{t('Primary')}
 						</Button>
 						<Button
 							variant="outline"
@@ -444,7 +464,7 @@
 							disabled={selected.length === 0}
 							onclick={() => askKey('UNIQUE', selected)}
 						>
-							Unique
+							{t('Unique')}
 						</Button>
 						<Button
 							variant="outline"
@@ -452,7 +472,7 @@
 							disabled={selected.length === 0}
 							onclick={() => askKey('INDEX', selected)}
 						>
-							Index
+							{t('Index')}
 						</Button>
 						<Button
 							variant="outline"
@@ -460,7 +480,7 @@
 							disabled={!spatialOk}
 							onclick={() => askKey('SPATIAL', selected)}
 						>
-							Spatial
+							{t('Spatial')}
 						</Button>
 						<Button
 							variant="outline"
@@ -468,7 +488,7 @@
 							disabled={!fulltextOk}
 							onclick={() => askKey('FULLTEXT', selected)}
 						>
-							Fulltext
+							{t('Fulltext')}
 						</Button>
 						{#if data.centralAvailable}
 							<CentralColumnsActions {selected} />
@@ -476,35 +496,37 @@
 					</div>
 					<div class="flex flex-wrap items-center gap-2 border-t p-4" data-testid="add-columns">
 						<Plus class="size-4 text-muted-foreground" aria-hidden="true" />
-						<span class="text-sm">Add</span>
+						<span class="text-sm">{t('Add')}</span>
 						<Input
 							type="number"
 							min={1}
 							max={64}
 							bind:value={addCount}
-							aria-label="Number of columns to add"
+							aria-label={t('Number of columns to add')}
 							class="w-20"
 						/>
-						<span class="text-sm">column(s)</span>
+						<span class="text-sm">{t('column(s)')}</span>
 						<Select.Root type="single" bind:value={addWhere}>
-							<Select.Trigger class="w-48" aria-label="Position of the new columns">
+							<Select.Trigger class="w-48" aria-label={t('Position of the new columns')}>
 								{addWhere === 'end'
-									? 'at end of table'
+									? t('at end of table')
 									: addWhere === 'first'
-										? 'at beginning of table'
-										: 'after'}
+										? t('at beginning of table')
+										: t('after')}
 							</Select.Trigger>
 							<Select.Content>
-								<Select.Item value="end" label="at end of table">at end of table</Select.Item>
-								<Select.Item value="first" label="at beginning of table">
-									at beginning of table
+								<Select.Item value="end" label={t('at end of table')}
+									>{t('at end of table')}</Select.Item
+								>
+								<Select.Item value="first" label={t('at beginning of table')}>
+									{t('at beginning of table')}
 								</Select.Item>
-								<Select.Item value="after" label="after">after</Select.Item>
+								<Select.Item value="after" label={t('after')}>{t('after')}</Select.Item>
 							</Select.Content>
 						</Select.Root>
 						{#if addWhere === 'after'}
 							<Select.Root type="single" bind:value={addAfter}>
-								<Select.Trigger class="w-48" aria-label="Add after column">
+								<Select.Trigger class="w-48" aria-label={t('Add after column')}>
 									<span class="truncate font-mono">{addAfter}</span>
 								</Select.Trigger>
 								<Select.Content class="max-h-72">
@@ -514,7 +536,7 @@
 								</Select.Content>
 							</Select.Root>
 						{/if}
-						<Button href={addHref} size="sm">Go</Button>
+						<Button href={addHref} size="sm">{t('Go')}</Button>
 					</div>
 				{/if}
 			</Card.Root>
@@ -522,26 +544,26 @@
 			{#if !data.isView}
 				<Card.Root class="gap-0 py-0" id="indexes" data-testid="indexes-card">
 					<Card.Header class="border-b py-5">
-						<Card.Title>Indexes</Card.Title>
+						<Card.Title>{t('Indexes')}</Card.Title>
 					</Card.Header>
 					{#if data.indexes.length === 0}
 						<Card.Content class="py-5 text-sm text-muted-foreground">
-							No index defined!
+							{t('No index defined!')}
 						</Card.Content>
 					{:else}
 						<Table.Root data-testid="indexes-table">
 							<Table.Header>
 								<Table.Row>
-									{#if !readOnly}<Table.Head>Action</Table.Head>{/if}
-									<Table.Head>Keyname</Table.Head>
-									<Table.Head>Type</Table.Head>
-									<Table.Head>Unique</Table.Head>
-									<Table.Head>Packed</Table.Head>
-									<Table.Head>Column</Table.Head>
-									<Table.Head class="text-end">Cardinality</Table.Head>
-									<Table.Head>Collation</Table.Head>
-									<Table.Head>Null</Table.Head>
-									<Table.Head>Comment</Table.Head>
+									{#if !readOnly}<Table.Head>{t('Action')}</Table.Head>{/if}
+									<Table.Head>{t('Keyname')}</Table.Head>
+									<Table.Head>{t('Type')}</Table.Head>
+									<Table.Head>{t('Unique')}</Table.Head>
+									<Table.Head>{t('Packed')}</Table.Head>
+									<Table.Head>{t('Column')}</Table.Head>
+									<Table.Head class="text-end">{t('Cardinality')}</Table.Head>
+									<Table.Head>{t('Collation')}</Table.Head>
+									<Table.Head>{t('Null')}</Table.Head>
+									<Table.Head>{t('Comment')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>
@@ -553,10 +575,10 @@
 													<Button
 														variant="ghost"
 														size="icon-sm"
-														aria-label="Edit index {idx.name}"
+														aria-label={t('Edit index {name}', { name: idx.name })}
 														title={idx.editable
-															? 'Edit'
-															: 'Functional indexes cannot be edited here'}
+															? t('Edit')
+															: t('Functional indexes cannot be edited here')}
 														disabled={!idx.editable}
 														onclick={() => openEditor(idx, indexToDef(idx))}
 													>
@@ -566,17 +588,17 @@
 														<Button
 															variant="ghost"
 															size="sm"
-															aria-label="Rename index {idx.name}"
+															aria-label={t('Rename index {name}', { name: idx.name })}
 															onclick={() => startRename(idx)}
 														>
-															Rename
+															{t('Rename')}
 														</Button>
 													{/if}
 													<Button
 														variant="ghost"
 														size="icon-sm"
-														aria-label="Drop index {idx.name}"
-														title="Drop"
+														aria-label={t('Drop index {name}', { name: idx.name })}
+														title={t('Drop')}
 														onclick={() => askDropIndex(idx)}
 													>
 														<Trash2 />
@@ -591,8 +613,8 @@
 											{/if}
 										</Table.Cell>
 										<Table.Cell class="text-xs">{idx.indexType}</Table.Cell>
-										<Table.Cell>{idx.unique ? 'Yes' : 'No'}</Table.Cell>
-										<Table.Cell>{idx.packed ?? 'No'}</Table.Cell>
+										<Table.Cell>{idx.unique ? t('Yes') : t('No')}</Table.Cell>
+										<Table.Cell>{idx.packed ?? t('No')}</Table.Cell>
 										<Table.Cell class="font-mono text-xs">
 											{#each idx.columns as c, i (i)}
 												<div>
@@ -612,7 +634,7 @@
 										</Table.Cell>
 										<Table.Cell class="text-xs">
 											{#each idx.columns as c, i (i)}
-												<div>{c.nullable ? 'Yes' : 'No'}</div>
+												<div>{c.nullable ? t('Yes') : t('No')}</div>
 											{/each}
 										</Table.Cell>
 										<Table.Cell class="text-xs">{idx.indexComment || idx.comment}</Table.Cell>
@@ -623,17 +645,17 @@
 					{/if}
 					{#if !readOnly}
 						<div class="flex flex-wrap items-center gap-2 border-t p-4">
-							<span class="text-sm">Create an index on</span>
+							<span class="text-sm">{t('Create an index on')}</span>
 							<Input
 								type="number"
 								min={1}
 								max={16}
 								bind:value={newIndexParts}
-								aria-label="Number of index columns"
+								aria-label={t('Number of index columns')}
 								class="w-20"
 							/>
-							<span class="text-sm">columns</span>
-							<Button size="sm" onclick={createIndex}>Go</Button>
+							<span class="text-sm">{t('columns')}</span>
+							<Button size="sm" onclick={createIndex}>{t('Go')}</Button>
 						</div>
 					{/if}
 				</Card.Root>
@@ -679,12 +701,13 @@
 <Dialog.Root bind:open={renameOpen}>
 	<Dialog.Content class="max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Rename index {renaming?.name}</Dialog.Title>
+			<Dialog.Title>{t('Rename index {name}', { name: renaming?.name ?? '' })}</Dialog.Title>
 		</Dialog.Header>
-		<Input bind:value={newName} placeholder="New index name" maxlength={64} autocomplete="off" />
+		<Input bind:value={newName} placeholder={t('New index name')} maxlength={64} autocomplete="off" />
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => (renameOpen = false)}>Cancel</Button>
-			<Button type="button" disabled={newName.trim() === ''} onclick={askRename}>Preview SQL</Button
+			<Button type="button" variant="outline" onclick={() => (renameOpen = false)}>{t('Cancel')}</Button>
+			<Button type="button" disabled={newName.trim() === ''} onclick={askRename}
+				>{t('Preview SQL')}</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>

@@ -36,12 +36,12 @@ export const actions: Actions = {
 		const req = parseSearchRequest(url.searchParams);
 		const table = z.string().min(1).safeParse(form.get('table'));
 		if (!req.submitted || !table.success) {
-			return fail(400, { deleteError: 'The search is incomplete, nothing was deleted.' });
+			return fail(400, { deleteError: locals.i18n.t('The search is incomplete, nothing was deleted.') });
 		}
 
 		const dbi = await locals.dbi;
 		const tables = await dbi.listTables(params.db);
-		const res = await deleteMatches(dbi, params.db, tables, req, table.data);
+		const res = await deleteMatches(dbi, params.db, tables, req, table.data, locals.i18n);
 		if (!res.ok) return fail(400, { deleteError: res.error, deleteTable: table.data });
 		return { deleted: res.deleted, deleteTable: res.table };
 	}
