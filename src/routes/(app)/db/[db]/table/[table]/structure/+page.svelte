@@ -11,6 +11,7 @@
 	import TableProperties from '@lucide/svelte/icons/table-properties';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
+	import CentralColumnsActions from '#lib/components/table-structure/central-columns-actions.svelte';
 	import IndexEditorDialog from '#lib/components/table-structure/index-editor-dialog.svelte';
 	import MoveColumnsDialog from '#lib/components/table-structure/move-columns-dialog.svelte';
 	import PartitionsCard from '#lib/components/table-structure/partitions-card.svelte';
@@ -467,6 +468,9 @@
 						>
 							Fulltext
 						</Button>
+						{#if data.centralAvailable}
+							<CentralColumnsActions {selected} />
+						{/if}
 					</div>
 					<div class="flex flex-wrap items-center gap-2 border-t p-4" data-testid="add-columns">
 						<Plus class="size-4 text-muted-foreground" aria-hidden="true" />
