@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { bare } from '#lib/nav/paths.ts';
+	import KeyRound from '@lucide/svelte/icons/key-round';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.ts';
@@ -8,9 +11,10 @@
 		host: string;
 		serverLabel: string;
 		canLogout: boolean;
+		canChangePassword?: boolean;
 	}
 
-	let { user, host, serverLabel, canLogout }: Props = $props();
+	let { user, host, serverLabel, canLogout, canChangePassword = false }: Props = $props();
 
 	const initials = $derived(user.slice(0, 2).toUpperCase() || '?');
 </script>
@@ -46,6 +50,17 @@
 			<span class="truncate text-xs text-muted-foreground">{user}@{host}</span>
 			<span class="truncate text-xs text-muted-foreground">{serverLabel}</span>
 		</DropdownMenu.Label>
+		{#if canChangePassword}
+			<DropdownMenu.Separator />
+			<DropdownMenu.Item>
+				{#snippet child({ props })}
+					<a {...props} href={resolve(bare('/server/user-password'))}>
+						<KeyRound />
+						Change password
+					</a>
+				{/snippet}
+			</DropdownMenu.Item>
+		{/if}
 		{#if canLogout}
 			<DropdownMenu.Separator />
 			<form method="POST" action="/logout" class="contents">

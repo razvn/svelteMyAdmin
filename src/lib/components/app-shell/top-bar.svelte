@@ -15,6 +15,8 @@
 			serverLabel: string;
 			serverIndex: number;
 			canLogout: boolean;
+			/** Show "Change password" in the user menu. */
+			canChangePassword?: boolean;
 		};
 		servers: { index: number; label: string; auth: string }[];
 		onsearch: () => void;
@@ -77,6 +79,7 @@
 				host={session.host}
 				serverLabel={session.serverLabel}
 				canLogout={session.canLogout}
+				canChangePassword={session.canChangePassword}
 			/>
 		</div>
 	</div>

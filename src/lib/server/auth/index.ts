@@ -162,4 +162,31 @@ export async function attemptLogin(
 	return { ok: true };
 }
 
+/**
+ * After the connected user changed their own password: re-seal the session cookie with the new one so the
+ * user stays logged in. Only cookie auth keeps the password; returns false for the other auth types
+ * (`config` has a fixed password, `http` sends it with every request) or when there is no session.
+ */
+export function updateSessionPassword(
+	ctx: Pick<AuthContext, 'cookies' | 'url' | 'config'>,
+	newPassword: string
+): boolean {
+	const session = readSession(ctx);
+	if (!session) return false;
+	setSessionCookie(
+		ctx.cookies,
+		ctx.config,
+		ctx.url,
+		{
+			serverIndex: session.serverIndex,
+			host: session.host,
+			port: session.port,
+			user: session.user,
+			password: newPassword
+		},
+		session.createdAt
+	);
+	return true;
+}
+
 export { clearSessionCookie };

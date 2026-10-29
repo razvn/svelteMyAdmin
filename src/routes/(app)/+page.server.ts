@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		},
 		collation: info.collation,
 		collations: collations.map((c) => ({ name: c.name, charset: c.charset })),
-		showChgPassword: locals.config.ShowChgPassword,
+		showChgPassword: locals.config.ShowChgPassword && locals.session?.authType !== 'config',
 		webServer: getAppInfo()
 	};
 };

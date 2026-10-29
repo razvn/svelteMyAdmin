@@ -20,7 +20,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			serverLabel: serverLabel(locals.server),
 			serverIndex: locals.serverIndex,
 			// phpMyAdmin hides "Log out" for config auth (nothing to log out of)
-			canLogout: s.authType !== 'config'
+			canLogout: s.authType !== 'config',
+			// phpMyAdmin: ShowChgPassword and not config auth (the password is fixed there)
+			canChangePassword: config.ShowChgPassword && s.authType !== 'config'
 		},
 		servers: config.Servers.map((server, i) => ({
 			index: i + 1,
