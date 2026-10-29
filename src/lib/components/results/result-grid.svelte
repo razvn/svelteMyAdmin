@@ -8,6 +8,7 @@
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
 	import Columns3 from '@lucide/svelte/icons/columns-3';
+	import Wand from '@lucide/svelte/icons/wand-sparkles';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.ts';
@@ -17,6 +18,8 @@
 	import { nextSort, type OrderConfig, type Sort } from '#lib/table/sort.ts';
 	import CellEditor from './cell-editor.svelte';
 	import CellValue from './cell-value.svelte';
+	import TransformedValue from './transformed-value.svelte';
+	import type { Transformed } from '#lib/transformations/types.ts';
 	import type { Cell } from './format.ts';
 	import type { CellLink, EditResult, GridColumn } from './types.ts';
 
@@ -42,6 +45,8 @@
 		repeatCells?: number;
 		/** Column name => link per row index. */
 		links?: Record<string, (CellLink | null)[]>;
+		/** Browser display transformations: column index => one entry per row (null = raw). */
+		transforms?: Record<number, (Transformed | null)[]>;
 		/** Download URL of a binary cell. */
 		downloadHref?: (row: number, column: GridColumn) => string | null;
 		/** Provide to enable double-click editing; resolves with the stored value or an error. */
@@ -65,6 +70,7 @@
 		actionsPosition = 'left',
 		repeatCells = 0,
 		links = {},
+		transforms = {},
 		downloadHref,
 		onedit,
 		empty,
@@ -92,6 +98,14 @@
 		patched = {};
 		expanded = {};
 	});
+
+	let showRaw = $state(false);
+	const hasTransforms = $derived(Object.keys(transforms).length > 0);
+
+	function transformedAt(r: number, c: number): Transformed | null {
+		if (showRaw || `${r}:${c}` in patched) return null;
+		return transforms[c]?.[r] ?? null;
+	}
 
 	let editing = $state<{ row: number; col: number } | null>(null);
 	let editError = $state<string | null>(null);
@@ -203,6 +217,18 @@
 
 <div class={cn('flex flex-col', className)} data-slot="result-grid">
 	<div class="flex items-center justify-end gap-2 border-b px-3 py-2">
+		{#if hasTransforms}
+			<Button
+				variant="outline"
+				size="sm"
+				aria-pressed={showRaw}
+				onclick={() => (showRaw = !showRaw)}
+				data-testid="toggle-raw"
+			>
+				<Wand class="size-4" aria-hidden="true" />
+				{showRaw ? 'Show transformed values' : 'Show raw values'}
+			</Button>
+		{/if}
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
@@ -262,6 +288,7 @@
 							{/if}
 							{#each visible as { column, index: c } (column.name)}
 								{@const cell = cellAt(r, c)}
+								{@const tv = transformedAt(r, c)}
 								{@const isEditing = editing?.row === r && editing?.col === c}
 								<Table.Cell
 									class={cn(
@@ -282,6 +309,8 @@
 											onsave={save}
 											oncancel={() => (editing = null)}
 										/>
+									{:else if tv}
+										<TransformedValue value={tv} />
 									{:else}
 										<CellValue
 											{cell}

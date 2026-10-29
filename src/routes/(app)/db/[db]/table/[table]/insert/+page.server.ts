@@ -12,6 +12,11 @@ import {
 	nextRowClause,
 	parseSubmission
 } from '#lib/server/table/insert-edit.ts';
+import {
+	applyInputTransforms,
+	attachInputTransforms,
+	toFormValues
+} from '#lib/server/transformations/input.ts';
 import { readSignedClauses, signClause, verifyClause } from '#lib/server/table/signed-clause.ts';
 import { InsertEditError, isProtected, type FormColumn } from '#lib/sql/insert-edit.ts';
 import { tabHref } from '#lib/nav/tabs.ts';
@@ -49,14 +54,19 @@ export const load: PageServerLoad = async ({ params, url, locals, parent }) => {
 	const insertMode = refs.length === 0 || copy;
 
 	const conn = await locals.db;
-	const columns = await buildFormColumns(
-		conn,
-		locals.server,
+	const columns = await attachInputTransforms(
+		locals,
 		db,
 		table,
-		await loadColumns(conn, db, table),
-		cfg,
-		insertMode
+		await buildFormColumns(
+			conn,
+			locals.server,
+			db,
+			table,
+			await loadColumns(conn, db, table),
+			cfg,
+			insertMode
+		)
 	);
 
 	let rows;
@@ -76,6 +86,7 @@ export const load: PageServerLoad = async ({ params, url, locals, parent }) => {
 				: Math.max(1, cfg.InsertRows);
 		rows = Array.from({ length: count }, () => blankRow(columns));
 	}
+	toFormValues(columns, rows);
 
 	return {
 		revision: crypto.randomUUID(),
@@ -110,13 +121,19 @@ export const actions: Actions = {
 		const after = afterSchema.parse(form.get('after_insert'));
 		let statements: string[] = [];
 		try {
-			const columns: FormColumn[] = (await loadColumns(conn, db, table)).map((c) => ({
-				...c,
-				protected: isProtected(c, cfg.ProtectBinary),
-				defaultFunction: '',
-				foreign: null
-			}));
+			const columns: FormColumn[] = await attachInputTransforms(
+				locals,
+				db,
+				table,
+				(await loadColumns(conn, db, table)).map((c) => ({
+					...c,
+					protected: isProtected(c, cfg.ProtectBinary),
+					defaultFunction: '',
+					foreign: null
+				}))
+			);
 			const sub = await parseSubmission(form, columns);
+			applyInputTransforms(sub, columns);
 			const built = await buildStatements(conn, db, table, columns, sub, (clause, sig) =>
 				verifyClause(secret, db, table, clause, sig)
 			);

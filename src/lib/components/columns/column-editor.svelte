@@ -27,6 +27,8 @@
 		fixed?: boolean;
 		/** Allow removing the last remaining row (never for CREATE TABLE). */
 		minColumns?: number;
+		/** Extra per-column fields (see `ColumnRow`). */
+		extra?: import('svelte').Snippet<[{ col: ColumnDef; index: number }]>;
 	}
 
 	let {
@@ -36,7 +38,8 @@
 		showIndex = true,
 		showAutoIncrement = showIndex,
 		fixed = false,
-		minColumns = 1
+		minColumns = 1,
+		extra
 	}: Props = $props();
 
 	const typeGroups = $derived(getTypeGroups(caps));
@@ -96,6 +99,7 @@
 			{showIndex}
 			{showAutoIncrement}
 			{fixed}
+			{extra}
 			onmoveup={() => move(i, -1)}
 			onmovedown={() => move(i, 1)}
 			onremove={() => remove(i)}

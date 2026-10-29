@@ -22,5 +22,6 @@
 		collations={data.collations}
 		db={data.db}
 		table={data.table}
+		transformUi={data.transformUi}
 	/>
 </div>
