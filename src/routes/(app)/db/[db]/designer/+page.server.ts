@@ -77,8 +77,6 @@ const json = z.string().transform((s, ctx) => {
 	}
 });
 
-const UNAVAILABLE = 'The configuration storage for the Designer pages is not available.';
-
 const positionsSchema = z.record(
 	z.string().max(64),
 	z.object({ x: z.number().finite(), y: z.number().finite() })
@@ -89,7 +87,7 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const name = String(fd.get('name') ?? '').trim();
 		if (!name || name.length > 50)
-			return fail(400, { error: 'Enter a page name (up to 50 characters).' });
+			return fail(400, { error: locals.i18n.t('Enter a page name (up to 50 characters).') });
 		const dbi = await locals.dbi;
 		const schema = await loadDesignerSchema(dbi, locals.server as RelationServer, params.db);
 		const positions = autoLayout(schema.tables, schema.relations);
@@ -98,7 +96,10 @@ export const actions: Actions = {
 			await savePositions(c, t, params.db, nr, positions);
 			return nr;
 		});
-		if (id === undefined) return fail(400, { error: UNAVAILABLE });
+		if (id === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
 		return { pageId: id };
 	},
 
@@ -107,28 +108,34 @@ export const actions: Actions = {
 		const id = Number.parseInt(String(fd.get('page') ?? ''), 10);
 		const name = String(fd.get('name') ?? '').trim();
 		if (!Number.isInteger(id) || !name || name.length > 50) {
-			return fail(400, { error: 'Enter a page name (up to 50 characters).' });
+			return fail(400, { error: locals.i18n.t('Enter a page name (up to 50 characters).') });
 		}
 		const done = await withDesignerTables(locals, async (c, t) => {
 			if (!(await pageExists(c, t, params.db, id))) return false;
 			await renamePage(c, t, params.db, id, name);
 			return true;
 		});
-		if (done === undefined) return fail(400, { error: UNAVAILABLE });
-		if (!done) return fail(404, { error: 'Unknown page.' });
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
+		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { pageId: id };
 	},
 
 	deletePage: async ({ request, locals, params }) => {
 		const id = Number.parseInt(String((await request.formData()).get('page') ?? ''), 10);
-		if (!Number.isInteger(id)) return fail(400, { error: 'Invalid page.' });
+		if (!Number.isInteger(id)) return fail(400, { error: locals.i18n.t('Invalid page.') });
 		const done = await withDesignerTables(locals, async (c, t) => {
 			if (!(await pageExists(c, t, params.db, id))) return false;
 			await deletePage(c, t, params.db, id);
 			return true;
 		});
-		if (done === undefined) return fail(400, { error: UNAVAILABLE });
-		if (!done) return fail(404, { error: 'Unknown page.' });
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
+		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { deleted: id };
 	},
 
@@ -136,7 +143,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const id = Number.parseInt(String(fd.get('page') ?? ''), 10);
 		const parsed = json.pipe(positionsSchema).safeParse(String(fd.get('positions') ?? ''));
-		if (!Number.isInteger(id) || !parsed.success) return fail(400, { error: 'Invalid request.' });
+		if (!Number.isInteger(id) || !parsed.success)
+			return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const dbi = await locals.dbi;
 		const known = new Set((await dbi.listTables(params.db)).map((t) => t.name));
 		const positions: Positions = {};
@@ -146,8 +154,11 @@ export const actions: Actions = {
 			await savePositions(c, t, params.db, id, positions);
 			return true;
 		});
-		if (done === undefined) return fail(400, { error: UNAVAILABLE });
-		if (!done) return fail(404, { error: 'Unknown page.' });
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
+		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { saved: Object.keys(positions).length };
 	},
 
@@ -155,7 +166,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const key = String(fd.get('key') ?? '');
 		const value = String(fd.get('value') ?? '').slice(0, 32);
-		if (!isDesignerKey(key) || !locals.session) return fail(400, { error: 'Invalid setting.' });
+		if (!isDesignerKey(key) || !locals.session)
+			return fail(400, { error: locals.i18n.t('Invalid setting.') });
 		const user = locals.session.user;
 		const done = await withStorageTable(locals, 'designer_settings', async (c, q) => {
 			await saveSetting(c, q, user, key, value);
@@ -167,40 +179,40 @@ export const actions: Actions = {
 
 	createRelation: async ({ request, locals, params }) => {
 		const raw = json.safeParse(String((await request.formData()).get('payload') ?? ''));
-		if (!raw.success) return fail(400, { error: 'Invalid request.' });
+		if (!raw.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const res = await createRelation(
 			await locals.dbi,
 			locals.server as RelationServer,
 			params.db,
 			raw.data
 		);
-		if (!res.ok) return fail(400, { error: res.error, sql: res.sql });
+		if (!res.ok) return fail(400, { error: locals.i18n.t(res.error), sql: res.sql });
 		return { done: res.sql };
 	},
 
 	deleteRelation: async ({ request, locals, params }) => {
 		const raw = json.safeParse(String((await request.formData()).get('payload') ?? ''));
-		if (!raw.success) return fail(400, { error: 'Invalid request.' });
+		if (!raw.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const res = await deleteRelation(
 			await locals.dbi,
 			locals.server as RelationServer,
 			params.db,
 			raw.data
 		);
-		if (!res.ok) return fail(400, { error: res.error, sql: res.sql });
+		if (!res.ok) return fail(400, { error: locals.i18n.t(res.error), sql: res.sql });
 		return { done: res.sql };
 	},
 
 	setDisplay: async ({ request, locals, params }) => {
 		const raw = json.safeParse(String((await request.formData()).get('payload') ?? ''));
-		if (!raw.success) return fail(400, { error: 'Invalid request.' });
+		if (!raw.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const res = await setDisplayField(
 			await locals.dbi,
 			locals.server as RelationServer,
 			params.db,
 			raw.data
 		);
-		if (!res.ok) return fail(400, { error: res.error, sql: res.sql });
+		if (!res.ok) return fail(400, { error: locals.i18n.t(res.error), sql: res.sql });
 		return { done: true };
 	}
 };

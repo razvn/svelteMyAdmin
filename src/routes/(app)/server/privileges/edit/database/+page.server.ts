@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { fail } from '@sveltejs/kit';
 import {
 	editContext,
@@ -57,7 +58,8 @@ export const actions: Actions = {
 		const ctx = await editContext(locals, url);
 		const fd = await request.formData();
 		const dbs = clean(fd.getAll('dbname').filter((v): v is string => typeof v === 'string'));
-		if (dbs.length === 0) return fail(400, { error: 'No database selected.', results: [] });
+		if (dbs.length === 0)
+			return fail(400, { error: locals.i18n.t('No database selected.'), results: [] });
 		const privileges = parsePrivileges(fd);
 		const grantOption = fd.get('grant_option') !== null;
 		const res = await updateScopedPrivileges(
@@ -71,9 +73,13 @@ export const actions: Actions = {
 				grantOption
 			}))
 		);
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: `You have updated the privileges for '${ctx.account.user}'@'${ctx.account.host}' on ${dbs.join(', ')}.`,
+			saved: locals.i18n.t("You have updated the privileges for '{user}'@'{host}' on {target}.", {
+				user: ctx.account.user,
+				host: ctx.account.host,
+				target: dbs.join(', ')
+			}),
 			results: res.results
 		};
 	},
@@ -81,14 +87,17 @@ export const actions: Actions = {
 	revoke: async ({ request, locals, url }) => {
 		const ctx = await editContext(locals, url);
 		const db = String((await request.formData()).get('dbname') ?? '');
-		if (db === '') return fail(400, { error: 'No database selected.', results: [] });
+		if (db === '') return fail(400, { error: locals.i18n.t('No database selected.'), results: [] });
 		const res = await revokeScoped(ctx.dbi, ctx.server, ctx.caps, ctx.account, {
 			scope: 'database',
 			db
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: `You have revoked the privileges for '${ctx.account.user}' on ${db}.`,
+			saved: locals.i18n.t("You have revoked the privileges for '{user}' on {target}.", {
+				user: ctx.account.user,
+				target: db
+			}),
 			results: res.results
 		};
 	}

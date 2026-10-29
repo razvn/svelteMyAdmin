@@ -69,7 +69,7 @@ export async function savePrefs(
 	secure: boolean
 ): Promise<string | null> {
 	const user = username(locals);
-	if (!user) return 'Could not save configuration';
+	if (!user) return locals.i18n.t('Could not save configuration');
 	if (userConfigTable(locals.server)) {
 		const ok = await withUserConfig(locals, async (conn, table) => {
 			await saveUserConfig(conn, table, user, data);
@@ -79,7 +79,9 @@ export async function savePrefs(
 			cookies.delete(PREFS_COOKIE, { path: '/' });
 			return null;
 		}
-		return 'Could not save configuration: the phpMyAdmin configuration storage could not be reached.';
+		return locals.i18n.t(
+			'Could not save configuration: the phpMyAdmin configuration storage could not be reached.'
+		);
 	}
 	if (Object.keys(data).length === 0) {
 		cookies.delete(PREFS_COOKIE, { path: '/' });
@@ -93,7 +95,9 @@ export async function savePrefs(
 	};
 	const value = JSON.stringify(payload);
 	if (encodeURIComponent(value).length > MAX_COOKIE_VALUE) {
-		return 'The settings are too large to be kept without a configuration storage. Reset some of them or configure the userconfig table.';
+		return locals.i18n.t(
+			'The settings are too large to be kept without a configuration storage. Reset some of them or configure the userconfig table.'
+		);
 	}
 	cookies.set(PREFS_COOKIE, value, {
 		path: '/',

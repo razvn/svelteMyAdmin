@@ -8,8 +8,10 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { pluginStatusVariant } from '#lib/admin/badges.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 
 	let filter = $state('');
@@ -29,14 +31,14 @@
 </script>
 
 <svelte:head>
-	<title>Plugins - svelteMyAdmin</title>
+	<title>{t('Plugins')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={PlugZap}
-		title="Plugins"
-		description="Server plugins grouped by type, with their status and licence."
+		title={t('Plugins')}
+		description={t('Server plugins grouped by type, with their status and licence.')}
 	/>
 
 	<Card.Root>
@@ -49,14 +51,14 @@
 					<Input
 						type="search"
 						class="ps-8"
-						placeholder="Filter by name, description, author or license"
-						aria-label="Filter plugins"
+						placeholder={t('Filter by name, description, author or license')}
+						aria-label={t('Filter plugins')}
 						data-testid="plugins-filter"
 						bind:value={filter}
 					/>
 				</div>
 				<span class="text-sm text-muted-foreground" data-testid="plugins-count">
-					{shown} of {total} plugins shown
+					{t('{shown} of {total} plugins shown', { shown, total })}
 				</span>
 			</div>
 			<nav class="flex flex-wrap gap-2">
@@ -85,11 +87,11 @@
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Plugin</Table.Head>
-								<Table.Head>Description</Table.Head>
-								<Table.Head>Version</Table.Head>
-								<Table.Head>Author</Table.Head>
-								<Table.Head>License</Table.Head>
+								<Table.Head>{t('Plugin')}</Table.Head>
+								<Table.Head>{t('Description')}</Table.Head>
+								<Table.Head>{t('Version')}</Table.Head>
+								<Table.Head>{t('Author')}</Table.Head>
+								<Table.Head>{t('License')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -115,6 +117,6 @@
 			</Card.Content>
 		</Card.Root>
 	{:else}
-		<p class="text-sm text-muted-foreground">No plugins match the filter.</p>
+		<p class="text-sm text-muted-foreground">{t('No plugins match the filter.')}</p>
 	{/each}
 </div>

@@ -16,7 +16,8 @@ function flowCtx(event: RequestEvent): FlowCtx | null {
 		cookies: event.cookies,
 		url: event.url,
 		user: pending.user,
-		serverIndex: event.locals.serverIndex
+		serverIndex: event.locals.serverIndex,
+		i18n: event.locals.i18n
 	};
 }
 

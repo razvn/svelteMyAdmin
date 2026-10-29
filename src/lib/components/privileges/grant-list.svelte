@@ -15,6 +15,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { namedAction } from '#lib/nav/account-tabs.ts';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Undo2 from '@lucide/svelte/icons/undo-2';
@@ -33,6 +34,7 @@
 		testid: string;
 	}
 
+	const { t } = useI18n();
 	let { title, headings, rows, canEdit, empty, testid }: Props = $props();
 </script>
 
@@ -44,9 +46,9 @@
 				<Table.Row>
 					<Table.Head>{headings[0]}</Table.Head>
 					{#if headings[1]}<Table.Head>{headings[1]}</Table.Head>{/if}
-					<Table.Head>Privileges</Table.Head>
-					<Table.Head>Grant</Table.Head>
-					<Table.Head class="text-end">Action</Table.Head>
+					<Table.Head>{t('Privileges')}</Table.Head>
+					<Table.Head>{t('Grant')}</Table.Head>
+					<Table.Head class="text-end">{t('Action')}</Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
@@ -60,7 +62,7 @@
 						</Table.Cell>
 						<Table.Cell>
 							<Badge variant={row.grantOption ? 'success' : 'muted'}>
-								{row.grantOption ? 'Yes' : 'No'}
+								{row.grantOption ? t('Yes') : t('No')}
 							</Badge>
 						</Table.Cell>
 						<Table.Cell class="text-end">
@@ -79,17 +81,19 @@
 											variant="ghost"
 											size="sm"
 											href={row.editHref}
-											aria-label="Edit privileges on {row.name}"
+											aria-label={t('Edit privileges on {name}', { name: row.name })}
 										>
-											<Pencil /> Edit
+											<Pencil />
+											{t('Edit')}
 										</Button>
 										<Button
 											variant="ghost"
 											size="sm"
 											type="submit"
-											aria-label="Revoke privileges on {row.name}"
+											aria-label={t('Revoke privileges on {name}', { name: row.name })}
 										>
-											<Undo2 /> Revoke
+											<Undo2 />
+											{t('Revoke')}
 										</Button>
 									{/if}
 								</div>

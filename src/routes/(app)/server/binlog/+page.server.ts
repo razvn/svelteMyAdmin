@@ -16,7 +16,8 @@ const query = z.object({
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const conn = await locals.db;
-	if (!(await isBinlogEnabled(conn))) error(404, 'Binary logging is not enabled on this server.');
+	if (!(await isBinlogEnabled(conn)))
+		error(404, locals.i18n.t('Binary logging is not enabled on this server.'));
 	const q = query.parse(Object.fromEntries(url.searchParams));
 	const files = await listBinlogs(conn);
 	// only files listed by SHOW BINARY LOGS are accepted

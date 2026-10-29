@@ -3,6 +3,7 @@
 	import ZoomIn from '@lucide/svelte/icons/zoom-in';
 	import ZoomOut from '@lucide/svelte/icons/zoom-out';
 	import { Button } from '#lib/components/ui/button/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import {
 		GRID,
 		bounds,
@@ -39,6 +40,7 @@
 		ontoggle?: (table: string) => void;
 	}
 
+	const { t } = useI18n();
 	let {
 		tables,
 		relations,
@@ -195,7 +197,7 @@
 	style:background-position="{pan.x}px {pan.y}px"
 	data-testid="designer-canvas"
 	role="application"
-	aria-label="Designer canvas"
+	aria-label={t('Designer canvas')}
 	onpointerdown={panDown}
 	onpointermove={panMove}
 	onpointerup={panUp}
@@ -236,7 +238,10 @@
 							style:pointer-events="stroke"
 							role="button"
 							tabindex="-1"
-							aria-label="Relation {relation.fromTable}.{relation.fromColumn} to {relation.toTable}.{relation.toColumn}"
+							aria-label={t('Relation {from} to {to}', {
+								from: `${relation.fromTable}.${relation.fromColumn}`,
+								to: `${relation.toTable}.${relation.toColumn}`
+							})}
 							onpointerdown={(e) => e.stopPropagation()}
 							onclick={() => onrelationclick?.(relation)}
 							onkeydown={(e) => e.key === 'Enter' && onrelationclick?.(relation)}
@@ -277,7 +282,12 @@
 	<div
 		class="absolute end-3 bottom-3 flex items-center gap-1 rounded-lg border bg-card p-1 shadow-card"
 	>
-		<Button variant="ghost" size="icon-sm" aria-label="Zoom out" onclick={() => zoomBy(1 / 1.2)}>
+		<Button
+			variant="ghost"
+			size="icon-sm"
+			aria-label={t('Zoom out')}
+			onclick={() => zoomBy(1 / 1.2)}
+		>
 			<ZoomOut />
 		</Button>
 		<span
@@ -286,10 +296,10 @@
 		>
 			{Math.round(zoom * 100)}%
 		</span>
-		<Button variant="ghost" size="icon-sm" aria-label="Zoom in" onclick={() => zoomBy(1.2)}>
+		<Button variant="ghost" size="icon-sm" aria-label={t('Zoom in')} onclick={() => zoomBy(1.2)}>
 			<ZoomIn />
 		</Button>
-		<Button variant="ghost" size="icon-sm" aria-label="Fit to screen" onclick={fit}>
+		<Button variant="ghost" size="icon-sm" aria-label={t('Fit to screen')} onclick={fit}>
 			<Maximize />
 		</Button>
 	</div>

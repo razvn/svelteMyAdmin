@@ -4,6 +4,7 @@
  * Pure: no framework imports.
  */
 import { formatSi } from '#lib/format.ts';
+import { N_ } from '#lib/i18n/index.ts';
 
 export interface ConnectionsInput {
 	uptime: number;
@@ -14,6 +15,7 @@ export interface ConnectionsInput {
 }
 
 export interface ConnectionRow {
+	/** English msgid: translate with `t(name)`. */
 	name: string;
 	/** Absolute count, formatted exactly as PHP getConnectionsInfo does (e.g. "9", "1,234", "12.3 k"). */
 	number: string;
@@ -37,25 +39,25 @@ export function connectionRows(input: ConnectionsInput): ConnectionRow[] {
 	const perHour = (n: number) => si(n * hourFactor, 4, 2, true);
 	return [
 		{
-			name: 'Max. concurrent connections',
+			name: N_('Max. concurrent connections'),
 			number: si(input.maxUsedConnections, 0, 0),
 			perHour: '---',
 			percentage: '---'
 		},
 		{
-			name: 'Failed attempts',
+			name: N_('Failed attempts'),
 			number: si(input.abortedConnects, 4, 1, true),
 			perHour: perHour(input.abortedConnects),
 			percentage: share(input.abortedConnects, input.connections)
 		},
 		{
-			name: 'Aborted',
+			name: N_('Aborted'),
 			number: si(input.abortedClients, 4, 1, true),
 			perHour: perHour(input.abortedClients),
 			percentage: share(input.abortedClients, input.connections)
 		},
 		{
-			name: 'Total',
+			name: N_('Total'),
 			number: si(input.connections, 4, 0),
 			perHour: si(input.connections * hourFactor, 4, 2),
 			percentage: '100.00%'

@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Status variable categorisation, alert thresholds and derived values
  * (libraries/classes/Server/Status/Data.php, Controllers/Server/Status/VariablesController.php).
@@ -39,27 +40,27 @@ export const ALLOCATIONS: [string, string][] = [
 	['Opened_files', 'files']
 ];
 
-/** Section id -> label (Data::getSections). */
+/** Section id -> label msgid (Data::getSections); translate with `t(label)`. */
 export const SECTIONS: Record<string, string> = {
-	com: 'Com',
-	query: 'SQL query',
-	innodb: 'InnoDB',
-	ndb: 'NDB',
-	handler: 'Handler',
-	qcache: 'Query cache',
-	threads: 'Threads',
-	binlog_cache: 'Binary log',
-	created_tmp: 'Temporary data',
-	delayed: 'Delayed inserts',
-	key: 'Key cache',
-	select: 'Joins',
-	repl: 'Replication',
-	sort: 'Sorting',
-	table: 'Tables',
-	tc: 'Transaction coordinator',
-	files: 'Files',
-	ssl: 'SSL',
-	other: 'Other'
+	com: N_('Com'),
+	query: N_('SQL query'),
+	innodb: N_('InnoDB'),
+	ndb: N_('NDB'),
+	handler: N_('Handler'),
+	qcache: N_('Query cache'),
+	threads: N_('Threads'),
+	binlog_cache: N_('Binary log'),
+	created_tmp: N_('Temporary data'),
+	delayed: N_('Delayed inserts'),
+	key: N_('Key cache'),
+	select: N_('Joins'),
+	repl: N_('Replication'),
+	sort: N_('Sorting'),
+	table: N_('Tables'),
+	tc: N_('Transaction coordinator'),
+	files: N_('Files'),
+	ssl: N_('SSL'),
+	other: N_('Other')
 };
 
 export type StatusMap = Record<string, string>;

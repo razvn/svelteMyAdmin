@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import {
 	accountQuerySchema,
@@ -53,7 +54,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 export const actions: Actions = {
 	default: async ({ request, locals, url }) => {
 		const raw = account(url);
-		if (!raw) return fail(400, { error: 'Missing account.', results: [] });
+		if (!raw) return fail(400, { error: locals.i18n.t('Missing account.'), results: [] });
 		const dbi = await locals.dbi;
 		const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
 		const acc = resolveAccount(server, raw);
@@ -63,7 +64,7 @@ export const actions: Actions = {
 			caps,
 			parseGlobalForm(await request.formData(), acc)
 		);
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return { saved: true, results: res.results };
 	}
 };

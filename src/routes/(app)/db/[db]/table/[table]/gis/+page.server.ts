@@ -17,7 +17,8 @@ export const load: PageServerLoad = async ({ locals, params, url, parent }) => {
 		});
 		return { db: params.db, table: params.table, sql: sql ?? '', gis, loadError: '' };
 	} catch (e) {
-		if (!(e instanceof GisError)) error(500, 'The geometry data could not be loaded.');
+		if (!(e instanceof GisError))
+			error(500, locals.i18n.t('The geometry data could not be loaded.'));
 		const empty: GisData = {
 			spatialColumns: [],
 			columns: [],

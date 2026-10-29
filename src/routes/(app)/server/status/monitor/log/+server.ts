@@ -17,21 +17,22 @@ const body = z.object({
 	groupInserts: z.boolean().default(false)
 });
 
-const sqlMessage = (e: unknown) =>
+const sqlMessage = (e: unknown, fallback: string) =>
 	e && typeof e === 'object' && 'sqlMessage' in e
 		? String((e as { sqlMessage: unknown }).sqlMessage)
-		: 'Failed to read the log table';
+		: fallback;
 
 /** Log entries of a time range from mysql.slow_log / mysql.general_log (needs log_output to include TABLE). */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const parsed = body.safeParse(await request.json().catch(() => null));
-	if (!parsed.success || parsed.data.end < parsed.data.start) error(400, 'Invalid request');
+	if (!parsed.success || parsed.data.end < parsed.data.start)
+		error(400, locals.i18n.t('Invalid request'));
 	const { type, start, end, limitTypes, groupInserts } = parsed.data;
 	const conn = await locals.db;
 	const headers = { 'cache-control': 'no-store' };
 	if (!logsToTable(await getLoggingVars(conn))) {
 		return Response.json(
-			{ error: 'log_output does not include TABLE, the log tables are not filled.' },
+			{ error: locals.i18n.t('log_output does not include TABLE, the log tables are not filled.') },
 			{ status: 400, headers }
 		);
 	}
@@ -42,6 +43,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				: await getGeneralLog(conn, start, end, limitTypes, groupInserts);
 		return Response.json({ type, ...result }, { headers });
 	} catch (e) {
-		return Response.json({ error: sqlMessage(e) }, { status: 400, headers });
+		return Response.json(
+			{ error: sqlMessage(e, locals.i18n.t('Failed to read the log table')) },
+			{ status: 400, headers }
+		);
 	}
 };

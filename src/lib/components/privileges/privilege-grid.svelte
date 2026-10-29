@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import {
 		GRANT_OPTION,
@@ -31,6 +32,7 @@
 		idPrefix = 'priv'
 	}: Props = $props();
 
+	const { t } = useI18n();
 	const groups = $derived(groupedPrivileges(scope, server));
 	const allNames = $derived(groups.flatMap((g) => g.items.map((p) => p.name)));
 	const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -56,15 +58,15 @@
 	<div class="flex items-center gap-2">
 		<Checkbox
 			id="{idPrefix}-check-all"
-			aria-label="Check all"
+			aria-label={t('Check all')}
 			{disabled}
 			checked={allNames.length > 0 && countIn(allNames) === allNames.length}
 			indeterminate={countIn(allNames) > 0 && countIn(allNames) < allNames.length}
 			onCheckedChange={(v) => setMany(allNames, v === true)}
 		/>
-		<label for="{idPrefix}-check-all" class="text-sm font-medium">Check all</label>
+		<label for="{idPrefix}-check-all" class="text-sm font-medium">{t('Check all')}</label>
 		<span class="text-xs text-muted-foreground"
-			>Note: MySQL privilege names are expressed in English.</span
+			>{t('Note: MySQL privilege names are expressed in English.')}</span
 		>
 	</div>
 
@@ -74,13 +76,13 @@
 			<legend class="flex items-center gap-2 px-1 text-sm font-semibold">
 				<Checkbox
 					id="{idPrefix}-group-{group.group}"
-					aria-label="Check all {group.label}"
+					aria-label={t('Check all {group}', { group: t(group.label) })}
 					{disabled}
 					checked={countIn(names) === names.length}
 					indeterminate={countIn(names) > 0 && countIn(names) < names.length}
 					onCheckedChange={(v) => setMany(names, v === true)}
 				/>
-				<label for="{idPrefix}-group-{group.group}">{group.label}</label>
+				<label for="{idPrefix}-group-{group.group}">{t(group.label)}</label>
 			</legend>
 			<div class="grid gap-x-6 gap-y-2.5 sm:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as p (p.name)}
@@ -97,11 +99,11 @@
 						<label
 							for={id}
 							class="grid gap-0.5 text-sm"
-							title={describePrivilege(p, scope, server)}
+							title={t(describePrivilege(p, scope, server))}
 						>
 							<code class="font-mono text-[13px] font-medium">{p.name}</code>
 							<span class="text-xs leading-snug text-muted-foreground">
-								{describePrivilege(p, scope, server)}
+								{t(describePrivilege(p, scope, server))}
 							</span>
 						</label>
 					</div>
@@ -118,7 +120,7 @@
 						<label for="{idPrefix}-grant-option" class="grid gap-0.5 text-sm">
 							<code class="font-mono text-[13px] font-medium">GRANT</code>
 							<span class="text-xs leading-snug text-muted-foreground"
-								>{GRANT_OPTION.description}</span
+								>{t(GRANT_OPTION.description)}</span
 							>
 						</label>
 					</div>

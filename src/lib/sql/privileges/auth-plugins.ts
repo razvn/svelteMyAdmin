@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /** Authentication plugins offered when creating an account or changing a password. */
 import type { PrivServer } from './types.ts';
 
@@ -16,31 +17,36 @@ export interface AuthPluginDef {
 export const AUTH_PLUGINS: readonly AuthPluginDef[] = [
 	{
 		name: 'caching_sha2_password',
-		label: 'Caching sha2 authentication',
+		label: N_('Caching sha2 authentication'),
 		engine: 'mysql',
 		since: 80000
 	},
-	{ name: 'mysql_native_password', label: 'Native MySQL authentication' },
+	{ name: 'mysql_native_password', label: N_('Native MySQL authentication') },
 	{
 		name: 'sha256_password',
-		label: 'SHA256 password authentication',
+		label: N_('SHA256 password authentication'),
 		engine: 'mysql',
 		since: 50606,
 		needsSecureChannel: true
 	},
 	{
 		name: 'ed25519',
-		label: 'Ed25519 Password Authentication',
+		label: N_('Ed25519 Password Authentication'),
 		engine: 'mariadb',
 		since: 100102
 	},
 	{
 		name: 'unix_socket',
-		label: 'Unix Socket Authentication',
+		label: N_('Unix Socket Authentication'),
 		engine: 'mariadb',
 		passwordless: true
 	},
-	{ name: 'auth_socket', label: 'Unix Socket Authentication', engine: 'mysql', passwordless: true }
+	{
+		name: 'auth_socket',
+		label: N_('Unix Socket Authentication'),
+		engine: 'mysql',
+		passwordless: true
+	}
 ];
 
 export const NATIVE_PLUGIN = 'mysql_native_password';

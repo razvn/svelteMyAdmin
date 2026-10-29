@@ -5,6 +5,7 @@
 	import SslFields from './ssl-fields.svelte';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import type { PrivServer, ResourceLimits, SslRequirement } from '#lib/sql/privileges/index.ts';
 
@@ -19,6 +20,7 @@
 		canEdit: boolean;
 	}
 
+	const { t } = useI18n();
 	let { server, initial, canEdit }: Props = $props();
 
 	// The parent re-creates this component (keyed) when the saved state changes.
@@ -45,7 +47,7 @@
 	}}
 >
 	<Card.Root>
-		<Card.Header><Card.Title>Global privileges</Card.Title></Card.Header>
+		<Card.Header><Card.Title>{t('Global privileges')}</Card.Title></Card.Header>
 		<Card.Content>
 			<PrivilegeGrid
 				scope="global"
@@ -57,17 +59,17 @@
 		</Card.Content>
 	</Card.Root>
 	<Card.Root>
-		<Card.Header><Card.Title>Resource limits</Card.Title></Card.Header>
+		<Card.Header><Card.Title>{t('Resource limits')}</Card.Title></Card.Header>
 		<Card.Content><LimitsFields bind:limits disabled={!canEdit} /></Card.Content>
 	</Card.Root>
 	<Card.Root>
-		<Card.Header><Card.Title>SSL</Card.Title></Card.Header>
+		<Card.Header><Card.Title>{t('SSL')}</Card.Title></Card.Header>
 		<Card.Content><SslFields bind:ssl disabled={!canEdit} /></Card.Content>
 	</Card.Root>
 	{#if canEdit}
 		<div class="flex justify-end">
 			<Button type="submit" disabled={!hydration.ready || submitting} data-testid="save-privileges">
-				Go
+				{t('Go')}
 			</Button>
 		</div>
 	{/if}

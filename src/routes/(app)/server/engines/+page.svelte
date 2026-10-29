@@ -7,31 +7,33 @@
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
-	<title>Storage engines - svelteMyAdmin</title>
+	<title>{t('Storage engines')} - svelteMyAdmin</title>
 </svelte:head>
 
 <PageHeader
 	icon={Cpu}
-	title="Storage engines"
-	description="Engines available on this server and the features they support."
+	title={t('Storage engines')}
+	description={t('Engines available on this server and the features they support.')}
 />
 
 <Card.Root class="gap-0 py-0">
 	<Table.Root data-testid="engines-table">
 		<Table.Header>
 			<Table.Row>
-				<Table.Head>Storage engine</Table.Head>
-				<Table.Head>Support</Table.Head>
-				<Table.Head>Description</Table.Head>
-				<Table.Head>Transactions</Table.Head>
-				<Table.Head>XA</Table.Head>
-				<Table.Head>Savepoints</Table.Head>
+				<Table.Head>{t('Storage engine')}</Table.Head>
+				<Table.Head>{t('Support')}</Table.Head>
+				<Table.Head>{t('Description')}</Table.Head>
+				<Table.Head>{t('Transactions')}</Table.Head>
+				<Table.Head>{t('XA')}</Table.Head>
+				<Table.Head>{t('Savepoints')}</Table.Head>
 			</Table.Row>
 		</Table.Header>
 		<Table.Body>

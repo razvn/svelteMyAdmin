@@ -2,6 +2,7 @@
  * Normalization wizard planners (pure; browser preview + server execution).
  * Ported from phpMyAdmin 5.2.3 Normalization.php.
  */
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { buildDropColumns } from './alter-table.ts';
 import { quoteId } from './column-definition.ts';
 
@@ -145,17 +146,19 @@ export function planRepeatingGroup(
 export function checkNames(
 	table: string,
 	groups: DecompositionGroup[],
-	existing: string[]
+	existing: string[],
+	{ t }: Pick<Translator, 't'> = SOURCE_TRANSLATOR
 ): string {
 	const seen = new Set<string>();
 	const lower = new Set(existing.map((t) => t.toLowerCase()));
 	for (const g of groups) {
-		if (!g.name.trim()) return 'Give a name to every table.';
-		if (g.name.length > 64) return 'Table name is too long.';
+		if (!g.name.trim()) return t('Give a name to every table.');
+		if (g.name.length > 64) return t('Table name is too long.');
 		const l = g.name.toLowerCase();
-		if (seen.has(l)) return `Table name ${g.name} is used twice.`;
+		if (seen.has(l)) return t('Table name {name} is used twice.', { name: g.name });
 		seen.add(l);
-		if (g.name !== table && lower.has(l)) return `Table ${g.name} already exists.`;
+		if (g.name !== table && lower.has(l))
+			return t('Table {name} already exists.', { name: g.name });
 	}
 	return '';
 }

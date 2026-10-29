@@ -10,8 +10,10 @@
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 	let pw = $state('');
 	let pw2 = $state('');
@@ -22,27 +24,33 @@
 </script>
 
 <svelte:head>
-	<title>Change password - svelteMyAdmin</title>
+	<title>{t('Change password')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex max-w-2xl flex-col gap-6">
 	<PageHeader
 		icon={KeyRound}
-		title="Change password"
-		description={data.denied ? '' : `Account '${data.account.user}'@'${data.account.host}'`}
+		title={t('Change password')}
+		description={data.denied
+			? ''
+			: t("Account '{user}'@'{host}'", { user: data.account.user, host: data.account.host })}
 	/>
 
 	{#if data.denied}
 		<Alert variant="destructive" role="alert">
-			<AlertDescription>You don't have sufficient privileges to be here right now!</AlertDescription
+			<AlertDescription
+				>{t("You don't have sufficient privileges to be here right now!")}</AlertDescription
 			>
 		</Alert>
 	{:else}
 		{#if form && 'changed' in form && form.changed}
 			<Alert variant="success" role="status" data-testid="password-changed">
 				<AlertDescription>
-					The password for '{data.account.user}'@'{data.account.host}' was changed successfully.
-					{#if form.relogin}You have to log in again with the new password.{/if}
+					{t("The password for '{user}'@'{host}' was changed successfully.", {
+						user: data.account.user,
+						host: data.account.host
+					})}
+					{#if form.relogin}{t('You have to log in again with the new password.')}{/if}
 				</AlertDescription>
 			</Alert>
 		{:else if form && 'error' in form && form.error}
@@ -70,8 +78,8 @@
 			<Card.Root>
 				<Card.Content class="grid gap-5">
 					<div class="flex items-center gap-2">
-						<Checkbox id="nopass" bind:checked={nopass} aria-label="No Password" />
-						<label for="nopass" class="text-sm">No Password</label>
+						<Checkbox id="nopass" bind:checked={nopass} aria-label={t('No Password')} />
+						<label for="nopass" class="text-sm">{t('No Password')}</label>
 						{#if nopass}<input type="hidden" name="nopass" value="1" />{/if}
 					</div>
 					<PasswordFields
@@ -80,11 +88,11 @@
 						disabled={nopass}
 						userName={data.account.user}
 						idPrefix="chg"
-						label="Password"
+						label={t('Password')}
 					/>
 					{#if data.plugins.length > 1}
 						<div class="grid gap-1.5">
-							<label for="chg-plugin" class="text-sm font-medium">Password Hashing:</label>
+							<label for="chg-plugin" class="text-sm font-medium">{t('Password Hashing:')}</label>
 							<NativeSelect id="chg-plugin" name="authentication_plugin" bind:value={plugin}>
 								{#each data.plugins as p (p.name)}
 									<NativeSelectOption value={p.name}>{p.label} ({p.name})</NativeSelectOption>
@@ -98,7 +106,7 @@
 							disabled={!hydration.ready || submitting}
 							data-testid="change-password-go"
 						>
-							Go
+							{t('Go')}
 						</Button>
 					</div>
 				</Card.Content>

@@ -4,13 +4,14 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, cookies, params, url }) => {
 	const page = await loadFormPage(locals, cookies, params.form);
-	if (!page) error(404, 'Page not found');
+	if (!page) error(404, locals.i18n.t('Page not found'));
 	return { ...page, saved: url.searchParams.has('saved') };
 };
 
 export const actions: Actions = {
 	save: async ({ request, locals, cookies, params, url }) => {
-		if (!(await loadFormPage(locals, cookies, params.form))) error(404, 'Page not found');
+		if (!(await loadFormPage(locals, cookies, params.form)))
+			error(404, locals.i18n.t('Page not found'));
 		const res = await saveForm(
 			locals,
 			cookies,

@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Change login information / copy user account (Privileges::getDataForChangeOrCopyUser,
  * getDbSpecificPrivsQueriesForChangeOrCopyUser, getDataForDeleteUsers). The statements come from the pure
@@ -24,7 +25,7 @@ export async function changeLogin(
 	if (!caps.isCreateUser || !caps.isGrantUser) {
 		return {
 			ok: false,
-			error: 'You do not have the privileges to administrate the users!',
+			error: N_('You do not have the privileges to administrate the users!'),
 			results: []
 		};
 	}
@@ -32,17 +33,23 @@ export async function changeLogin(
 	if (from.user === to.user && from.host === to.host) {
 		return {
 			ok: false,
-			error:
-				"Username and hostname didn't change. If you only want to change the password, 'Change password' tab should be used.",
+			error: N_(
+				"Username and hostname didn't change. If you only want to change the password, 'Change password' tab should be used."
+			),
 			results: []
 		};
 	}
 	if (await accountExists(dbi, to)) {
-		return { ok: false, error: `The user '${to.user}'@'${to.host}' already exists!`, results: [] };
+		return {
+			ok: false,
+			error: N_("The user '{user}'@'{host}' already exists!"),
+			errorParams: { user: to.user, host: to.host },
+			results: []
+		};
 	}
 	const details = await readAccount(dbi, server, from);
 	if (!details.properties.exists && details.grantsError) {
-		return { ok: false, error: 'No user found.', results: [] };
+		return { ok: false, error: N_('No user found.'), results: [] };
 	}
 	const creds = await readAccountCredentials(dbi, server, from);
 	let plan;

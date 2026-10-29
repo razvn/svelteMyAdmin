@@ -48,12 +48,16 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		const priv = await getServerPrivileges(dbi);
 		if (!locals.config.ShowCreateDb || !priv.canCreateDb) {
-			return fail(403, { createError: 'No privileges to create databases' });
+			return fail(403, { createError: locals.i18n.t('No privileges to create databases') });
 		}
-		const res = await createDatabase(dbi, {
-			new_db: String(form.get('new_db') ?? ''),
-			db_collation: String(form.get('db_collation') ?? '')
-		});
+		const res = await createDatabase(
+			dbi,
+			{
+				new_db: String(form.get('new_db') ?? ''),
+				db_collation: String(form.get('db_collation') ?? '')
+			},
+			locals.i18n
+		);
 		if (!res.ok) return fail(400, { createError: res.error });
 		return { created: res.name };
 	},
@@ -62,10 +66,10 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		const priv = await getServerPrivileges(dbi);
 		if (!priv.isSuperUser && !locals.config.AllowUserDropDatabase) {
-			return fail(403, { dropError: 'No privileges to drop databases' });
+			return fail(403, { dropError: locals.i18n.t('No privileges to drop databases') });
 		}
 		const names = form.getAll('selected_dbs').map(String);
-		const res = await dropDatabases(dbi, names, { pmadb: locals.server.pmadb });
+		const res = await dropDatabases(dbi, names, { pmadb: locals.server.pmadb }, locals.i18n);
 		if (!res.ok) return fail(400, { dropError: res.error });
 		return { dropped: res.dropped, skipped: res.skipped };
 	}

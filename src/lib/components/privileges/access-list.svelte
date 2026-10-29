@@ -9,6 +9,7 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import ShieldCheck from '@lucide/svelte/icons/shield-check';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 
 	interface Row {
 		user: string;
@@ -31,7 +32,17 @@
 	}
 
 	let { title, db, state, isGrantUser, rows }: Props = $props();
-	const typeLabel = (r: Row) => (r.type === 'routine' ? `routine ${r.routine}` : r.type);
+	const { t } = useI18n();
+	const TYPE_LABELS: Record<string, string> = {
+		global: N_('global'),
+		'database-specific': N_('database-specific'),
+		wildcard: N_('wildcard'),
+		'table-specific': N_('table-specific')
+	};
+	const typeLabel = (r: Row) =>
+		r.type === 'routine'
+			? t('routine {name}', { name: r.routine ?? '' })
+			: t(TYPE_LABELS[r.type] ?? r.type);
 </script>
 
 <div class="flex flex-col gap-6">
@@ -42,7 +53,8 @@
 					href="/server/privileges/add?dbname={encodeURIComponent(db)}"
 					data-testid="add-user"
 				>
-					<UserPlus /> Add user account
+					<UserPlus />
+					{t('Add user account')}
 				</Button>
 			{/if}
 		{/snippet}
@@ -51,7 +63,7 @@
 	{#if state === 'denied'}
 		<Alert variant="destructive" role="alert">
 			<AlertDescription>
-				You do not have the privileges to view the users having access to this page.
+				{t('You do not have the privileges to view the users having access to this page.')}
 			</AlertDescription>
 		</Alert>
 	{:else}
@@ -60,26 +72,27 @@
 				<Table.Root data-testid="access-table">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>User name</Table.Head>
-							<Table.Head>Host name</Table.Head>
-							<Table.Head>Type</Table.Head>
-							<Table.Head>Privileges</Table.Head>
-							<Table.Head>Grant</Table.Head>
-							<Table.Head class="text-end">Action</Table.Head>
+							<Table.Head>{t('User name')}</Table.Head>
+							<Table.Head>{t('Host name')}</Table.Head>
+							<Table.Head>{t('Type')}</Table.Head>
+							<Table.Head>{t('Privileges')}</Table.Head>
+							<Table.Head>{t('Grant')}</Table.Head>
+							<Table.Head class="text-end">{t('Action')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
 						{#each rows as r, i (i)}
 							<Table.Row data-testid="access-row" data-user={r.user} data-type={r.type}>
 								<Table.Cell class="font-medium">
-									{#if r.user === ''}<span class="text-destructive">Any</span>{:else}{r.user}{/if}
+									{#if r.user === ''}<span class="text-destructive">{t('Any')}</span
+										>{:else}{r.user}{/if}
 								</Table.Cell>
 								<Table.Cell class="font-mono text-[13px]">{r.host}</Table.Cell>
 								<Table.Cell><Badge variant="info">{typeLabel(r)}</Badge></Table.Cell>
 								<Table.Cell class="max-w-md whitespace-normal">
 									<code class="font-mono text-xs break-words">{r.privileges}</code>
 								</Table.Cell>
-								<Table.Cell>{r.grantOption ? 'Yes' : 'No'}</Table.Cell>
+								<Table.Cell>{r.grantOption ? t('Yes') : t('No')}</Table.Cell>
 								<Table.Cell class="text-end">
 									<div class="flex justify-end gap-1">
 										{#if isGrantUser}
@@ -87,8 +100,10 @@
 												variant="ghost"
 												size="icon-sm"
 												href={r.editHref}
-												aria-label="Edit privileges of {r.user || 'Any'}@{r.host}"
-												title="Edit privileges"
+												aria-label={t('Edit privileges of {account}', {
+													account: `${r.user || t('Any')}@${r.host}`
+												})}
+												title={t('Edit privileges')}
 											>
 												<Pencil />
 											</Button>
@@ -99,8 +114,10 @@
 												variant="ghost"
 												size="icon-sm"
 												type="submit"
-												aria-label="Export {r.user || 'Any'}@{r.host}"
-												title="Export"
+												aria-label={t('Export {account}', {
+													account: `${r.user || t('Any')}@${r.host}`
+												})}
+												title={t('Export')}
 											>
 												<Download />
 											</Button>
@@ -111,7 +128,7 @@
 						{:else}
 							<Table.Row>
 								<Table.Cell colspan={6} class="py-8 text-center text-muted-foreground">
-									No user found.
+									{t('No user found.')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}

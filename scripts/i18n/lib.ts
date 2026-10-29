@@ -39,8 +39,14 @@ export function localeDirs(root = LOCALES_DIR): string[] {
 		.sort();
 }
 
+/**
+ * File name of an area's catalog. The `server` area is stored as `server-pages.json`: SvelteKit treats any module
+ * named `server.*` as server-only and refuses to bundle it into the client (the catalogs are loaded in the browser).
+ */
+export const catalogFile = (area: string) => (area === 'server' ? 'server-pages' : area) + '.json';
+
 export const catalogPath = (lang: string, area: string, root = LOCALES_DIR) =>
-	join(root, lang, `${area}.json`);
+	join(root, lang, catalogFile(area));
 
 export function readCatalog(lang: string, area: string, root = LOCALES_DIR): Catalog {
 	const file = catalogPath(lang, area, root);

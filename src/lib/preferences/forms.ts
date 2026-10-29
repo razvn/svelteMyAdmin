@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * The user preference forms: exact key lists of libraries/classes/Config/Forms/User/*Form.php
  * (FeaturesForm, SqlForm, NaviForm, MainForm, ExportForm, ImportForm). `Servers/1/only_db` and
@@ -32,11 +33,11 @@ const sec = (id: string, title: string, keys: string[], description?: string): F
 export const PREF_FORMS: PrefForm[] = [
 	{
 		id: 'features',
-		title: 'Features',
+		title: N_('Features'),
 		sections: [
 			sec(
 				'General',
-				'General',
+				N_('General'),
 				[
 					'VersionCheck',
 					'NaturalOrder',
@@ -49,11 +50,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'DisableShortcutKeys',
 					'FirstDayOfCalendar'
 				],
-				'Set some commonly used options.'
+				N_('Set some commonly used options.')
 			),
 			sec(
 				'Databases',
-				'Databases',
+				N_('Databases'),
 				[
 					'Server/only_db',
 					'Server/hide_db',
@@ -61,11 +62,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'MaxTableList',
 					'DefaultConnectionCollation'
 				],
-				'Databases display options.'
+				N_('Databases display options.')
 			),
 			sec(
 				'Text_fields',
-				'Text fields',
+				N_('Text fields'),
 				[
 					'CharEditing',
 					'MinSizeForInputField',
@@ -76,26 +77,28 @@ export const PREF_FORMS: PrefForm[] = [
 					'TextareaRows',
 					'LongtextDoubleTextarea'
 				],
-				'Customize text input fields.'
+				N_('Customize text input fields.')
 			),
 			sec(
 				'Page_titles',
-				'Page titles',
+				N_('Page titles'),
 				['TitleDefault', 'TitleTable', 'TitleDatabase', 'TitleServer'],
-				"Specify browser's title bar text. Refer to documentation for magic strings that can be used to get special values."
+				N_(
+					"Specify browser's title bar text. Refer to documentation for magic strings that can be used to get special values."
+				)
 			),
 			sec(
 				'Warnings',
-				'Warnings',
+				N_('Warnings'),
 				[
 					'PmaNoRelation_DisableWarning',
 					'SuhosinDisableWarning',
 					'LoginCookieValidityDisableWarning',
 					'ReservedWordDisableWarning'
 				],
-				'Disable some of the warnings shown by phpMyAdmin.'
+				N_('Disable some of the warnings shown by phpMyAdmin.')
 			),
-			sec('Console', 'Console', [
+			sec('Console', N_('Console'), [
 				'Console/Mode',
 				'Console/StartHistory',
 				'Console/AlwaysExpand',
@@ -111,11 +114,11 @@ export const PREF_FORMS: PrefForm[] = [
 	},
 	{
 		id: 'sql',
-		title: 'SQL queries',
+		title: N_('SQL queries'),
 		sections: [
 			sec(
 				'Sql_queries',
-				'SQL queries',
+				N_('SQL queries'),
 				[
 					'ShowSQL',
 					'Confirm',
@@ -128,23 +131,23 @@ export const PREF_FORMS: PrefForm[] = [
 					'EnableAutocompleteForTablesAndColumns',
 					'DefaultForeignKeyChecks'
 				],
-				'SQL queries settings.'
+				N_('SQL queries settings.')
 			),
 			sec(
 				'Sql_box',
-				'SQL Query box',
+				N_('SQL Query box'),
 				['SQLQuery/Edit', 'SQLQuery/Explain', 'SQLQuery/ShowAsPHP', 'SQLQuery/Refresh'],
-				'Customize links shown in SQL Query boxes.'
+				N_('Customize links shown in SQL Query boxes.')
 			)
 		]
 	},
 	{
 		id: 'navigation',
-		title: 'Navigation panel',
+		title: N_('Navigation panel'),
 		sections: [
 			sec(
 				'Navi_panel',
-				'Navigation panel',
+				N_('Navigation panel'),
 				[
 					'ShowDatabasesNavigationAsTree',
 					'NavigationLinkWithMainPanel',
@@ -158,11 +161,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'NumFavoriteTables',
 					'NavigationWidth'
 				],
-				'Customize appearance of the navigation panel.'
+				N_('Customize appearance of the navigation panel.')
 			),
 			sec(
 				'Navi_tree',
-				'Navigation tree',
+				N_('Navigation tree'),
 				[
 					'MaxNavigationItems',
 					'NavigationTreeEnableGrouping',
@@ -174,46 +177,46 @@ export const PREF_FORMS: PrefForm[] = [
 					'NavigationTreeShowEvents',
 					'NavigationTreeAutoexpandSingleDb'
 				],
-				'Customize the navigation tree.'
+				N_('Customize the navigation tree.')
 			),
 			sec(
 				'Navi_servers',
-				'Servers',
+				N_('Servers'),
 				['NavigationDisplayServers', 'DisplayServersList'],
-				'Servers display options.'
+				N_('Servers display options.')
 			),
 			sec(
 				'Navi_databases',
-				'Databases',
+				N_('Databases'),
 				['NavigationTreeDisplayDbFilterMinimum', 'NavigationTreeDbSeparator'],
-				'Databases display options.'
+				N_('Databases display options.')
 			),
 			sec(
 				'Navi_tables',
-				'Tables',
+				N_('Tables'),
 				[
 					'NavigationTreeDefaultTabTable',
 					'NavigationTreeDefaultTabTable2',
 					'NavigationTreeTableSeparator',
 					'NavigationTreeTableLevel'
 				],
-				'Tables display options.'
+				N_('Tables display options.')
 			)
 		]
 	},
 	{
 		id: 'main',
-		title: 'Main panel',
+		title: N_('Main panel'),
 		sections: [
 			sec(
 				'Startup',
-				'Startup',
+				N_('Startup'),
 				['ShowCreateDb', 'ShowStats', 'ShowServerInfo'],
-				'Customize startup page.'
+				N_('Customize startup page.')
 			),
 			sec(
 				'DbStructure',
-				'Database structure',
+				N_('Database structure'),
 				[
 					'ShowDbStructureCharset',
 					'ShowDbStructureComment',
@@ -221,17 +224,17 @@ export const PREF_FORMS: PrefForm[] = [
 					'ShowDbStructureLastUpdate',
 					'ShowDbStructureLastCheck'
 				],
-				'Choose which details to show in the database structure (list of tables).'
+				N_('Choose which details to show in the database structure (list of tables).')
 			),
 			sec(
 				'TableStructure',
-				'Table structure',
+				N_('Table structure'),
 				['HideStructureActions', 'ShowColumnComments'],
-				'Settings for the table structure (list of columns).'
+				N_('Settings for the table structure (list of columns).')
 			),
 			sec(
 				'Browse',
-				'Browse mode',
+				N_('Browse mode'),
 				[
 					'TableNavigationLinksMode',
 					'ActionLinksMode',
@@ -250,11 +253,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'RememberSorting',
 					'RelationalDisplay'
 				],
-				'Customize browse mode.'
+				N_('Customize browse mode.')
 			),
 			sec(
 				'Edit',
-				'Edit mode',
+				N_('Edit mode'),
 				[
 					'ProtectBinary',
 					'ShowFunctionFields',
@@ -263,24 +266,24 @@ export const PREF_FORMS: PrefForm[] = [
 					'ForeignKeyDropdownOrder',
 					'ForeignKeyMaxLimit'
 				],
-				'Customize edit mode.'
+				N_('Customize edit mode.')
 			),
 			sec(
 				'Tabs',
-				'Tabs',
+				N_('Tabs'),
 				['TabsMode', 'DefaultTabServer', 'DefaultTabDatabase', 'DefaultTabTable'],
-				'Choose how you want tabs to work.'
+				N_('Choose how you want tabs to work.')
 			),
-			sec('DisplayRelationalSchema', 'Display relational schema', ['PDFDefaultPageSize'])
+			sec('DisplayRelationalSchema', N_('Display relational schema'), ['PDFDefaultPageSize'])
 		]
 	},
 	{
 		id: 'export',
-		title: 'Export',
+		title: N_('Export'),
 		sections: [
 			sec(
 				'Export_defaults',
-				'Export defaults',
+				N_('Export defaults'),
 				[
 					'Export/method',
 					'Export/quick_export_onserver',
@@ -297,11 +300,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'Export/file_template_database',
 					'Export/file_template_server'
 				],
-				'Customize default export options.'
+				N_('Customize default export options.')
 			),
 			sec(
 				'Sql',
-				'SQL',
+				N_('SQL'),
 				[
 					'Export/sql_include_comments',
 					'Export/sql_dates',
@@ -333,12 +336,12 @@ export const PREF_FORMS: PrefForm[] = [
 					'Export/sql_hex_for_binary',
 					'Export/sql_utc_time'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
-			sec('CodeGen', 'CodeGen', ['Export/codegen_format'], 'Customize default options.'),
+			sec('CodeGen', N_('CodeGen'), ['Export/codegen_format'], N_('Customize default options.')),
 			sec(
 				'Csv',
-				'CSV',
+				N_('CSV'),
 				[
 					'Export/csv_separator',
 					'Export/csv_enclosed',
@@ -348,22 +351,22 @@ export const PREF_FORMS: PrefForm[] = [
 					'Export/csv_removeCRLF',
 					'Export/csv_columns'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Excel',
-				'CSV for MS Excel',
+				N_('CSV for MS Excel'),
 				[
 					'Export/excel_null',
 					'Export/excel_removeCRLF',
 					'Export/excel_columns',
 					'Export/excel_edition'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Latex',
-				'LaTeX',
+				N_('LaTeX'),
 				[
 					'Export/latex_caption',
 					'Export/latex_structure_or_data',
@@ -379,17 +382,17 @@ export const PREF_FORMS: PrefForm[] = [
 					'Export/latex_data_label',
 					'Export/latex_null'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Microsoft_Office',
-				'Microsoft Word 2000',
+				N_('Microsoft Word 2000'),
 				['Export/htmlword_structure_or_data', 'Export/htmlword_null', 'Export/htmlword_columns'],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Open_Document',
-				'OpenDocument',
+				N_('OpenDocument'),
 				[
 					'Export/ods_columns',
 					'Export/ods_null',
@@ -400,23 +403,23 @@ export const PREF_FORMS: PrefForm[] = [
 					'Export/odt_columns',
 					'Export/odt_null'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Texy',
-				'Texy! text',
+				N_('Texy! text'),
 				['Export/texytext_structure_or_data', 'Export/texytext_null', 'Export/texytext_columns'],
-				'Customize default options.'
+				N_('Customize default options.')
 			)
 		]
 	},
 	{
 		id: 'import',
-		title: 'Import',
+		title: N_('Import'),
 		sections: [
 			sec(
 				'Import_defaults',
-				'Import defaults',
+				N_('Import defaults'),
 				[
 					'Import/format',
 					'Import/charset',
@@ -424,21 +427,21 @@ export const PREF_FORMS: PrefForm[] = [
 					'Import/skip_queries',
 					'enable_drag_drop_import'
 				],
-				'Customize default common import options.'
+				N_('Customize default common import options.')
 			),
 			sec(
 				'Sql',
-				'SQL',
+				N_('SQL'),
 				[
 					'Import/sql_compatibility',
 					'Import/sql_no_auto_value_on_zero',
 					'Import/sql_read_as_multibytes'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Csv',
-				'CSV',
+				N_('CSV'),
 				[
 					'Import/csv_replace',
 					'Import/csv_ignore',
@@ -447,11 +450,11 @@ export const PREF_FORMS: PrefForm[] = [
 					'Import/csv_escaped',
 					'Import/csv_col_names'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Ldi',
-				'CSV using LOAD DATA',
+				N_('CSV using LOAD DATA'),
 				[
 					'Import/ldi_replace',
 					'Import/ldi_ignore',
@@ -460,18 +463,18 @@ export const PREF_FORMS: PrefForm[] = [
 					'Import/ldi_escaped',
 					'Import/ldi_local_option'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			),
 			sec(
 				'Open_Document',
-				'OpenDocument Spreadsheet',
+				N_('OpenDocument Spreadsheet'),
 				[
 					'Import/ods_col_names',
 					'Import/ods_empty_rows',
 					'Import/ods_recognize_percentages',
 					'Import/ods_recognize_currency'
 				],
-				'Customize default options.'
+				N_('Customize default options.')
 			)
 		]
 	}
