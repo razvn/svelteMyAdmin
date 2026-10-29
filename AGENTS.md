@@ -105,6 +105,9 @@ Test conventions (specs run in parallel workers against shared Docker databases)
 
 ## Commands
 
+Shell note: in this environment `mv`, `cp` and `rm` are aliased to their interactive `-i` forms and will hang
+waiting for a confirmation. Use `/bin/mv -f`, `/bin/cp -f`, `/bin/rm -f` in scripts, and run checks in the foreground.
+
 ```
 pnpm install
 pnpm check               # svelte-check (types)
