@@ -29,15 +29,16 @@ Seeded with the fixture database `sma_test` and the phpMyAdmin configuration sto
 
 ## Scripts
 
-| Script                           | Purpose                                |
-| -------------------------------- | -------------------------------------- |
-| `pnpm dev` / `build` / `preview` | develop, build (adapter-node), preview |
-| `pnpm check`                     | svelte-check                           |
-| `pnpm lint` / `format`           | prettier + eslint                      |
-| `pnpm test`                      | unit + browser component tests         |
-| `pnpm test:integration`          | SQL tests against the Docker databases |
-| `pnpm test:e2e`                  | Playwright end-to-end tests            |
-| `pnpm db:up` / `db:down`         | Docker databases                       |
+| Script                           | Purpose                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm dev` / `build` / `preview` | develop, build (adapter-node), preview                                                         |
+| `pnpm check`                     | svelte-check                                                                                   |
+| `pnpm lint` / `format`           | prettier + eslint                                                                              |
+| `pnpm test`                      | unit + browser component tests                                                                 |
+| `pnpm test:integration`          | SQL tests against the Docker databases                                                         |
+| `pnpm test:e2e`                  | Playwright end-to-end tests                                                                    |
+| `pnpm db:up` / `db:down`         | Docker databases                                                                               |
+| `pnpm site:screenshots`          | regenerate `site/` screenshots (running app at `SITE_BASE_URL`, default http://localhost:5173) |
 
 ## Production
 
@@ -55,3 +56,9 @@ shows the limit and `Import.max_upload_size` in `config.json` can lower it. `Exe
 budget of interruptible imports (resume with the skip count) and `MemoryLimit` caps the formats that are
 read into memory (ODS, XML, MediaWiki, CSV at database/server level; default 512M). `LOAD DATA` imports
 need `local_infile=ON` on the MySQL server. bzip2 files are not supported.
+
+## License
+
+svelteMyAdmin is free software released under the [GNU General Public License v2.0 or later](LICENSE)
+(GPL-2.0-or-later), the same license as phpMyAdmin, whose translations and configuration storage
+schema it reuses. It is an independent project, not affiliated with phpMyAdmin, Oracle or MariaDB.

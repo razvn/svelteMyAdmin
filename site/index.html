@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>svelteMyAdmin - A modern MySQL &amp; MariaDB administration tool</title>
+		<meta
+			name="description"
+			content="svelteMyAdmin is an open source, modern re-implementation of phpMyAdmin built with Svelte 5 and SvelteKit: browse and edit data, run SQL, design schemas and manage MySQL and MariaDB servers."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#6366f1" />
+		<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+		<link rel="canonical" href="https://razvn.github.io/svelteMyAdmin/" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="svelteMyAdmin" />
+		<meta
+			property="og:title"
+			content="svelteMyAdmin - A modern MySQL &amp; MariaDB administration tool"
+		/>
+		<meta
+			property="og:description"
+			content="A modern re-implementation of phpMyAdmin built with Svelte 5 and SvelteKit. Compatible with phpMyAdmin's configuration storage."
+		/>
+		<meta property="og:url" content="https://razvn.github.io/svelteMyAdmin/" />
+		<meta
+			property="og:image"
+			content="https://razvn.github.io/svelteMyAdmin/assets/screenshots/home-light.webp"
+		/>
+		<meta property="og:image:alt" content="The svelteMyAdmin home dashboard" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+		/>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="#top"
+					><img src="assets/logo.svg" alt="" width="32" height="32" /><span>svelteMyAdmin</span></a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="#features">Features</a>
+					<a href="#screenshots">Screenshots</a>
+					<a href="#compatible">phpMyAdmin compatible</a>
+					<a href="#quick-start">Quick start</a>
+					<a class="btn btn-sm" href="https://github.com/razvn/svelteMyAdmin">GitHub</a>
+				</nav>
+			</div>
+		</header>
+
+		<main id="main">
+			<div class="hero" id="top">
+				<div class="wrap">
+					<span class="eyebrow">Svelte 5 &middot; SvelteKit &middot; MySQL &amp; MariaDB</span>
+					<h1>A modern MySQL &amp; MariaDB <span class="grad">administration tool</span></h1>
+					<p class="lead">
+						svelteMyAdmin is a fresh take on phpMyAdmin 5.2.3: a fast, clean dashboard to browse
+						data, run SQL, design schemas and manage your servers, while staying compatible with the
+						phpMyAdmin configuration you already have.
+					</p>
+					<div class="cta">
+						<a class="btn btn-primary" href="https://github.com/razvn/svelteMyAdmin"
+							>View on GitHub</a
+						>
+						<a class="btn" href="#quick-start">Quick start</a>
+					</div>
+					<div class="shot hero-shot">
+						<picture
+							><source
+								media="(prefers-color-scheme: dark)"
+								srcset="assets/screenshots/home-dark.webp" />
+							<img
+								src="assets/screenshots/home-light.webp"
+								alt="The svelteMyAdmin home dashboard showing server version, uptime, databases and queries per hour"
+								width="1440"
+								height="900"
+								fetchpriority="high"
+						/></picture>
+					</div>
+				</div>
+			</div>
+
+			<section id="features">
+				<div class="wrap">
+					<div class="section-head">
+						<span class="kicker">Features</span>
+						<h2>Everything you expect from a database admin tool</h2>
+						<p>
+							Feature parity with phpMyAdmin where it makes sense, rebuilt with a modern interface
+							and a maintainable, tested codebase.
+						</p>
+					</div>
+					<ul class="grid">
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="3" y="4" width="18" height="16" rx="2" />
+									<path d="M3 10h18M9 4v16" /></svg
+							></span>
+							<h3>Browse and edit data</h3>
+							<p>
+								Pagination, sorting, column visibility, inline and grid editing, multi-row edit,
+								copy, delete and export, foreign-key links, BLOB and geometry display, and a typed
+								insert form with functions and NULL toggles.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6M12 19h8" /></svg
+							></span>
+							<h3>A real SQL editor</h3>
+							<p>
+								CodeMirror 6 with schema-aware autocompletion, SQL formatting, multi-statement
+								scripts with DELIMITER, EXPLAIN and profiling, plus query history, bookmarks and a
+								console drawer.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M12 3v18M3 8h18" />
+									<rect x="3" y="3" width="18" height="18" rx="2" /></svg
+							></span>
+							<h3>Structure and operations</h3>
+							<p>
+								Edit columns and indexes, partitions, relations and central columns. Rename, copy,
+								move or maintain tables and databases, and manage routines, events and triggers.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3" /></svg
+							></span>
+							<h3>Import and export</h3>
+							<p>
+								Streamed SQL, CSV, JSON, XML, YAML, Markdown, LaTeX, MediaWiki, PHP array, ODS/ODT
+								and more, with gzip or zip compression and saved export templates. Import SQL, CSV,
+								LOAD DATA, ODS, XML and MediaWiki.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="3" y="3" width="7" height="6" rx="1" />
+									<rect x="14" y="15" width="7" height="6" rx="1" />
+									<path d="M10 6h4a3 3 0 0 1 3 3v6" /></svg
+							></span>
+							<h3>Designer and relations</h3>
+							<p>
+								An ER diagram with drag-and-drop relations, saved layout pages, and PDF or SVG
+								schema export, backed by the same relation tables as phpMyAdmin.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M3 12h4l3-8 4 16 3-8h4" /></svg
+							></span>
+							<h3>Server monitoring</h3>
+							<p>
+								Server status with processes and query statistics, a live monitor with charts, an
+								advisor, variables editing, engines, plugins, charsets, binary log and replication
+								status.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<circle cx="9" cy="8" r="3.5" />
+									<path
+										d="M2.5 20a6.5 6.5 0 0 1 13 0M17 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6 6 0 0 0-4-5.6"
+									/></svg
+							></span>
+							<h3>Users and privileges</h3>
+							<p>
+								Add, edit and drop accounts; global, database, table, column and routine privileges;
+								roles, resource limits, SSL requirements and user groups.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+									<circle cx="12" cy="12" r="3" /></svg
+							></span>
+							<h3>Tracking and more</h3>
+							<p>
+								Table and database tracking, a normalization wizard, GIS visualization, column
+								transformations, saved searches, find and replace, and zoom search.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="4" y="10" width="16" height="11" rx="2" />
+									<path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg
+							></span>
+							<h3>Two-factor authentication</h3>
+							<p>
+								TOTP authenticator apps and WebAuthn security keys for cookie-authenticated logins,
+								in addition to cookie, config and HTTP auth types.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<circle cx="12" cy="12" r="9" />
+									<path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg
+							></span>
+							<h3>Internationalized</h3>
+							<p>
+								English, French and Spanish today, with phpMyAdmin translation catalogs as the
+								starting point and a documented way to add more languages.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<circle cx="11" cy="11" r="7" />
+									<path d="m20 20-3.5-3.5" /></svg
+							></span>
+							<h3>Fast navigation</h3>
+							<p>
+								A navigation tree with filtering, recent and favorite tables, and a command palette
+								opened with a keyboard shortcut.
+							</p>
+						</li>
+						<li class="card">
+							<span class="icon"
+								><svg viewBox="0 0 24 24" aria-hidden="true">
+									<path
+										d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-3 3-2.4-.6-.6-2.4Z"
+									/></svg
+							></span>
+							<h3>Light and dark</h3>
+							<p>
+								A modern dashboard UI built on shadcn-svelte, following your system theme with a
+								manual toggle.
+							</p>
+						</li>
+					</ul>
+				</div>
+			</section>
+
+			<section id="screenshots" style="padding-top: 0">
+				<div class="wrap">
+					<div class="section-head">
+						<span class="kicker">Screenshots</span>
+						<h2>See it in action</h2>
+						<p>
+							Light and dark themes, captured from the running app. Select an image to enlarge it.
+						</p>
+					</div>
+					<ul class="gallery">
+						<li>
+							<figure>
+								<button
+									type="button"
+									data-shot="databases"
+									aria-label="Enlarge screenshot: Databases"
+								>
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/databases-dark.webp" />
+											<img
+												src="assets/screenshots/databases-light.webp"
+												alt="Databases list screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Databases</strong>Server-wide list with collations and statistics.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button
+									type="button"
+									data-shot="structure"
+									aria-label="Enlarge screenshot: Database structure"
+								>
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/structure-dark.webp" />
+											<img
+												src="assets/screenshots/structure-light.webp"
+												alt="Database structure screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Database structure</strong>Tables, rows, size, engine and bulk actions.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button
+									type="button"
+									data-shot="browse"
+									aria-label="Enlarge screenshot: Table browse"
+								>
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/browse-dark.webp" />
+											<img
+												src="assets/screenshots/browse-light.webp"
+												alt="Table browse screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Table browse</strong>Sort, filter, edit inline and follow foreign keys.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button type="button" data-shot="sql" aria-label="Enlarge screenshot: SQL editor">
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/sql-dark.webp" />
+											<img
+												src="assets/screenshots/sql-light.webp"
+												alt="SQL editor screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>SQL editor</strong>Editor with history, bookmarks and result grid.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button
+									type="button"
+									data-shot="designer"
+									aria-label="Enlarge screenshot: Designer"
+								>
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/designer-dark.webp" />
+											<img
+												src="assets/screenshots/designer-light.webp"
+												alt="Designer screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Designer</strong>Visual ER diagram of your schema and relations.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button
+									type="button"
+									data-shot="status"
+									aria-label="Enlarge screenshot: Server status"
+								>
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/status-dark.webp" />
+											<img
+												src="assets/screenshots/status-light.webp"
+												alt="Server status screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Server status</strong>Live counters, traffic and connections.
+								</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button type="button" data-shot="export" aria-label="Enlarge screenshot: Export">
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/export-dark.webp" />
+											<img
+												src="assets/screenshots/export-light.webp"
+												alt="Export screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption><strong>Export</strong>Formats, compression and templates.</figcaption>
+							</figure>
+						</li>
+						<li>
+							<figure>
+								<button type="button" data-shot="login" aria-label="Enlarge screenshot: Login">
+									<span class="shot"
+										><picture
+											><source
+												media="(prefers-color-scheme: dark)"
+												srcset="assets/screenshots/login-dark.webp" />
+											<img
+												src="assets/screenshots/login-light.webp"
+												alt="Login screenshot of svelteMyAdmin"
+												width="1440"
+												height="900"
+												loading="lazy"
+												decoding="async" /></picture
+									></span>
+								</button>
+								<figcaption>
+									<strong>Login</strong>Cookie authentication with server selection and language.
+								</figcaption>
+							</figure>
+						</li>
+					</ul>
+				</div>
+			</section>
+
+			<section id="compatible" class="compat">
+				<div class="wrap compat-grid">
+					<div>
+						<span class="kicker">Drop-in friendly</span>
+						<h2>phpMyAdmin compatible</h2>
+						<p class="lead" style="margin-left: 0">
+							Move over without starting from scratch. Your bookmarks, relations, history and
+							preferences keep working.
+						</p>
+					</div>
+					<ul class="checks">
+						<li>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg
+							><span
+								><strong>Same configuration keys.</strong>
+								<code class="inline">config.json</code> uses the
+								<code class="inline">$cfg</code> key names from phpMyAdmin:
+								<code class="inline">Servers[i].host</code>, <code class="inline">auth_type</code>,
+								<code class="inline">controluser</code>, <code class="inline">pmadb</code>,
+								<code class="inline">MaxRows</code> and so on.</span
+							>
+						</li>
+						<li>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg
+							><span
+								><strong>Same configuration storage.</strong> It reads and writes the standard
+								<code class="inline">pma__*</code> tables (bookmarks, history, relations, table
+								coordinates, user preferences, tracking, central columns, export templates). Both
+								tools can share one pmadb.</span
+							>
+						</li>
+						<li>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg
+							><span
+								><strong>Legacy URLs redirect.</strong> Old
+								<code class="inline">index.php?route=/table/sql&amp;db=x&amp;table=y</code> links
+								land on the matching page.</span
+							>
+						</li>
+						<li>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg
+							><span
+								><strong>Familiar dumps.</strong> SQL dump structure, CSV, JSON and XML exports aim
+								to round-trip between the two tools.</span
+							>
+						</li>
+					</ul>
+				</div>
+			</section>
+
+			<section id="stack">
+				<div class="wrap">
+					<div class="section-head">
+						<span class="kicker">Built with</span>
+						<h2>A modern, typed stack</h2>
+					</div>
+					<ul class="stack">
+						<li>Svelte 5</li>
+						<li>SvelteKit</li>
+						<li>TypeScript</li>
+						<li>Tailwind CSS</li>
+						<li>shadcn-svelte</li>
+						<li>mysql2</li>
+						<li>CodeMirror 6</li>
+						<li>Vitest &amp; Playwright</li>
+					</ul>
+				</div>
+			</section>
+
+			<section id="quick-start" style="padding-top: 0">
+				<div class="wrap">
+					<div class="section-head">
+						<span class="kicker">Quick start</span>
+						<h2>Run it in a minute</h2>
+						<p>
+							Requires Node.js 22 or newer and pnpm. Docker is optional and provides demo MySQL and
+							MariaDB databases.
+						</p>
+					</div>
+					<div class="steps">
+						<div>
+							<h3>Develop</h3>
+							<pre><code>pnpm install
+cp config.sample.json config.json
+<span class="c"># demo MySQL 8.4 + MariaDB 11.4 (root / root)</span>
+pnpm db:up
+pnpm dev</code></pre>
+							<p class="note">
+								<code class="inline">pnpm db:up</code> runs
+								<code class="inline">docker compose</code> for you. Skip it if you already have a
+								server and edit <code class="inline">config.json</code>.
+							</p>
+						</div>
+						<div>
+							<h3>Production</h3>
+							<pre><code>pnpm build
+SMA_CONFIG=/path/to/config.json node build</code></pre>
+							<p class="note">
+								Built with <code class="inline">adapter-node</code>. Set
+								<code class="inline">BODY_SIZE_LIMIT</code> to allow larger imports.
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<div>
+					<a class="brand" href="#top"
+						><img src="assets/logo.svg" alt="" width="28" height="28" /><span
+							>svelteMyAdmin</span
+						></a
+					>
+					<p style="margin-top: 0.75rem">
+						svelteMyAdmin is an independent project and is not affiliated with phpMyAdmin, Oracle or
+						MariaDB. MySQL is a trademark of Oracle; MariaDB is a trademark of MariaDB plc;
+						phpMyAdmin is a trademark of its respective owners.
+					</p>
+				</div>
+				<ul>
+					<li><a href="https://github.com/razvn/svelteMyAdmin">Source on GitHub</a></li>
+					<li><a href="https://github.com/razvn/svelteMyAdmin/issues">Issues</a></li>
+					<li>
+						<a href="https://github.com/razvn/svelteMyAdmin/blob/main/LICENSE">GPL-2.0-or-later</a>
+					</li>
+				</ul>
+			</div>
+		</footer>
+
+		<dialog class="lightbox" id="lightbox" aria-label="Screenshot preview">
+			<button class="close" type="button" aria-label="Close preview">&times;</button>
+			<div id="lightbox-body"></div>
+		</dialog>
+
+		<script>
+			(function () {
+				var dlg = document.getElementById('lightbox');
+				if (!dlg || !dlg.showModal) return;
+				var body = document.getElementById('lightbox-body');
+				document.querySelectorAll('[data-shot]').forEach(function (btn) {
+					btn.addEventListener('click', function () {
+						body.innerHTML = btn.querySelector('picture').outerHTML.replace(' loading="lazy"', '');
+						dlg.showModal();
+					});
+				});
+				dlg.querySelector('.close').addEventListener('click', function () {
+					dlg.close();
+				});
+				dlg.addEventListener('click', function (e) {
+					if (e.target === dlg) dlg.close();
+				});
+			})();
+		</script>
+	</body>
+</html>
