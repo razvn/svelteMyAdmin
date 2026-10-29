@@ -1,7 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { z } from 'zod';
+import { applyHidden } from '#lib/nav/hidden.ts';
 import { getDbChildren } from '#lib/server/navigation/children.ts';
 import { toNavConfig } from '#lib/server/navigation/config.ts';
+import { storageTable } from '#lib/server/pmadb/index.ts';
+import { listHiddenItems } from '#lib/server/pmadb/navigation-hiding.ts';
 import type { RequestHandler } from './$types';
 
 const paramsSchema = z.object({ db: z.string().min(1).max(64) });
@@ -14,5 +17,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	const dbi = await locals.dbi;
 	if (!(await dbi.databaseExists(db))) error(404, 'Database not found');
 	const children = await getDbChildren(dbi, db, toNavConfig(locals.config));
-	return Response.json(children, { headers: { 'cache-control': 'no-store' } });
+	// Hidden items (pma__navigationhiding) are filtered out of the data, not just the view.
+	const canHide = storageTable(locals.server, 'navigationhiding') !== null;
+	const hidden = canHide ? await listHiddenItems(locals, db) : undefined;
+	const body = hidden
+		? { ...applyHidden(children, hidden), canHide: true, hiddenCount: hidden.length }
+		: { ...children, canHide: false, hiddenCount: 0 };
+	return Response.json(body, { headers: { 'cache-control': 'no-store' } });
 };

@@ -10,6 +10,8 @@
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
 	import type { NavConfig } from '#lib/nav/config.ts';
 	import NavigationTree from './navigation-tree.svelte';
+	import QuickTables from './quick-tables.svelte';
+	import type { QuickAccess } from './quick-access.svelte.ts';
 	import type { NavState } from './nav-state.svelte.ts';
 	import SidebarResizer from './sidebar-resizer.svelte';
 	import type { SidebarWidth } from './sidebar-width.svelte.ts';
@@ -21,10 +23,12 @@
 		width: SidebarWidth;
 		currentDb?: string;
 		currentTable?: string;
+		quick: QuickAccess;
 		onreload: () => void;
 	}
 
-	let { databases, nav, navState, width, currentDb, currentTable, onreload }: Props = $props();
+	let { databases, nav, navState, width, currentDb, currentTable, quick, onreload }: Props =
+		$props();
 
 	const sqlHref = $derived(currentDb ? `/db/${encodeURIComponent(currentDb)}/sql` : '/server/sql');
 	const pathname = $derived(page.url.pathname);
@@ -92,8 +96,18 @@
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
 
+		<QuickTables {quick} {nav} scope="{currentDb ?? ''}.{currentTable ?? ''}" />
+
 		<NavigationTree {databases} {nav} {navState} {currentDb} {currentTable} />
 	</Sidebar.Content>
+
+	<Sidebar.Footer class="border-t px-3 py-2">
+		<a
+			href={resolve(bare('/server/check-relations'))}
+			class="rounded-md px-2 py-1 text-xs text-muted-foreground outline-hidden hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+			>Configuration storage</a
+		>
+	</Sidebar.Footer>
 
 	<SidebarResizer {width} />
 </Sidebar.Root>

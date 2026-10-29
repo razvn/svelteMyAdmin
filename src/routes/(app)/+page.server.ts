@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { getStatusData } from '#lib/server/admin/status.ts';
 import { serverLabel } from '#lib/server/auth/index.ts';
+import { getStorageStatus } from '#lib/server/pmadb/features.ts';
 import { getAppInfo } from '#lib/server/app-info.ts';
 import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
 import { isValidCollationName } from '#lib/server/db/connection.ts';
@@ -10,14 +11,15 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals }) => {
 	const dbi = await locals.dbi;
 	const conn = await locals.db;
-	const [info, collations, ssl, status] = await Promise.all([
+	const [info, collations, ssl, status, storage] = await Promise.all([
 		dbi.getServerInfo(),
 		dbi.listCollations(),
 		dbi.isSslConnection().catch(() => false),
 		// Only feeds the KPI cards: the page still renders when the user may not read the status.
 		getStatusData(conn)
 			.then((d) => d.status)
-			.catch(() => null)
+			.catch(() => null),
+		getStorageStatus(locals)
 	]);
 	const num = (key: string) => Number(status?.[key] ?? 0) || 0;
 	const uptime = num('Uptime');
@@ -43,6 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			threadsConnected: num('Threads_connected'),
 			available: status !== null
 		},
+		storageComplete: storage.allWorks,
 		collation: info.collation,
 		collations: collations.map((c) => ({ name: c.name, charset: c.charset })),
 		showChgPassword: locals.config.ShowChgPassword && locals.session?.authType !== 'config',
