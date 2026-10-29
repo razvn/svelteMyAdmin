@@ -68,7 +68,10 @@ async function pick(page: Page, trigger: Locator, option: string) {
 const info = (col: string, table: string) =>
 	`SELECT ${col} FROM information_schema.TABLES WHERE TABLE_SCHEMA='${DB}' AND TABLE_NAME='${table}'`;
 
-test('rename, change comment and engine, copy, truncate and drop a table', async ({ page }) => {
+// One test per operation: the whole flow in a single test needed ~20 form round trips inside one
+// 30 s budget, which a loaded machine (many specs sharing the databases) occasionally exceeded. The
+// tests run serially in this file and build on each other's state (t_orig -> t_renamed -> dropped).
+test('rename a table and change its comment and engine', async ({ page }) => {
 	const main = page.getByRole('main');
 	await gotoReady(page, `/db/${DB}/table/t_orig/operations`);
 	await expect(main.getByRole('heading', { name: 'Operations' })).toBeVisible();
@@ -87,6 +90,12 @@ test('rename, change comment and engine, copy, truncate and drop a table', async
 	await expect(main.getByTestId('outcome')).toContainText('has been updated');
 	expect(await scalar(info('TABLE_COMMENT', 't_renamed'))).toBe('hello e2e');
 	expect(await scalar(info('ENGINE', 't_renamed'))).toBe('MyISAM');
+});
+
+test('copy a table with its data and run table maintenance', async ({ page }) => {
+	const main = page.getByRole('main');
+	await gotoReady(page, `/db/${DB}/table/t_renamed/operations`);
+	await expect(main.getByRole('heading', { name: 'Operations' })).toBeVisible();
 
 	// copy structure and data to the other database
 	const copy = main.getByTestId('copy-form');
@@ -102,6 +111,12 @@ test('rename, change comment and engine, copy, truncate and drop a table', async
 	await expect(results.getByTestId('maintenance-result')).toBeVisible();
 	await results.getByRole('button', { name: 'Close' }).first().click();
 	await expect(results).toBeHidden();
+});
+
+test('truncate and drop a table after confirming the SQL', async ({ page }) => {
+	const main = page.getByRole('main');
+	await gotoReady(page, `/db/${DB}/table/t_renamed/operations`);
+	await expect(main.getByRole('heading', { name: 'Operations' })).toBeVisible();
 
 	// truncate with confirmation
 	await main.getByTestId('empty-table').click();
