@@ -5,7 +5,9 @@
  */
 import { z } from 'zod';
 import {
+	isCopyMode,
 	isValidPluginName,
+	type CopyMode,
 	type Account,
 	type DatabaseGrantChoice,
 	type ResourceLimits,
@@ -183,6 +185,32 @@ export function parseSelectedAccounts(fd: FormData): Account[] {
 		out.push(a);
 	}
 	return out;
+}
+
+export interface LoginChangeInput {
+	from: Account;
+	to: Account;
+	mode: CopyMode;
+}
+
+/**
+ * Change login information form: `username` / `hostname` (empty = keep the current one) and the
+ * phpMyAdmin `mode` radio (4 keep the old account, 1/2/3 delete it).
+ */
+export function parseLoginForm(
+	fd: FormData,
+	from: Account,
+	lengths: { user: number; host: number }
+): Parsed<LoginChangeInput> {
+	const user = text(fd, 'username') === '' ? from.user : text(fd, 'username');
+	const host = text(fd, 'hostname').trim() === '' ? from.host : text(fd, 'hostname').trim();
+	if (user.length > lengths.user)
+		return { ok: false, error: `The user name is too long (maximum ${lengths.user} characters).` };
+	if (host.length > lengths.host) return { ok: false, error: 'Invalid host name.' };
+	if (user.includes('\0') || host.includes('\0')) return { ok: false, error: 'Invalid name.' };
+	const mode = Number(text(fd, 'mode') || 4);
+	if (!isCopyMode(mode)) return { ok: false, error: 'Invalid mode.' };
+	return { ok: true, value: { from, to: { user, host }, mode } };
 }
 
 /** `?username=&hostname=` of the edit page. */

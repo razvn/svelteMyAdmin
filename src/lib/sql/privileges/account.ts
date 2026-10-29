@@ -4,6 +4,7 @@ import type { Account, GrantTarget, PrivilegeItem, PrivServer } from './types.ts
 
 /** `'user'@'host'` with both parts escaped as string literals. */
 export function quoteAccount(account: Account): string {
+	if (account.noHost) return quoteValue(account.user);
 	return `${quoteValue(account.user)}@${quoteValue(account.host)}`;
 }
 

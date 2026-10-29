@@ -52,7 +52,7 @@ export function initialsOf(users: readonly string[]): string[] {
 }
 
 /** Rows of mysql.user (and global_priv lock flags on MariaDB) keyed by user and host. */
-async function readUserTable(
+export async function readUserTable(
 	dbi: DatabaseInterface,
 	server: PrivServer
 ): Promise<Map<string, AccountRow & { raw: Record<string, unknown> }>> {
@@ -76,6 +76,19 @@ async function readUserTable(
 			// no access to global_priv
 		}
 	}
+	// MySQL 8 has no is_role column: roles are the targets of role_edges, or locked + expired + without credentials.
+	const roleKeys = new Set<string>();
+	if (!server.isMariaDB) {
+		try {
+			const e = await query(
+				dbi,
+				'SELECT DISTINCT `FROM_USER` AS u, `FROM_HOST` AS h FROM `mysql`.`role_edges`'
+			);
+			for (const r of e) roleKeys.add(key(str(r.u), str(r.h)));
+		} catch {
+			// no access / MySQL < 8
+		}
+	}
 	for (const r of rows) {
 		const user = str(r.User ?? r.user);
 		const host = str(r.Host ?? r.host);
@@ -87,7 +100,12 @@ async function readUserTable(
 			plugin: str(r.plugin),
 			locked: str(r.account_locked).toUpperCase() === 'Y' || locked.has(key(user, host)),
 			passwordExpired: str(r.password_expired).toUpperCase() === 'Y',
-			isRole: str(r.is_role).toUpperCase() === 'Y',
+			isRole: server.isMariaDB
+				? str(r.is_role).toUpperCase() === 'Y'
+				: roleKeys.has(key(user, host)) ||
+					(str(r.account_locked).toUpperCase() === 'Y' &&
+						str(r.password_expired).toUpperCase() === 'Y' &&
+						str(r.authentication_string) === ''),
 			raw: r
 		});
 	}
@@ -253,6 +271,26 @@ export async function readAccount(
 		grantsError = (e as { sqlMessage?: string }).sqlMessage ?? (e as Error).message;
 	}
 	return { account, properties, grants, grantsError };
+}
+
+export interface AccountCredentials {
+	plugin: string;
+	/** `authentication_string` (or the legacy `Password`), '' = none. */
+	hash: string;
+}
+
+/** The stored credential of an account, to recreate it under another name. */
+export async function readAccountCredentials(
+	dbi: DatabaseInterface,
+	server: PrivServer,
+	account: Account
+): Promise<AccountCredentials> {
+	const row = (await readUserTable(dbi, server)).get(key(account.user, account.host));
+	if (!row) return { plugin: '', hash: '' };
+	return {
+		plugin: row.plugin,
+		hash: str(row.raw.authentication_string) || str(row.raw.Password)
+	};
 }
 
 /**

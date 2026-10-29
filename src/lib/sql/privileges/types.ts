@@ -15,6 +15,8 @@ export type Scope = 'global' | 'database' | 'table' | 'column' | 'routine';
 export interface Account {
 	user: string;
 	host: string;
+	/** MariaDB role: addressed by name only (`'role'`), its Host column is empty. */
+	noHost?: boolean;
 }
 
 /** A statement to run plus its display form (secrets masked with `***`). */
