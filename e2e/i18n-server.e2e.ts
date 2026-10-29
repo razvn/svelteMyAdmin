@@ -55,6 +55,7 @@ test('server status and privileges pages are translated (fr, es)', async ({
 	await page.getByLabel('Utilisateur').fill(USER);
 	await page.getByLabel('Mot de passe').fill(PASSWORD);
 	await page.getByRole('button', { name: 'Connexion' }).click();
+	await expect(page).toHaveURL(/\/$/);
 	await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
 
 	const main = page.getByRole('main');
