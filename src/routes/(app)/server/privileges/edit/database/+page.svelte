@@ -74,7 +74,9 @@
 							</select>
 						</div>
 						<div class="grid gap-1.5">
-							<label for="dbwild" class="text-sm font-medium">Use text field (wildcards allowed)</label>
+							<label for="dbwild" class="text-sm font-medium"
+								>Use text field (wildcards allowed)</label
+							>
 							<Input
 								id="dbwild"
 								name="dbwild"

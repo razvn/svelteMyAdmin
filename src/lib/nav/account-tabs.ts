@@ -28,7 +28,15 @@ export const ACCOUNT_TABS: readonly AccountTab[] = [
 
 /** The tabs shown for a server (Roles only where `CREATE ROLE` exists). */
 export function accountTabsFor(server?: PrivServer): readonly AccountTab[] {
-	return server && !supportsRoles(server) ? ACCOUNT_TABS.filter((t) => t.id !== 'roles') : ACCOUNT_TABS;
+	return server && !supportsRoles(server)
+		? ACCOUNT_TABS.filter((t) => t.id !== 'roles')
+		: ACCOUNT_TABS;
+}
+
+/** Form `action` of a named action that keeps the current query string (`?username=..&/revoke`). */
+export function namedAction(search: string, name: string): string {
+	const q = search.replace(/^\?/, '');
+	return `?${q}${q ? '&' : ''}/${name}`;
 }
 
 /** Query string that identifies the edited account. */
@@ -38,6 +46,7 @@ export function accountQuery(account: Account): string {
 
 export function accountTabHref(tab: AccountTab['id'], account: Account): string {
 	if (tab === 'global') return `/server/privileges/edit?${accountQuery(account)}`;
-	if (tab === 'column') return `/server/privileges/edit/table?${accountQuery(account)}#column-privileges`;
+	if (tab === 'column')
+		return `/server/privileges/edit/table?${accountQuery(account)}#column-privileges`;
 	return `/server/privileges/edit/${tab}?${accountQuery(account)}`;
 }

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { namedAction } from '#lib/nav/account-tabs.ts';
 	import type { Snippet } from 'svelte';
 	import PrivilegeGrid from './privilege-grid.svelte';
 	import { Button } from '#lib/components/ui/button/index.ts';
@@ -20,7 +22,16 @@
 		idPrefix?: string;
 	}
 
-	let { server, scope, title, initial, canEdit, hidden, extra, idPrefix = 'priv' }: Props = $props();
+	let {
+		server,
+		scope,
+		title,
+		initial,
+		canEdit,
+		hidden,
+		extra,
+		idPrefix = 'priv'
+	}: Props = $props();
 
 	// The parent re-creates this component (keyed) when the saved state changes.
 	// svelte-ignore state_referenced_locally
@@ -32,6 +43,7 @@
 
 <form
 	method="POST"
+	action={namedAction(page.url.search, 'save')}
 	class="flex flex-col gap-6"
 	data-testid="scoped-editor"
 	use:enhance={() => {

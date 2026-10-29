@@ -158,7 +158,7 @@ for (const { name, port } of servers) {
 			expect(res.ok, JSON.stringify(res.results)).toBe(true);
 			d = await readAccount(dbi, server, acc);
 			expect(d.grants.databases.map((x) => x.db)).toEqual([wild.db]);
-			res = await revokeScoped(dbi, server, caps, acc, wild);
+			expect((await revokeScoped(dbi, server, caps, acc, wild)).ok).toBe(true);
 			d = await readAccount(dbi, server, acc);
 			expect(d.grants.databases).toHaveLength(0);
 		});

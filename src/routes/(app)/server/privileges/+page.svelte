@@ -15,6 +15,7 @@
 	import UsersRound from '@lucide/svelte/icons/users-round';
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
+	import RolesSection from '#lib/components/privileges/roles-section.svelte';
 	import StatementList from '#lib/components/privileges/statement-list.svelte';
 	import { Alert, AlertDescription, AlertTitle } from '#lib/components/ui/alert/index.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
@@ -424,6 +425,14 @@
 						</Card.Content>
 					</Card.Root>
 				{/if}
+			{/if}
+
+			{#if data.rolesSupported}
+				<RolesSection
+					roles={data.roles}
+					canManage={data.caps.isCreateUser}
+					result={form && 'roleResult' in form ? form.roleResult : null}
+				/>
 			{/if}
 
 			<Alert>

@@ -35,7 +35,7 @@
 			</AlertDescription>
 		</Alert>
 	{:else}
-		<AccountTabs account={data.account} active="global" />
+		<AccountTabs account={data.account} active="global" server={data.server} />
 		{#if data.isSelf}
 			<Alert role="status">
 				<AlertDescription>

@@ -11,8 +11,9 @@ import {
 import { describeAccess, escapeWildcards } from '#lib/sql/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-const clean = (values: string[]) =>
-	[...new Set(values.map((v) => v.trim()).filter((v) => v !== '' && v.length <= 192))];
+const clean = (values: string[]) => [
+	...new Set(values.map((v) => v.trim()).filter((v) => v !== '' && v.length <= 192))
+];
 
 /** Databases to edit: stored patterns (`dbname`), picked real names (escaped) and the wildcard text field. */
 function selectedDatabases(params: URLSearchParams): string[] {
@@ -39,7 +40,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		grantOption: d.grantOption
 	}));
 	const editing = selectedDatabases(url.searchParams);
-	const first = editing.length === 1 ? currentFor(details, { scope: 'database', db: editing[0] }) : null;
+	const first =
+		editing.length === 1 ? currentFor(details, { scope: 'database', db: editing[0] }) : null;
 	return {
 		...common,
 		state: 'ok' as const,
@@ -51,7 +53,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, url }) => {
+	save: async ({ request, locals, url }) => {
 		const ctx = await editContext(locals, url);
 		const fd = await request.formData();
 		const dbs = clean(fd.getAll('dbname').filter((v): v is string => typeof v === 'string'));
@@ -85,6 +87,9 @@ export const actions: Actions = {
 			db
 		});
 		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
-		return { saved: `You have revoked the privileges for '${ctx.account.user}' on ${db}.`, results: res.results };
+		return {
+			saved: `You have revoked the privileges for '${ctx.account.user}' on ${db}.`,
+			results: res.results
+		};
 	}
 };

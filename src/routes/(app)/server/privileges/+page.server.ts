@@ -1,7 +1,10 @@
 import { fail } from '@sveltejs/kit';
 import {
+	createRole,
 	decodeAccount,
 	dropAccounts,
+	dropRoles,
+	listRoles,
 	encodeAccount,
 	exportGrants,
 	getCapabilities,
@@ -18,7 +21,7 @@ import {
 	setUserGroup,
 	withGroupTables
 } from '#lib/server/pmadb/user-groups.ts';
-import { buildFlushPrivileges } from '#lib/sql/privileges/index.ts';
+import { buildFlushPrivileges, supportsRoles } from '#lib/sql/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /** phpMyAdmin lists accounts directly only below this many users, else an initial must be chosen. */
@@ -59,9 +62,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const tooMany = initialParam === null && !showAll && filtered.length >= LIST_LIMIT;
 	const accounts = tooMany ? [] : await withPrivilegeSummaries(dbi, server, filtered);
 
+	const rolesSupported = supportsRoles(server);
+	const roles = rolesSupported ? await listRoles(dbi, server) : [];
+
 	return {
 		...base,
 		state: 'ok' as const,
+		rolesSupported,
+		roles,
 		total: all.length,
 		initials: all.length > INITIALS_FROM ? initialsOf(all.map((a) => a.user)) : [],
 		initial: initialParam,
@@ -133,6 +141,32 @@ export const actions: Actions = {
 			return fail(400, { groupError: 'User groups management is not enabled.' });
 		if (!res) return fail(400, { groupError: 'This user group does not exist.' });
 		return { groupSet: { username, group } };
+	},
+
+	createRole: async ({ request, locals }) => {
+		const dbi = await locals.dbi;
+		const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
+		const name = String((await request.formData()).get('role_name') ?? '').trim();
+		const res = await createRole(dbi, server, caps, name);
+		if (!res.ok) return fail(400, { roleResult: { ...res, created: null } });
+		return { roleResult: { ...res, created: name } };
+	},
+
+	dropRole: async ({ request, locals }) => {
+		const dbi = await locals.dbi;
+		const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
+		const fd = await request.formData();
+		const roles = fd
+			.getAll('role')
+			.filter((v): v is string => typeof v === 'string')
+			.map((v) => {
+				const i = v.lastIndexOf('|');
+				return { name: v.slice(0, i), host: v.slice(i + 1) };
+			})
+			.filter((r) => r.name !== '');
+		const res = await dropRoles(dbi, server, caps, roles);
+		if (!res.ok) return fail(400, { roleResult: { ...res, created: null } });
+		return { roleResult: { ...res, created: null } };
 	},
 
 	flush: async ({ locals }) => {

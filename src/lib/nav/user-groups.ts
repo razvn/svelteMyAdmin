@@ -76,7 +76,7 @@ export function filterTabs(level: TabLevel, tabs: TabDef[], denied: readonly str
 
 /** Pages without a tab of their own are governed by the tab they belong to. */
 const EXTRA_OWNER: Record<TabLevel, Record<string, string>> = {
-	server: { 'status/': 'status', 'user-groups': 'privileges' },
+	server: { 'status/': 'status', 'user-groups': 'privileges', 'privileges/': 'privileges' },
 	db: { 'data-dictionary': 'structure' },
 	table: { chart: 'browse' }
 };
@@ -84,8 +84,7 @@ const EXTRA_OWNER: Record<TabLevel, Record<string, string>> = {
 /** Tab id that governs a path below the level root; null when no tab applies. */
 export function governingTabId(level: TabLevel, path: string): string | null {
 	const page = findPage(level, path);
-	if (!page) return null;
-	if (page.tab) return page.tab.id;
+	if (page?.tab) return page.tab.id;
 	for (const [prefix, id] of Object.entries(EXTRA_OWNER[level])) {
 		if (prefix.endsWith('/') ? path.startsWith(prefix) : path === prefix) return id;
 	}

@@ -21,7 +21,7 @@ import {
 import { query, type Capabilities } from './context.ts';
 import { listAccounts, readAccount, showGrantsLines, type AccountDetails } from './accounts.ts';
 import { runStatements, type OperationResult } from './operations.ts';
-import { emptyGrants, parseShowGrants } from './show-grants.ts';
+import { parseShowGrants } from './show-grants.ts';
 
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 const sqlError = (e: unknown): string => {
@@ -219,7 +219,7 @@ export async function listUsersWithAccess(
 	const out: AccessRow[] = [];
 	for (const a of await listAccounts(dbi, server)) {
 		const account = resolveAccount(server, a);
-		let grants = emptyGrants();
+		let grants;
 		try {
 			grants = parseShowGrants(await showGrantsLines(dbi, account), server);
 		} catch {

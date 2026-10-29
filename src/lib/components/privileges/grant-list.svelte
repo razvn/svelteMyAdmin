@@ -13,8 +13,9 @@
 </script>
 
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve -- hrefs carry the account query string */
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { namedAction } from '#lib/nav/account-tabs.ts';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Undo2 from '@lucide/svelte/icons/undo-2';
 	import { Badge } from '#lib/components/ui/badge/index.ts';
@@ -52,7 +53,8 @@
 				{#each rows as row (row.name + '|' + (row.detail ?? ''))}
 					<Table.Row data-testid="grant-row" data-name={row.name}>
 						<Table.Cell class="font-mono text-[13px] font-medium">{row.name}</Table.Cell>
-						{#if headings[1]}<Table.Cell class="font-mono text-[13px]">{row.detail}</Table.Cell>{/if}
+						{#if headings[1]}<Table.Cell class="font-mono text-[13px]">{row.detail}</Table.Cell
+							>{/if}
 						<Table.Cell class="max-w-md whitespace-normal">
 							<code class="font-mono text-xs break-words">{row.summary}</code>
 						</Table.Cell>
@@ -62,7 +64,12 @@
 							</Badge>
 						</Table.Cell>
 						<Table.Cell class="text-end">
-							<form method="POST" action="?/revoke" class="contents" use:enhance>
+							<form
+								method="POST"
+								action={namedAction(page.url.search, 'revoke')}
+								class="contents"
+								use:enhance
+							>
 								{#each Object.entries(row.fields) as [name, value] (name)}
 									<input type="hidden" {name} {value} />
 								{/each}

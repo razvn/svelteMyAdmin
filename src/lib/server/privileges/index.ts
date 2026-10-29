@@ -7,3 +7,4 @@ export * from './scoped.ts';
 export * from './login.ts';
 export * from './roles.ts';
 export * from './edit-context.ts';
+export * from './access-view.ts';

@@ -5,6 +5,7 @@ import {
 	getPrivServer,
 	parseGlobalForm,
 	readAccount,
+	resolveAccount,
 	updateGlobalPrivileges
 } from '#lib/server/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -18,10 +19,11 @@ function account(url: URL) {
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const acc = account(url);
-	if (!acc) redirect(303, '/server/privileges');
+	const raw = account(url);
+	if (!raw) redirect(303, '/server/privileges');
 	const dbi = await locals.dbi;
 	const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
+	const acc = resolveAccount(server, raw);
 	const base = { account: acc, server, isGrantUser: caps.isGrantUser };
 	if (!caps.isGrantUser && !caps.isSuperUser) return { ...base, state: 'denied' as const };
 	const d = await readAccount(dbi, server, acc);
@@ -50,10 +52,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	default: async ({ request, locals, url }) => {
-		const acc = account(url);
-		if (!acc) return fail(400, { error: 'Missing account.', results: [] });
+		const raw = account(url);
+		if (!raw) return fail(400, { error: 'Missing account.', results: [] });
 		const dbi = await locals.dbi;
 		const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
+		const acc = resolveAccount(server, raw);
 		const res = await updateGlobalPrivileges(
 			dbi,
 			server,
