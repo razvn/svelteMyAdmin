@@ -59,7 +59,8 @@
 	async function submit() {
 		error = '';
 		if (built.error !== null) {
-			error = built.error;
+			// msgids marked with N_() in #lib/sql/create-view.ts (table catalog)
+			error = t(built.error); // i18n-ignore
 			return;
 		}
 		busy = true;
