@@ -239,6 +239,7 @@
 				<Button variant="outline" href="{base}/relation">
 					<ArrowLeftRight class="size-4" /> Relation view
 				</Button>
+				<Button variant="outline" href="{base}/normalization">Normalize</Button>
 			{/if}
 			<Button variant="outline" href="/transformations">Transformations</Button>
 			{#if !readOnly}

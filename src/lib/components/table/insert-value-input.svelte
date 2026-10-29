@@ -14,6 +14,7 @@
 		type InputSettings
 	} from '#lib/sql/insert-edit.ts';
 	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
+	import GisEditorDialog from '#lib/gis/gis-editor-dialog.svelte';
 	import FkSelect from './fk-select.svelte';
 
 	interface Props {
@@ -57,6 +58,7 @@
 	const sizeAttr = $derived(Math.min(Math.max((column.length || 20) * 2, 4), settings.limitChars));
 
 	let picker = $state<HTMLInputElement | null>(null);
+	let gisOpen = $state(false);
 
 	function pickerValue(): string {
 		const v = cell.value.trim();
@@ -278,6 +280,36 @@
 		pattern="[01]*"
 		class="w-52 font-mono"
 	/>
+{:else if kind === 'spatial'}
+	<div class="flex flex-wrap items-center gap-2">
+		<Input
+			{name}
+			bind:value={cell.value}
+			{disabled}
+			aria-label={label}
+			size={sizeAttr}
+			class="font-mono"
+			placeholder="POINT(1 2)"
+		/>
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			{disabled}
+			aria-label="GIS editor for {column.name}"
+			onclick={() => (gisOpen = true)}
+		>
+			GIS
+		</Button>
+	</div>
+	{#if gisOpen}
+		<GisEditorDialog
+			bind:open={gisOpen}
+			value={cell.value}
+			column={column.name}
+			onapply={(wkt) => (cell.value = wkt)}
+		/>
+	{/if}
 {:else}
 	<Input
 		{name}
@@ -285,13 +317,11 @@
 		{disabled}
 		aria-label={label}
 		size={sizeAttr}
-		class={kind === 'binary' || kind === 'spatial' ? 'font-mono' : ''}
+		class={kind === 'binary' ? 'font-mono' : ''}
 		placeholder={kind === 'binary'
 			? '0x hexadecimal'
-			: kind === 'spatial'
-				? 'POINT(1 2)'
-				: column.foreign && !column.foreign.options
-					? 'Referenced key (too many values to list)'
-					: ''}
+			: column.foreign && !column.foreign.options
+				? 'Referenced key (too many values to list)'
+				: ''}
 	/>
 {/if}
