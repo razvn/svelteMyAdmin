@@ -25,6 +25,8 @@ export function serializeChart(svg: SVGSVGElement): { xml: string; width: number
 		dst[i].setAttribute('style', style);
 		dst[i].removeAttribute('class');
 	});
+	// external content (map tiles) cannot be rasterized from an SVG image
+	clone.querySelectorAll('[data-no-export]').forEach((el) => el.remove());
 	const vb = svg.viewBox.baseVal;
 	const width = vb.width || svg.clientWidth;
 	const height = vb.height || svg.clientHeight;
@@ -55,6 +57,11 @@ export function downloadSvg(svg: SVGSVGElement, filename: string) {
 }
 
 export async function downloadPng(svg: SVGSVGElement, filename: string, scale = 2) {
+	download(await svgToPngBlob(svg, scale), filename);
+}
+
+/** Rasterize the SVG (with inlined styles) to a PNG blob. */
+export async function svgToPngBlob(svg: SVGSVGElement, scale = 2): Promise<Blob> {
 	const { xml, width, height } = serializeChart(svg);
 	const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
 	try {
@@ -73,7 +80,7 @@ export async function downloadPng(svg: SVGSVGElement, filename: string, scale = 
 		ctx.drawImage(img, 0, 0, width, height);
 		const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
 		if (!blob) throw new Error('The image could not be created.');
-		download(blob, filename);
+		return blob;
 	} finally {
 		URL.revokeObjectURL(url);
 	}

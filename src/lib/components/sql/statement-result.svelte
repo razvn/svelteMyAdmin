@@ -64,6 +64,15 @@
 	);
 	const exportHref = $derived(`${base}/export?sql_query=${enc(statement.sql)}`);
 
+	/** Visualize GIS data: the first geometry field that comes from a real table. */
+	const gisHref = $derived.by(() => {
+		if (!statement.ok || statement.kind !== 'select') return null;
+		const f = statement.resultSets[0]?.fields.find(
+			(x) => x.kind === 'geometry' && x.db && x.orgTable
+		);
+		return f ? `/db/${enc(f.db)}/table/${enc(f.orgTable)}/gis?sql=${enc(statement.sql)}` : null;
+	});
+
 	let expandedSql = $state(false);
 	const shown = $derived(truncateSql(statement.sql, settings.maxCharsInSql));
 
@@ -356,6 +365,9 @@
 				{#if scope.level !== 'server'}
 					<Button variant="outline" size="sm" onclick={() => (viewOpen = true)}>Create view</Button>
 				{/if}
+			{/if}
+			{#if gisHref}
+				<Button variant="outline" size="sm" href={gisHref}>Visualize GIS data</Button>
 			{/if}
 			{#if chartSet}
 				<Button variant="outline" size="sm" onclick={() => (chartOpen = true)}>

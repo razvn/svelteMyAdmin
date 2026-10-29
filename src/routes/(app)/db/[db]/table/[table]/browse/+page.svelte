@@ -150,6 +150,9 @@
 		icon={Table2}
 	>
 		{#snippet actions()}
+			{#if data.columns.some((c) => c.kind === 'geometry')}
+				<Button href="{tableBase}/gis" size="sm" variant="outline">Visualize GIS data</Button>
+			{/if}
 			{#if !data.isView}
 				<Button href="{tableBase}/insert" size="sm">
 					<Plus class="size-4" aria-hidden="true" />
