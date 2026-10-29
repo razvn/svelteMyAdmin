@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { getColumnEditorContext } from '#lib/server/database/create-table.ts';
 import { alterAction } from '#lib/server/table/actions.ts';
+import { saveStructureTransforms, transformUi } from '#lib/server/transformations/structure.ts';
 import { addColumns, loadColumns, loadIndexes } from '#lib/server/table/structure.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,10 +30,15 @@ export const load: PageServerLoad = async ({ locals, params, url, parent }) => {
 		hasPrimary: indexes.some((i) => i.kind === 'PRIMARY'),
 		num: Math.min(Math.max(Number.parseInt(url.searchParams.get('num') ?? '', 10) || 1, 1), 64),
 		where: where as 'end' | 'first' | 'after',
-		after
+		after,
+		transformUi: await transformUi(locals, params.db, params.table, [])
 	};
 };
 
 export const actions: Actions = {
-	add: alterAction((ctx, p) => addColumns(ctx, p))
+	add: alterAction(async (ctx, p, event) => {
+		const res = await addColumns(ctx, p);
+		if (res.ok) await saveStructureTransforms(event.locals, ctx.dbi, ctx.db, ctx.table, p);
+		return res;
+	})
 };

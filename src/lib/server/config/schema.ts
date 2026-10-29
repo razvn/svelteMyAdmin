@@ -190,6 +190,7 @@ export const configSchema = z
 		RowActionType: z.enum(['icons', 'text', 'both']).default('both'),
 		RepeatCells: z.number().int().min(0).default(100),
 		SaveCellsAtOnce: z.boolean().default(false),
+		BrowseMIME: z.boolean().default(true),
 		GridEditing: z.enum(['double-click', 'click', 'disabled']).default('double-click'),
 		RelationalDisplay: z.enum(['K', 'D']).default('K'),
 		ProtectBinary: z.union([z.enum(['blob', 'noblob', 'all']), z.literal(false)]).default('blob'),

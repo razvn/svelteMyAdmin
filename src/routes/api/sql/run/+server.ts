@@ -4,6 +4,7 @@ import { getSecret } from '#lib/server/auth/session.ts';
 import { recordHistory } from '#lib/server/pmadb/history.ts';
 import { runScript } from '#lib/server/sql/execute.ts';
 import { historyEntries } from '#lib/server/sql/page.ts';
+import { attachTransforms } from '#lib/server/transformations/sql-results.ts';
 import { createRowKeyResolver } from '#lib/server/sql/row-keys.ts';
 import type { RequestHandler } from './$types';
 
@@ -26,6 +27,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		maxTotalRows: 200,
 		rowKeys: createRowKeyResolver(dbi, getSecret(config.blowfish_secret))
 	});
+	await attachTransforms(locals, result);
 	const scope = db
 		? table
 			? { level: 'table' as const, db, table }

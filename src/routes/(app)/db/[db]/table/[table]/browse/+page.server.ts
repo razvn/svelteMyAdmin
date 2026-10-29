@@ -30,6 +30,8 @@ import {
 	visibilityFromHidden,
 	type PrefsContext
 } from '#lib/server/table/ui-prefs.ts';
+import { loadMime } from '#lib/server/transformations/column-info.ts';
+import { transformBrowseRows, type RowTransforms } from '#lib/server/transformations/apply.ts';
 import { isNumericKind } from '#lib/table/column-kind.ts';
 import {
 	canShowAll,
@@ -130,6 +132,7 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 	let page = paginate(0, pageSize(rows), 0);
 	let seconds = 0;
 	let browseRows: ReturnType<typeof toBrowseRows> = [];
+	let transforms: RowTransforms = {};
 	try {
 		counted = await countRows(conn, db, table, {
 			where,
@@ -150,6 +153,17 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 		const fetched = await fetchRows(conn, sql);
 		seconds = fetched.seconds;
 		browseRows = toBrowseRows(secret, db, table, meta.condCols, fetched.rows);
+		const mime = await loadMime(locals, db, table);
+		if (mime && mime.size > 0) {
+			transforms = transformBrowseRows({
+				db,
+				table,
+				mime,
+				targets: meta.columns.map((c) => ({ name: c.name, kind: c.kind, settingsName: c.name })),
+				rows: fetched.rows,
+				signed: browseRows
+			});
+		}
 	} catch (e) {
 		queryError = e instanceof Error ? e.message : 'The query failed.';
 	}
@@ -192,6 +206,7 @@ export const load: PageServerLoad = async ({ params, locals, url, cookies, paren
 		rows: browseRows,
 		hasUniqueKey: meta.hasUniqueKey,
 		fkLinks,
+		transforms,
 		sort,
 		rowsPerPage: rows,
 		rowsOptions: rowsOptions(config.MaxRows),

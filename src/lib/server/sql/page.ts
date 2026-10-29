@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { getSecret } from '#lib/server/auth/session.ts';
 import { escapeId } from '#lib/server/db/escape.ts';
 import { recordHistory } from '#lib/server/pmadb/history.ts';
+import { attachTransforms } from '#lib/server/transformations/sql-results.ts';
 import { runScript } from './execute.ts';
 import { createRowKeyResolver } from './row-keys.ts';
 import type { ScriptResult, SqlPageSettings, SqlRunOptions, SqlScope } from '#lib/sql/run-types.ts';
@@ -155,6 +156,7 @@ export async function runSqlAction(
 		rowKeys: createRowKeyResolver(dbi, getSecret(config.blowfish_secret))
 	});
 
+	await attachTransforms(locals, result);
 	if (!f.single) await recordHistory(locals, historyEntries(scope, result));
 
 	const options: SqlRunOptions = {

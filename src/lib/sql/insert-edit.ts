@@ -73,6 +73,17 @@ export interface FormColumn extends ColumnMeta {
 	protected: boolean;
 	defaultFunction: string;
 	foreign: ForeignInfo | null;
+	/** Input transformation configured for the column (pma__column_info), if any. */
+	inputTransform?: InputTransformInfo | null;
+}
+
+export interface InputTransformInfo {
+	/** Plugin id (`text_plain_iptolong`). */
+	id: string;
+	widget: import('#lib/transformations/types.ts').InputWidget;
+	language?: 'json' | 'sql' | 'xml';
+	/** Parsed transformation options. */
+	options: string[];
 }
 
 export interface InputSettings {

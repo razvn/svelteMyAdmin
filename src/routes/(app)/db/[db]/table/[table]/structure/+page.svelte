@@ -240,6 +240,7 @@
 					<ArrowLeftRight class="size-4" /> Relation view
 				</Button>
 			{/if}
+			<Button variant="outline" href="/transformations">Transformations</Button>
 			{#if !readOnly}
 				<Button
 					variant="outline"
