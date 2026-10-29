@@ -13,6 +13,7 @@ export {
 	buildPrivilegeChanges,
 	buildColumnPrivilegeChanges,
 	buildDatabaseGrants,
+	supportsRoles,
 	buildCreateRole,
 	buildDropRole,
 	buildGrantRole,
@@ -26,3 +27,6 @@ export {
 	type DatabaseGrantChoice
 } from './grant.ts';
 export * from './summary.ts';
+export * from './copy-user.ts';
+export * from './access.ts';
+export * from './copy-user.ts';

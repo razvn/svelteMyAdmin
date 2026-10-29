@@ -188,6 +188,10 @@ export function buildDatabaseGrants(account: Account, choice: DatabaseGrantChoic
 
 // ---- roles (MariaDB: GRANT role TO user; MySQL 8: roles are accounts) ----
 
+/** CREATE ROLE: MySQL 8.0+, MariaDB 10.0.5+. */
+export const supportsRoles = (server: PrivServer): boolean =>
+	server.isMariaDB ? server.version >= 100005 : server.version >= 80000;
+
 export const buildCreateRole = (server: PrivServer, name: string, host = '%'): Stmt =>
 	stmt(`CREATE ROLE ${quoteRole(server, name, host)}`);
 
