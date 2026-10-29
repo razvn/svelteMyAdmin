@@ -1,0 +1,104 @@
+import { fail } from '@sveltejs/kit';
+import { z } from 'zod';
+import { menuTabs, TAB_LEVELS } from '#lib/nav/user-groups.ts';
+import {
+	deleteGroup,
+	getGroup,
+	groupExists,
+	listGroups,
+	listGroupUsers,
+	saveGroup,
+	withGroupTables
+} from '#lib/server/pmadb/user-groups.ts';
+import { getCapabilities } from '#lib/server/privileges/index.ts';
+import type { Actions, PageServerLoad } from './$types';
+
+const groupName = z.string().trim().min(1, 'Group name is required.').max(64);
+
+const levelTabs = TAB_LEVELS.map((level) => ({
+	level,
+	tabs: menuTabs(level).map((t) => ({ key: t.key, label: t.label }))
+}));
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const dbi = await locals.dbi;
+	const caps = await getCapabilities(dbi);
+	const enabled = await withGroupTables(locals, async (conn, t) => {
+		await conn.query(`SELECT 1 FROM ${t.groups} LIMIT 1`);
+		await conn.query(`SELECT 1 FROM ${t.users} LIMIT 1`);
+		return true;
+	});
+	if (!enabled) return { state: 'disabled' as const, levelTabs };
+	if (!caps.isSuperUser) return { state: 'no-privileges' as const, levelTabs };
+
+	const view = await withGroupTables(locals, async (conn, t) => {
+		const groups = await listGroups(conn, t);
+		const usersOf = url.searchParams.get('users');
+		const editName = url.searchParams.get('edit');
+		const edit = editName ? groups.find((g) => g.name === editName) : undefined;
+		return {
+			groups: groups.map((g) => ({
+				name: g.name,
+				// A tab without a row counts as allowed (UserGroups::getAllowedTabNames)
+				allowed: levelTabs.map((l) =>
+					l.tabs.filter((tab) => g.tabs[tab.key] !== false).map((tab) => tab.label)
+				)
+			})),
+			members: usersOf ? { group: usersOf, users: await listGroupUsers(conn, t, usersOf) } : null,
+			edit: edit
+				? {
+						name: edit.name,
+						checked: levelTabs.flatMap((l) =>
+							l.tabs.filter((tab) => edit.tabs[tab.key]).map((x) => x.key)
+						)
+					}
+				: null
+		};
+	});
+	if (!view) return { state: 'disabled' as const, levelTabs };
+	return { state: 'ok' as const, levelTabs, adding: url.searchParams.has('add'), ...view };
+};
+
+function allowedKeys(fd: FormData): string[] {
+	return levelTabs.flatMap((l) => l.tabs.map((t) => t.key)).filter((k) => fd.get(k) === 'Y');
+}
+
+async function isSuper(locals: App.Locals) {
+	return (await getCapabilities(await locals.dbi)).isSuperUser;
+}
+
+export const actions: Actions = {
+	save: async ({ request, locals }) => {
+		if (!(await isSuper(locals))) return fail(403, { error: 'No Privileges' });
+		const fd = await request.formData();
+		const isNew = fd.get('mode') === 'add';
+		const name = groupName.safeParse(fd.get('userGroup'));
+		if (!name.success) return fail(400, { error: name.error.issues[0].message });
+		const res = await withGroupTables(locals, async (conn, t) => {
+			const exists = await groupExists(conn, t, name.data);
+			if (isNew && exists) return 'exists' as const;
+			if (!isNew && !exists) return 'missing' as const;
+			await saveGroup(conn, t, name.data, allowedKeys(fd));
+			return 'ok' as const;
+		});
+		if (res === undefined) return fail(500, { error: 'User groups storage is unavailable.' });
+		if (res === 'exists') return fail(400, { error: 'This user group already exists.' });
+		if (res === 'missing') return fail(404, { error: 'This user group does not exist.' });
+		return { saved: name.data };
+	},
+
+	delete: async ({ request, locals }) => {
+		if (!(await isSuper(locals))) return fail(403, { error: 'No Privileges' });
+		const fd = await request.formData();
+		const name = groupName.safeParse(fd.get('userGroup'));
+		if (!name.success) return fail(400, { error: name.error.issues[0].message });
+		const res = await withGroupTables(locals, async (conn, t) => {
+			if (!(await getGroup(conn, t, name.data))) return false;
+			await deleteGroup(conn, t, name.data);
+			return true;
+		});
+		if (res === undefined) return fail(500, { error: 'User groups storage is unavailable.' });
+		if (!res) return fail(404, { error: 'This user group does not exist.' });
+		return { deleted: name.data };
+	}
+};

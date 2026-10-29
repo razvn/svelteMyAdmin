@@ -12,6 +12,12 @@ import {
 	parseSelectedAccounts,
 	withPrivilegeSummaries
 } from '#lib/server/privileges/index.ts';
+import {
+	listGroups,
+	listMemberships,
+	setUserGroup,
+	withGroupTables
+} from '#lib/server/pmadb/user-groups.ts';
 import { buildFlushPrivileges } from '#lib/sql/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -39,6 +45,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		return { ...base, state: 'cannot-view' as const };
 	}
 
+	// User groups (configurable menus) are optional: only when both pmadb tables answer.
+	const groupInfo = await withGroupTables(locals, async (conn, t) => ({
+		memberships: await listMemberships(conn, t),
+		groups: (await listGroups(conn, t)).map((g) => g.name)
+	}));
+	const memberships = groupInfo?.memberships ?? {};
+
 	const all = (await listAccounts(dbi, server)).filter((a) => !a.isRole);
 	const initialParam = url.searchParams.get('initial');
 	const showAll = url.searchParams.has('showall');
@@ -57,6 +70,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		anonymousLocalhost: all.some((a) => a.user === '' && a.host === 'localhost'),
 		hasAccountLocking: all.some((a) => a.locked),
 		currentUser: caps.currentUser,
+		userGroups: groupInfo ? { groups: groupInfo.groups } : null,
 		accounts: accounts.map((a) => ({
 			value: encodeAccount(a),
 			user: a.user,
@@ -65,7 +79,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			inUserTable: a.inUserTable,
 			locked: a.locked,
 			summary: a.summary,
-			hasGrant: a.hasGrant
+			hasGrant: a.hasGrant,
+			userGroup: memberships[a.user] ?? ''
 		}))
 	};
 };
@@ -97,6 +112,27 @@ export const actions: Actions = {
 		const accounts = one ? [one] : parseSelectedAccounts(fd);
 		if (accounts.length === 0) return fail(400, { exportError: 'No users selected.' });
 		return { exportText: await exportGrants(dbi, accounts) };
+	},
+
+	setGroup: async ({ request, locals }) => {
+		const dbi = await locals.dbi;
+		const caps = await getCapabilities(dbi);
+		if (!caps.isSuperUser) {
+			return fail(403, { groupError: 'You do not have the privileges to administrate the users!' });
+		}
+		const fd = await request.formData();
+		const username = String(fd.get('username') ?? '');
+		const group = String(fd.get('usergroup') ?? '');
+		if (username === '') return fail(400, { groupError: 'Missing parameter: username' });
+		const res = await withGroupTables(locals, async (conn, t) => {
+			if (group !== '' && !(await listGroups(conn, t)).some((g) => g.name === group)) return false;
+			await setUserGroup(conn, t, username, group === '' ? null : group);
+			return true;
+		});
+		if (res === undefined)
+			return fail(400, { groupError: 'User groups management is not enabled.' });
+		if (!res) return fail(400, { groupError: 'This user group does not exist.' });
+		return { groupSet: { username, group } };
 	},
 
 	flush: async ({ locals }) => {
