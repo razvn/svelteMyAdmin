@@ -41,6 +41,20 @@ export function setSessionCookie(
 	cookies.set(SESSION_COOKIE, token, cookieOptions(config, url));
 }
 
+/**
+ * The sliding expiry only has to move forward every so often. Re-sealing the cookie on every request
+ * lets a slow background request (sidebar fetch, ...) that finishes after logout / `clearCookies`
+ * write the old session back and resurrect it, so recent sessions are left alone.
+ */
+export function needsRefresh(
+	lastActivity: number,
+	validitySeconds: number,
+	now: number = Date.now()
+): boolean {
+	const interval = Math.min(60_000, (validitySeconds * 1000) / 4);
+	return now - lastActivity >= interval;
+}
+
 export function clearSessionCookie(cookies: Cookies, config: AppConfig, url: URL): void {
 	cookies.delete(SESSION_COOKIE, { ...cookieOptions(config, url), maxAge: undefined });
 }
@@ -72,6 +86,7 @@ export const cookieAuth: AuthPlugin = {
 
 	touch(ctx, creds) {
 		const s = readSession(ctx);
+		if (s && !needsRefresh(s.lastActivity, ctx.config.LoginCookieValidity)) return;
 		setSessionCookie(ctx.cookies, ctx.config, ctx.url, creds, s?.createdAt, s?.twoFactorVerified);
 	},
 
