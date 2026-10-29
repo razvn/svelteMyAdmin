@@ -11,6 +11,7 @@ import {
 import { isAccessDenied, RULE_MESSAGES } from '#lib/server/auth/errors.ts';
 import { getConfig } from '#lib/server/config/index.ts';
 import { createConnection, type Connection } from '#lib/server/db/connection.ts';
+import { installTracking, type TrackingHook } from '#lib/server/pmadb/tracking-hook.ts';
 import { DatabaseInterface } from '#lib/server/db/dbi.ts';
 import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
 import { expiredLoginLocation } from '#lib/server/auth/expired.ts';
@@ -104,7 +105,10 @@ const auth: Handle = async ({ event, resolve }) => {
 		const collation =
 			event.cookies.get(COLLATION_COOKIE) || config.DefaultConnectionCollation || undefined;
 		try {
-			return await createConnection(server, c.user, c.password, { collation });
+			const conn = await createConnection(server, c.user, c.password, { collation });
+			// Change tracking: the one place where statements of the user are recorded.
+			trackingHook = installTracking(conn, server, c.user);
+			return conn;
 		} catch (e) {
 			// Cookie sessions whose credentials MySQL no longer accepts (e.g. the password was
 			// changed): drop the session and go back to the login form instead of an error page.
@@ -115,6 +119,7 @@ const auth: Handle = async ({ event, resolve }) => {
 			throw e;
 		}
 	};
+	let trackingHook: TrackingHook | null = null;
 	let dbi: Promise<DatabaseInterface> | undefined;
 
 	event.locals.config = config;
@@ -138,6 +143,7 @@ const auth: Handle = async ({ event, resolve }) => {
 		creds = undefined;
 		if (pending) {
 			const conn = await pending.catch(() => undefined);
+			await trackingHook?.close();
 			await conn?.end().catch(() => {});
 		}
 	};

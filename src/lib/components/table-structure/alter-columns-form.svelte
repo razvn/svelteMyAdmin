@@ -162,7 +162,7 @@
 		</Card.Header>
 		<Card.Content>
 			{#if mode === 'add'}
-				<ColumnEditor bind:columns {caps} {collations} {extra} />
+				<ColumnEditor bind:columns {caps} {collations} centralDb={db} {extra} />
 			{:else}
 				<ColumnEditor
 					bind:columns
