@@ -19,7 +19,11 @@
 		title={t('Server status')}
 		description={t('Live counters since the last server start or FLUSH STATUS.')}
 	/>
-	<nav aria-label={t('Status')} class="flex flex-wrap gap-1 {TAB_STRIP}" data-testid="status-subnav">
+	<nav
+		aria-label={t('Status')}
+		class="flex flex-wrap gap-1 {TAB_STRIP}"
+		data-testid="status-subnav"
+	>
 		{#each STATUS_SUB_TABS as tab (tab.id)}
 			<a
 				href={resolve(bare(`/server/status${tab.path ? `/${tab.path}` : ''}`))}

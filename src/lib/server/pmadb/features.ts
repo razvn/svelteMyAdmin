@@ -63,7 +63,11 @@ export const PMA_FEATURES: readonly FeatureDef[] = [
 		table: 'pma__designer_settings',
 		enables: N_('Remembering designer settings')
 	},
-	{ key: 'export_templates', table: 'pma__export_templates', enables: N_('Saving export templates') }
+	{
+		key: 'export_templates',
+		table: 'pma__export_templates',
+		enables: N_('Saving export templates')
+	}
 ];
 
 type StorageServer = Partial<Pick<ServerConfig, StorageKey | 'pmadb'>>;

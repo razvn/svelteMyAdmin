@@ -78,7 +78,9 @@ export const FIELDS: FieldDef[] = [
 				label: N_('textarea')
 			}
 		],
-		help: N_('Defines which type of editing controls should be used for CHAR and VARCHAR columns; input - allows limiting of input length, textarea - allows newlines in columns.'),
+		help: N_(
+			'Defines which type of editing controls should be used for CHAR and VARCHAR columns; input - allows limiting of input length, textarea - allows newlines in columns.'
+		),
 		default: 'input'
 	},
 	{
@@ -101,14 +103,18 @@ export const FIELDS: FieldDef[] = [
 		path: 'CodemirrorEnable',
 		type: 'bool',
 		label: N_('Enable CodeMirror'),
-		help: N_('Use user-friendly editor for editing SQL queries (CodeMirror) with syntax highlighting and line numbers.'),
+		help: N_(
+			'Use user-friendly editor for editing SQL queries (CodeMirror) with syntax highlighting and line numbers.'
+		),
 		default: true
 	},
 	{
 		path: 'Confirm',
 		type: 'bool',
 		label: N_('Confirm DROP queries'),
-		help: N_('Whether a warning ("Are your really sure…") should be displayed when you\'re about to lose data.'),
+		help: N_(
+			'Whether a warning ("Are your really sure…") should be displayed when you\'re about to lose data.'
+		),
 		default: true
 	},
 	{
@@ -214,7 +220,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'ConsoleEnterExecutes',
 		type: 'bool',
 		label: N_('Enter executes queries in console'),
-		help: N_('Queries are executed by pressing Enter (instead of Ctrl+Enter). New lines will be inserted with Shift+Enter.'),
+		help: N_(
+			'Queries are executed by pressing Enter (instead of Ctrl+Enter). New lines will be inserted with Shift+Enter.'
+		),
 		default: false
 	},
 	{
@@ -338,7 +346,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'DisableMultiTableMaintenance',
 		type: 'bool',
 		label: N_('Disable multi table maintenance'),
-		help: N_('Disable the table maintenance mass operations, like optimizing or repairing the selected tables of a database.'),
+		help: N_(
+			'Disable the table maintenance mass operations, like optimizing or repairing the selected tables of a database.'
+		),
 		default: false
 	},
 	{
@@ -1053,7 +1063,9 @@ export const FIELDS: FieldDef[] = [
 	{
 		path: 'Export/sql_if_not_exists',
 		type: 'bool',
-		label: N_('Add IF NOT EXISTS (less efficient as indexes will be generated during table creation)'),
+		label: N_(
+			'Add IF NOT EXISTS (less efficient as indexes will be generated during table creation)'
+		),
 		default: false
 	},
 	{
@@ -1263,7 +1275,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'FirstLevelNavigationItems',
 		type: 'number',
 		label: N_('Maximum items on first level'),
-		help: N_('The number of items that can be displayed on each page on the first level of the navigation tree.'),
+		help: N_(
+			'The number of items that can be displayed on each page on the first level of the navigation tree.'
+		),
 		default: 100,
 		min: 1
 	},
@@ -1271,7 +1285,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'ForeignKeyDropdownOrder',
 		type: 'list',
 		label: N_('Foreign key dropdown order'),
-		help: N_('Sort order for items in a foreign-key dropdown box; content is the referenced data, id is the key value.'),
+		help: N_(
+			'Sort order for items in a foreign-key dropdown box; content is the referenced data, id is the key value.'
+		),
 		default: ['content-id', 'id-content']
 	},
 	{
@@ -1313,14 +1329,18 @@ export const FIELDS: FieldDef[] = [
 		path: 'IgnoreMultiSubmitErrors',
 		type: 'bool',
 		label: N_('Ignore multiple statement errors'),
-		help: N_('If enabled, phpMyAdmin continues computing multiple-statement queries even if one of the queries failed.'),
+		help: N_(
+			'If enabled, phpMyAdmin continues computing multiple-statement queries even if one of the queries failed.'
+		),
 		default: false
 	},
 	{
 		path: 'Import/allow_interrupt',
 		type: 'bool',
 		label: N_('Partial import: allow interrupt'),
-		help: N_('Allow interrupt of import in case script detects it is close to time limit. This might be a good way to import large files, however it can break transactions.'),
+		help: N_(
+			'Allow interrupt of import in case script detects it is close to time limit. This might be a good way to import large files, however it can break transactions.'
+		),
 		default: true
 	},
 	{
@@ -1526,7 +1546,9 @@ export const FIELDS: FieldDef[] = [
 				label: N_('sql')
 			}
 		],
-		help: N_('Default format; be aware that this list depends on location (database, table) and only SQL is always available.'),
+		help: N_(
+			'Default format; be aware that this list depends on location (database, table) and only SQL is always available.'
+		),
 		default: 'sql'
 	},
 	{
@@ -1708,14 +1730,18 @@ export const FIELDS: FieldDef[] = [
 		path: 'LintEnable',
 		type: 'bool',
 		label: N_('Enable linter'),
-		help: N_('Find any errors in the query before executing it. Requires CodeMirror to be enabled.'),
+		help: N_(
+			'Find any errors in the query before executing it. Requires CodeMirror to be enabled.'
+		),
 		default: true
 	},
 	{
 		path: 'LoginCookieValidityDisableWarning',
 		type: 'bool',
 		label: N_('Login cookie validity warning'),
-		help: N_('Disable the default warning that is displayed on the main page if the value of the PHP setting session.gc_maxlifetime is less than the value of `LoginCookieValidity`.'),
+		help: N_(
+			'Disable the default warning that is displayed on the main page if the value of the PHP setting session.gc_maxlifetime is less than the value of `LoginCookieValidity`.'
+		),
 		default: false
 	},
 	{
@@ -1754,7 +1780,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'MaxRows',
 		type: 'number',
 		label: N_('Maximum number of rows to display'),
-		help: N_('Number of rows displayed when browsing a result set. If the result set contains more rows, "Previous" and "Next" links will be shown.'),
+		help: N_(
+			'Number of rows displayed when browsing a result set. If the result set contains more rows, "Previous" and "Next" links will be shown.'
+		),
 		default: 25,
 		min: 1
 	},
@@ -1920,7 +1948,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'NavigationTreeDisplayItemFilterMinimum',
 		type: 'number',
 		label: N_('Minimum number of items to display the filter box'),
-		help: N_('Defines the minimum number of items (tables, views, routines and events) to display a filter box.'),
+		help: N_(
+			'Defines the minimum number of items (tables, views, routines and events) to display a filter box.'
+		),
 		default: 30,
 		min: 1
 	},
@@ -1935,7 +1965,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'NavigationTreeEnableGrouping',
 		type: 'bool',
 		label: N_('Group items in the tree'),
-		help: N_('Group items in the navigation tree (determined by the separator defined in the Databases and Tables tabs above).'),
+		help: N_(
+			'Group items in the navigation tree (determined by the separator defined in the Databases and Tables tabs above).'
+		),
 		default: true
 	},
 	{
@@ -2036,7 +2068,9 @@ export const FIELDS: FieldDef[] = [
 				label: N_('SMART')
 			}
 		],
-		help: N_('SMART - i.e. descending order for columns of type TIME, DATE, DATETIME and TIMESTAMP, ascending order otherwise.'),
+		help: N_(
+			'SMART - i.e. descending order for columns of type TIME, DATE, DATETIME and TIMESTAMP, ascending order otherwise.'
+		),
 		default: 'SMART'
 	},
 	{
@@ -2071,7 +2105,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'PmaNoRelation_DisableWarning',
 		type: 'bool',
 		label: N_('Missing phpMyAdmin configuration storage tables'),
-		help: N_('Disable the default warning that is displayed on the database details Structure page if any of the required tables for the phpMyAdmin configuration storage could not be found.'),
+		help: N_(
+			'Disable the default warning that is displayed on the database details Structure page if any of the required tables for the phpMyAdmin configuration storage could not be found.'
+		),
 		default: false
 	},
 	{
@@ -2144,7 +2180,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'ReservedWordDisableWarning',
 		type: 'bool',
 		label: N_('MySQL reserved word warning'),
-		help: N_('Disable the default warning that is displayed on the Structure page if column names in a table are reserved MySQL words.'),
+		help: N_(
+			'Disable the default warning that is displayed on the Structure page if column names in a table are reserved MySQL words.'
+		),
 		default: false
 	},
 	{
@@ -2248,7 +2286,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'Server/only_db',
 		type: 'text',
 		label: N_('Show only listed databases'),
-		help: N_("You can use MySQL wildcard characters (% and _), escape them if you want to use their literal instances, i.e. use 'my\\_db' and not 'my_db'."),
+		help: N_(
+			"You can use MySQL wildcard characters (% and _), escape them if you want to use their literal instances, i.e. use 'my\\_db' and not 'my_db'."
+		),
 		default: ''
 	},
 	{
@@ -2317,7 +2357,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'ShowFieldTypesInDataEditView',
 		type: 'bool',
 		label: N_('Show field types'),
-		help: N_('Defines whether or not type fields should be initially displayed in edit/insert mode.'),
+		help: N_(
+			'Defines whether or not type fields should be initially displayed in edit/insert mode.'
+		),
 		default: true
 	},
 	{
@@ -2365,7 +2407,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'SuhosinDisableWarning',
 		type: 'bool',
 		label: N_('Suhosin warning'),
-		help: N_('Disable the default warning that is displayed on the main page if Suhosin is detected.'),
+		help: N_(
+			'Disable the default warning that is displayed on the main page if Suhosin is detected.'
+		),
 		default: false
 	},
 	{
@@ -2435,7 +2479,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'TextareaCols',
 		type: 'number',
 		label: N_('Textarea columns'),
-		help: N_('Textarea size (columns) in edit mode, this value will be emphasized for SQL query textareas (*2).'),
+		help: N_(
+			'Textarea size (columns) in edit mode, this value will be emphasized for SQL query textareas (*2).'
+		),
 		default: 40,
 		min: 1
 	},
@@ -2443,7 +2489,9 @@ export const FIELDS: FieldDef[] = [
 		path: 'TextareaRows',
 		type: 'number',
 		label: N_('Textarea rows'),
-		help: N_('Textarea size (rows) in edit mode, this value will be emphasized for SQL query textareas (*2).'),
+		help: N_(
+			'Textarea size (rows) in edit mode, this value will be emphasized for SQL query textareas (*2).'
+		),
 		default: 15,
 		min: 1
 	},

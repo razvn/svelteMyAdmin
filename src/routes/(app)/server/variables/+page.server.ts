@@ -21,7 +21,8 @@ export const actions: Actions = {
 	/** Inline edit of a GLOBAL variable (phpMyAdmin SetVariableController). */
 	save: async ({ request, locals }) => {
 		const parsed = saveSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) return fail(400, { error: locals.i18n.t('Invalid variable name or value.') });
+		if (!parsed.success)
+			return fail(400, { error: locals.i18n.t('Invalid variable name or value.') });
 		try {
 			const saved = await setGlobalVariable(await locals.db, parsed.data.name, parsed.data.value);
 			return { saved };

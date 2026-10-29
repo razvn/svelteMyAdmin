@@ -20,20 +20,27 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader icon={UserCog} title={t('Edit privileges: User account {account}', { account: title })}>
+	<PageHeader
+		icon={UserCog}
+		title={t('Edit privileges: User account {account}', { account: title })}
+	>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button
+			>
 		{/snippet}
 	</PageHeader>
 
 	{#if data.state === 'denied'}
 		<Alert variant="destructive" role="alert">
-			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
+			<AlertDescription
+				>{t('You do not have the privileges to administrate the users!')}</AlertDescription
+			>
 		</Alert>
 	{:else if data.state === 'missing'}
 		<Alert variant="destructive" role="alert">
 			<AlertDescription>
-				{t('The selected user was not found in the privilege table.')} {data.error}
+				{t('The selected user was not found in the privilege table.')}
+				{data.error}
 			</AlertDescription>
 		</Alert>
 	{:else}
@@ -50,7 +57,9 @@
 		{#if form && 'saved' in form && form.saved}
 			<Alert variant="success" role="status" data-testid="privileges-saved">
 				<AlertDescription
-					>{t('You have updated the privileges for {account}.', { account: title })}</AlertDescription
+					>{t('You have updated the privileges for {account}.', {
+						account: title
+					})}</AlertDescription
 				>
 			</Alert>
 		{:else if form && 'error' in form && form.error}

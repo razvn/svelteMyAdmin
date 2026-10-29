@@ -42,7 +42,9 @@
 		<Card.Root>
 			<Card.Header>
 				<Card.Title>{t('Database')}</Card.Title>
-				<Card.Description>{t('Choose the database whose tables you want to edit.')}</Card.Description>
+				<Card.Description
+					>{t('Choose the database whose tables you want to edit.')}</Card.Description
+				>
 			</Card.Header>
 			<Card.Content>
 				<form method="GET" class="flex flex-wrap items-center gap-2" data-testid="choose-database">
@@ -71,7 +73,9 @@
 
 			{#if data.isGrantUser}
 				<Card.Root>
-					<Card.Header><Card.Title>{t('Add privileges on the following table')}</Card.Title></Card.Header>
+					<Card.Header
+						><Card.Title>{t('Add privileges on the following table')}</Card.Title></Card.Header
+					>
 					<Card.Content>
 						<form method="GET" class="flex flex-wrap items-center gap-2" data-testid="choose-table">
 							<input type="hidden" name="username" value={data.account.user} />

@@ -81,9 +81,12 @@ export const actions: Actions = {
 			await saveGroup(conn, t, name.data, allowedKeys(fd));
 			return 'ok' as const;
 		});
-		if (res === undefined) return fail(500, { error: locals.i18n.t('User groups storage is unavailable.') });
-		if (res === 'exists') return fail(400, { error: locals.i18n.t('This user group already exists.') });
-		if (res === 'missing') return fail(404, { error: locals.i18n.t('This user group does not exist.') });
+		if (res === undefined)
+			return fail(500, { error: locals.i18n.t('User groups storage is unavailable.') });
+		if (res === 'exists')
+			return fail(400, { error: locals.i18n.t('This user group already exists.') });
+		if (res === 'missing')
+			return fail(404, { error: locals.i18n.t('This user group does not exist.') });
 		return { saved: name.data };
 	},
 
@@ -97,7 +100,8 @@ export const actions: Actions = {
 			await deleteGroup(conn, t, name.data);
 			return true;
 		});
-		if (res === undefined) return fail(500, { error: locals.i18n.t('User groups storage is unavailable.') });
+		if (res === undefined)
+			return fail(500, { error: locals.i18n.t('User groups storage is unavailable.') });
 		if (!res) return fail(404, { error: locals.i18n.t('This user group does not exist.') });
 		return { deleted: name.data };
 	}

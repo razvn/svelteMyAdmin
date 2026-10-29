@@ -103,7 +103,9 @@
 				{#each parts as part, p (p)}
 					<fieldset class="flex flex-col gap-2 rounded-lg border p-3">
 						{#if hasParts(type)}
-							<legend class="px-1 text-sm font-medium">{t('{part} {n}', { part: partLabel, n: p + 1 })}</legend>
+							<legend class="px-1 text-sm font-medium"
+								>{t('{part} {n}', { part: partLabel, n: p + 1 })}</legend
+							>
 						{/if}
 						{#each part.keys() as i (i)}
 							<div class="flex items-center gap-2">
@@ -175,7 +177,9 @@
 
 		<Dialog.Footer>
 			<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
-			<Button type="button" disabled={!built.ok} onclick={apply} data-testid="gis-apply">{t('Go')}</Button>
+			<Button type="button" disabled={!built.ok} onclick={apply} data-testid="gis-apply"
+				>{t('Go')}</Button
+			>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

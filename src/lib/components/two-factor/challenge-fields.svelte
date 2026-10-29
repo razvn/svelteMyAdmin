@@ -49,7 +49,9 @@
 	</div>
 {:else if view.backend === 'simple'}
 	<input type="hidden" name="2fa_confirm" value="1" />
-	<p class="text-sm text-muted-foreground">{t('Simple two-factor authentication (testing only).')}</p>
+	<p class="text-sm text-muted-foreground">
+		{t('Simple two-factor authentication (testing only).')}
+	</p>
 {:else if view.backend === 'WebAuthn'}
 	<input type="hidden" name="webauthn_request_response" value={response} />
 	<p class="text-sm text-muted-foreground">

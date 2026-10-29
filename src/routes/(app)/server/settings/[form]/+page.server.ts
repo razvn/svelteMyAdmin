@@ -10,7 +10,8 @@ export const load: PageServerLoad = async ({ locals, cookies, params, url }) => 
 
 export const actions: Actions = {
 	save: async ({ request, locals, cookies, params, url }) => {
-		if (!(await loadFormPage(locals, cookies, params.form))) error(404, locals.i18n.t('Page not found'));
+		if (!(await loadFormPage(locals, cookies, params.form)))
+			error(404, locals.i18n.t('Page not found'));
 		const res = await saveForm(
 			locals,
 			cookies,

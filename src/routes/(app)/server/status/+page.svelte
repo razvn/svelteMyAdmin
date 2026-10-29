@@ -144,7 +144,7 @@
 
 		<Card.Root class="gap-0 py-0">
 			<Card.Header class="border-b py-5">
-				<Card.Title>Connections</Card.Title>
+				<Card.Title>{t('Connections')}</Card.Title>
 			</Card.Header>
 			<Card.Content class="px-0">
 				<Table.Root data-testid="connections-table">

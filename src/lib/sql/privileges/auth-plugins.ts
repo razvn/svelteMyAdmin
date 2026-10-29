@@ -41,7 +41,12 @@ export const AUTH_PLUGINS: readonly AuthPluginDef[] = [
 		engine: 'mariadb',
 		passwordless: true
 	},
-	{ name: 'auth_socket', label: N_('Unix Socket Authentication'), engine: 'mysql', passwordless: true }
+	{
+		name: 'auth_socket',
+		label: N_('Unix Socket Authentication'),
+		engine: 'mysql',
+		passwordless: true
+	}
 ];
 
 export const NATIVE_PLUGIN = 'mysql_native_password';

@@ -120,7 +120,8 @@ export const actions: Actions = {
 		const only = fd.get('only');
 		const one = typeof only === 'string' ? decodeAccount(only) : null;
 		const accounts = one ? [one] : parseSelectedAccounts(fd);
-		if (accounts.length === 0) return fail(400, { exportError: locals.i18n.t('No users selected.') });
+		if (accounts.length === 0)
+			return fail(400, { exportError: locals.i18n.t('No users selected.') });
 		return { exportText: await exportGrants(dbi, accounts) };
 	},
 
@@ -128,12 +129,15 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		const caps = await getCapabilities(dbi);
 		if (!caps.isSuperUser) {
-			return fail(403, { groupError: locals.i18n.t('You do not have the privileges to administrate the users!') });
+			return fail(403, {
+				groupError: locals.i18n.t('You do not have the privileges to administrate the users!')
+			});
 		}
 		const fd = await request.formData();
 		const username = String(fd.get('username') ?? '');
 		const group = String(fd.get('usergroup') ?? '');
-		if (username === '') return fail(400, { groupError: locals.i18n.t('Missing parameter: username') });
+		if (username === '')
+			return fail(400, { groupError: locals.i18n.t('Missing parameter: username') });
 		const res = await withGroupTables(locals, async (conn, t) => {
 			if (group !== '' && !(await listGroups(conn, t)).some((g) => g.name === group)) return false;
 			await setUserGroup(conn, t, username, group === '' ? null : group);
@@ -150,7 +154,10 @@ export const actions: Actions = {
 		const [server, caps] = await Promise.all([getPrivServer(dbi), getCapabilities(dbi)]);
 		const name = String((await request.formData()).get('role_name') ?? '').trim();
 		const res = await createRole(dbi, server, caps, name);
-		if (!res.ok) return fail(400, { roleResult: { ...res, error: errorText(res, locals.i18n) ?? undefined, created: null } });
+		if (!res.ok)
+			return fail(400, {
+				roleResult: { ...res, error: errorText(res, locals.i18n) ?? undefined, created: null }
+			});
 		return { roleResult: { ...res, created: name } };
 	},
 
@@ -167,7 +174,8 @@ export const actions: Actions = {
 			})
 			.filter((r) => r.name !== '');
 		const res = await dropRoles(dbi, server, caps, roles);
-		if (!res.ok) return fail(400, {
+		if (!res.ok)
+			return fail(400, {
 				roleResult: { ...res, error: errorText(res, locals.i18n) ?? undefined, created: null }
 			});
 		return { roleResult: { ...res, created: null } };
@@ -183,7 +191,8 @@ export const actions: Actions = {
 			await dbi.conn.query(buildFlushPrivileges().sql);
 		} catch (e) {
 			return fail(500, {
-				flushError: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('FLUSH PRIVILEGES failed.')
+				flushError:
+					(e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('FLUSH PRIVILEGES failed.')
 			});
 		}
 		return { flushed: true };

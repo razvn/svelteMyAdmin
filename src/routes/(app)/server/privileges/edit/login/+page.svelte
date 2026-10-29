@@ -167,7 +167,9 @@
 						/>
 						{#if data.plugins.length > 0}
 							<div class="grid gap-1.5">
-								<label for="login-plugin" class="text-sm font-medium">{t('Authentication plugin')}</label>
+								<label for="login-plugin" class="text-sm font-medium"
+									>{t('Authentication plugin')}</label
+								>
 								<NativeSelect id="login-plugin" name="authentication_plugin" bind:value={plugin}>
 									{#each data.plugins as p (p.name)}
 										<NativeSelectOption value={p.name}>{t(p.label)} ({p.name})</NativeSelectOption>

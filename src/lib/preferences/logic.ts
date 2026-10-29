@@ -102,7 +102,9 @@ export function coerceFormValue(def: FieldDef, raw: string | null): Coerced {
 	if (raw === null) return fail(N_('Missing value'));
 	switch (def.type) {
 		case 'bool':
-			return raw === '1' || raw === '0' ? { ok: true, value: raw === '1' } : fail(N_('Not a boolean'));
+			return raw === '1' || raw === '0'
+				? { ok: true, value: raw === '1' }
+				: fail(N_('Not a boolean'));
 		case 'number': {
 			if (raw.trim() === '' || !/^-?\d+$/.test(raw.trim())) return fail(N_('Must be an integer'));
 			return coerceStored(def, Number(raw.trim()));

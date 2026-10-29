@@ -96,9 +96,10 @@ export const actions: Actions = {
 			await savePositions(c, t, params.db, nr, positions);
 			return nr;
 		});
-		if (id === undefined) return fail(400, {
-			error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
-		});
+		if (id === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
 		return { pageId: id };
 	},
 
@@ -114,9 +115,10 @@ export const actions: Actions = {
 			await renamePage(c, t, params.db, id, name);
 			return true;
 		});
-		if (done === undefined) return fail(400, {
-			error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
-		});
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
 		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { pageId: id };
 	},
@@ -129,9 +131,10 @@ export const actions: Actions = {
 			await deletePage(c, t, params.db, id);
 			return true;
 		});
-		if (done === undefined) return fail(400, {
-			error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
-		});
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
 		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { deleted: id };
 	},
@@ -140,7 +143,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const id = Number.parseInt(String(fd.get('page') ?? ''), 10);
 		const parsed = json.pipe(positionsSchema).safeParse(String(fd.get('positions') ?? ''));
-		if (!Number.isInteger(id) || !parsed.success) return fail(400, { error: locals.i18n.t('Invalid request.') });
+		if (!Number.isInteger(id) || !parsed.success)
+			return fail(400, { error: locals.i18n.t('Invalid request.') });
 		const dbi = await locals.dbi;
 		const known = new Set((await dbi.listTables(params.db)).map((t) => t.name));
 		const positions: Positions = {};
@@ -150,9 +154,10 @@ export const actions: Actions = {
 			await savePositions(c, t, params.db, id, positions);
 			return true;
 		});
-		if (done === undefined) return fail(400, {
-			error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
-		});
+		if (done === undefined)
+			return fail(400, {
+				error: locals.i18n.t('The configuration storage for the Designer pages is not available.')
+			});
 		if (!done) return fail(404, { error: locals.i18n.t('Unknown page.') });
 		return { saved: Object.keys(positions).length };
 	},
@@ -161,7 +166,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const key = String(fd.get('key') ?? '');
 		const value = String(fd.get('value') ?? '').slice(0, 32);
-		if (!isDesignerKey(key) || !locals.session) return fail(400, { error: locals.i18n.t('Invalid setting.') });
+		if (!isDesignerKey(key) || !locals.session)
+			return fail(400, { error: locals.i18n.t('Invalid setting.') });
 		const user = locals.session.user;
 		const done = await withStorageTable(locals, 'designer_settings', async (c, q) => {
 			await saveSetting(c, q, user, key, value);

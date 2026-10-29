@@ -157,7 +157,8 @@ export function checkNames(
 		const l = g.name.toLowerCase();
 		if (seen.has(l)) return t('Table name {name} is used twice.', { name: g.name });
 		seen.add(l);
-		if (g.name !== table && lower.has(l)) return t('Table {name} already exists.', { name: g.name });
+		if (g.name !== table && lower.has(l))
+			return t('Table {name} already exists.', { name: g.name });
 	}
 	return '';
 }

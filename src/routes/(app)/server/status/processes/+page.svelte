@@ -180,7 +180,8 @@
 				}}
 			>
 				<input type="hidden" name="id" value={killTarget?.id ?? ''} />
-				<AlertDialog.Action type="submit" data-testid="kill-confirm">{t('Kill')}</AlertDialog.Action>
+				<AlertDialog.Action type="submit" data-testid="kill-confirm">{t('Kill')}</AlertDialog.Action
+				>
 			</form>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

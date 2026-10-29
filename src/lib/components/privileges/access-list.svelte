@@ -84,7 +84,8 @@
 						{#each rows as r, i (i)}
 							<Table.Row data-testid="access-row" data-user={r.user} data-type={r.type}>
 								<Table.Cell class="font-medium">
-									{#if r.user === ''}<span class="text-destructive">{t('Any')}</span>{:else}{r.user}{/if}
+									{#if r.user === ''}<span class="text-destructive">{t('Any')}</span
+										>{:else}{r.user}{/if}
 								</Table.Cell>
 								<Table.Cell class="font-mono text-[13px]">{r.host}</Table.Cell>
 								<Table.Cell><Badge variant="info">{typeLabel(r)}</Badge></Table.Cell>
@@ -99,7 +100,9 @@
 												variant="ghost"
 												size="icon-sm"
 												href={r.editHref}
-												aria-label={t('Edit privileges of {account}', { account: `${r.user || t('Any')}@${r.host}` })}
+												aria-label={t('Edit privileges of {account}', {
+													account: `${r.user || t('Any')}@${r.host}`
+												})}
 												title={t('Edit privileges')}
 											>
 												<Pencil />
@@ -111,7 +114,9 @@
 												variant="ghost"
 												size="icon-sm"
 												type="submit"
-												aria-label={t('Export {account}', { account: `${r.user || t('Any')}@${r.host}` })}
+												aria-label={t('Export {account}', {
+													account: `${r.user || t('Any')}@${r.host}`
+												})}
 												title={t('Export')}
 											>
 												<Download />

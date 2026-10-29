@@ -107,7 +107,10 @@ export const PRESETS: Preset[] = [
 		chart: {
 			title: N_('Table locks'),
 			unit: '/s',
-			series: [diff(N_('Immediate'), 'Table_locks_immediate'), diff(N_('Waited'), 'Table_locks_waited')]
+			series: [
+				diff(N_('Immediate'), 'Table_locks_immediate'),
+				diff(N_('Waited'), 'Table_locks_waited')
+			]
 		}
 	},
 	{
@@ -127,7 +130,11 @@ export const PRESETS: Preset[] = [
 	{
 		key: 'slow_queries',
 		label: N_('Slow queries'),
-		chart: { title: N_('Slow queries'), unit: '/s', series: [diff(N_('Slow queries'), 'Slow_queries')] }
+		chart: {
+			title: N_('Slow queries'),
+			unit: '/s',
+			series: [diff(N_('Slow queries'), 'Slow_queries')]
+		}
 	},
 	{
 		key: 'qce',

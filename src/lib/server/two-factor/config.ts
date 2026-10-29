@@ -46,18 +46,24 @@ export interface BackendInfo {
 }
 
 export const BACKENDS: Record<string, BackendInfo> = {
-	'': { id: '', name: N_('No Two-Factor Authentication'), description: N_('Login using password only.') },
+	'': {
+		id: '',
+		name: N_('No Two-Factor Authentication'),
+		description: N_('Login using password only.')
+	},
 	application: {
 		id: 'application',
 		name: N_('Authentication Application (2FA)'),
-		description:
-			N_('Provides authentication using HOTP and TOTP applications such as FreeOTP, Google Authenticator or Authy.')
+		description: N_(
+			'Provides authentication using HOTP and TOTP applications such as FreeOTP, Google Authenticator or Authy.'
+		)
 	},
 	WebAuthn: {
 		id: 'WebAuthn',
 		name: N_('Hardware Security Key (WebAuthn/FIDO2)'),
-		description:
-			N_('Provides authentication using hardware security tokens supporting the WebAuthn/FIDO2 protocol, such as a YubiKey.')
+		description: N_(
+			'Provides authentication using hardware security tokens supporting the WebAuthn/FIDO2 protocol, such as a YubiKey.'
+		)
 	},
 	simple: {
 		id: 'simple',

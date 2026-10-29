@@ -83,6 +83,9 @@ export const actions: Actions = {
 			plugin: plugin || undefined
 		});
 		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
-		return { saved: locals.i18n.t('The password for the account has been changed.'), results: res.results };
+		return {
+			saved: locals.i18n.t('The password for the account has been changed.'),
+			results: res.results
+		};
 	}
 };

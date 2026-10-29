@@ -81,7 +81,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const db = String(fd.get('dbname') ?? '');
 		const table = String(fd.get('tablename') ?? '');
-		if (db === '' || table === '') return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
+		if (db === '' || table === '')
+			return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
 		const columns: Record<string, string[]> = {};
 		for (const name of COLUMN_PRIVILEGES) {
 			columns[name] = fd
@@ -99,10 +100,11 @@ export const actions: Actions = {
 		]);
 		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: locals.i18n.t(
-				"You have updated the privileges for '{user}'@'{host}' on {target}.",
-				{ user: ctx.account.user, host: ctx.account.host, target: `${db}.${table}` }
-			),
+			saved: locals.i18n.t("You have updated the privileges for '{user}'@'{host}' on {target}.", {
+				user: ctx.account.user,
+				host: ctx.account.host,
+				target: `${db}.${table}`
+			}),
 			results: res.results
 		};
 	},
@@ -112,7 +114,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const db = String(fd.get('dbname') ?? '');
 		const table = String(fd.get('tablename') ?? '');
-		if (db === '' || table === '') return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
+		if (db === '' || table === '')
+			return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
 		const res = await revokeScoped(ctx.dbi, ctx.server, ctx.caps, ctx.account, {
 			scope: 'table',
 			db,

@@ -96,9 +96,15 @@ const STATIC: PrivilegeDef[] = [
 	def('CREATE ROUTINE', 'structure', [G, D], N_('Allows creating stored routines.'), {
 		column: 'Create_routine_priv'
 	}),
-	def('ALTER ROUTINE', 'structure', [G, D, R], N_('Allows altering and dropping stored routines.'), {
-		column: 'Alter_routine_priv'
-	}),
+	def(
+		'ALTER ROUTINE',
+		'structure',
+		[G, D, R],
+		N_('Allows altering and dropping stored routines.'),
+		{
+			column: 'Alter_routine_priv'
+		}
+	),
 	def('EXECUTE', 'structure', [G, D, R], N_('Allows executing stored routines.'), {
 		column: 'Execute_priv'
 	}),
@@ -123,7 +129,9 @@ const STATIC: PrivilegeDef[] = [
 		'SUPER',
 		'administration',
 		[G],
-		N_('Allows connecting, even if maximum number of connections is reached; required for most administrative operations like setting global variables or killing threads of other users.'),
+		N_(
+			'Allows connecting, even if maximum number of connections is reached; required for most administrative operations like setting global variables or killing threads of other users.'
+		),
 		{ column: 'Super_priv' }
 	),
 	def('PROCESS', 'administration', [G], N_('Allows viewing processes of all users.'), {
@@ -139,12 +147,24 @@ const STATIC: PrivilegeDef[] = [
 	def('SHUTDOWN', 'administration', [G], N_('Allows shutting down the server.'), {
 		column: 'Shutdown_priv'
 	}),
-	def('SHOW DATABASES', 'administration', [G], N_('Gives access to the complete list of databases.'), {
-		column: 'Show_db_priv'
-	}),
-	def('LOCK TABLES', 'administration', [G, D], N_('Allows locking tables for the current thread.'), {
-		column: 'Lock_tables_priv'
-	}),
+	def(
+		'SHOW DATABASES',
+		'administration',
+		[G],
+		N_('Gives access to the complete list of databases.'),
+		{
+			column: 'Show_db_priv'
+		}
+	),
+	def(
+		'LOCK TABLES',
+		'administration',
+		[G, D],
+		N_('Allows locking tables for the current thread.'),
+		{
+			column: 'Lock_tables_priv'
+		}
+	),
 	def('REFERENCES', 'administration', [G, D, T, C], N_('Allows creating foreign key relations.'), {
 		column: 'References_priv',
 		scopeDescriptions: {}
@@ -186,14 +206,26 @@ const STATIC: PrivilegeDef[] = [
 		since: 80000
 	}),
 	// MariaDB 10.5.2+ administrative privileges (REPLICATION CLIENT became BINLOG MONITOR)
-	def('BINLOG ADMIN', 'administration', [G], N_('Allows purging binary logs (PURGE BINARY LOGS).'), {
-		engine: 'mariadb',
-		since: REPL_MONITOR
-	}),
-	def('BINLOG MONITOR', 'administration', [G], N_('Allows SHOW BINLOG STATUS and SHOW BINARY LOGS.'), {
-		engine: 'mariadb',
-		since: REPL_MONITOR
-	}),
+	def(
+		'BINLOG ADMIN',
+		'administration',
+		[G],
+		N_('Allows purging binary logs (PURGE BINARY LOGS).'),
+		{
+			engine: 'mariadb',
+			since: REPL_MONITOR
+		}
+	),
+	def(
+		'BINLOG MONITOR',
+		'administration',
+		[G],
+		N_('Allows SHOW BINLOG STATUS and SHOW BINARY LOGS.'),
+		{
+			engine: 'mariadb',
+			since: REPL_MONITOR
+		}
+	),
 	def('BINLOG REPLAY', 'administration', [G], N_('Allows executing BINLOG statements.'), {
 		engine: 'mariadb',
 		since: REPL_MONITOR
@@ -271,7 +303,11 @@ const DYNAMIC: PrivilegeDef[] = [
 		N_('Allows creating objects with a definer that does not exist.')
 	),
 	dyn('APPLICATION_PASSWORD_ADMIN', 80014, N_('Allows managing dual passwords.')),
-	dyn('AUDIT_ABORT_EXEMPT', 80028, N_('Exempts queries from being blocked by the audit log filter.')),
+	dyn(
+		'AUDIT_ABORT_EXEMPT',
+		80028,
+		N_('Exempts queries from being blocked by the audit log filter.')
+	),
 	dyn('AUDIT_ADMIN', 80001, N_('Allows managing the audit log.')),
 	dyn('AUTHENTICATION_POLICY_ADMIN', 80027, N_('Allows managing authentication policies.')),
 	dyn(
@@ -295,7 +331,11 @@ const DYNAMIC: PrivilegeDef[] = [
 	dyn('FLUSH_TABLES', 80023, N_('Allows FLUSH TABLES.')),
 	dyn('FLUSH_USER_RESOURCES', 80023, N_('Allows FLUSH USER_RESOURCES.')),
 	dyn('GROUP_REPLICATION_ADMIN', 80001, N_('Allows managing Group Replication.')),
-	dyn('GROUP_REPLICATION_STREAM', 80000, N_('Allows Group Replication recovery channel connections.')),
+	dyn(
+		'GROUP_REPLICATION_STREAM',
+		80000,
+		N_('Allows Group Replication recovery channel connections.')
+	),
 	dyn('INNODB_REDO_LOG_ARCHIVE', 80017, N_('Allows managing InnoDB redo log archiving.')),
 	dyn('INNODB_REDO_LOG_ENABLE', 80021, N_('Allows enabling or disabling the InnoDB redo log.')),
 	dyn('OPTIMIZE_LOCAL_TABLE', 80400, N_('Allows OPTIMIZE LOCAL TABLE.')),
@@ -308,9 +348,17 @@ const DYNAMIC: PrivilegeDef[] = [
 	dyn('REPLICATION_APPLIER', 80018, N_('Allows acting as the applier of a replication channel.')),
 	dyn('REPLICATION_SLAVE_ADMIN', 80001, N_('Allows starting and stopping replication.')),
 	dyn('RESOURCE_GROUP_ADMIN', 80001, N_('Allows managing resource groups.')),
-	dyn('RESOURCE_GROUP_USER', 80001, N_('Allows assigning threads and statements to resource groups.')),
+	dyn(
+		'RESOURCE_GROUP_USER',
+		80001,
+		N_('Allows assigning threads and statements to resource groups.')
+	),
 	dyn('ROLE_ADMIN', 80001, N_('Allows granting and revoking roles, and using WITH ADMIN OPTION.')),
-	dyn('SENSITIVE_VARIABLES_OBSERVER', 80029, N_('Allows viewing sensitive system variable values.')),
+	dyn(
+		'SENSITIVE_VARIABLES_OBSERVER',
+		80029,
+		N_('Allows viewing sensitive system variable values.')
+	),
 	dyn(
 		'SERVICE_CONNECTION_ADMIN',
 		80014,
@@ -333,8 +381,9 @@ export const PRIVILEGES: readonly PrivilegeDef[] = [...STATIC, ...DYNAMIC];
 export const GRANT_OPTION = {
 	name: 'GRANT OPTION',
 	column: 'Grant_priv',
-	description:
-		N_('Allows user to give to other users or remove from other users the privileges that user possess yourself.'),
+	description: N_(
+		'Allows user to give to other users or remove from other users the privileges that user possess yourself.'
+	),
 	group: 'administration' as const,
 	scopes: ['global', 'database', 'table', 'routine'] as const
 };
@@ -385,7 +434,9 @@ export function groupedPrivileges(scope: Scope, server: PrivServer): PrivilegeGr
 /** The description shown for a privilege at a scope (REFERENCES depends on the server). */
 export function describePrivilege(p: PrivilegeDef, scope: Scope, server: PrivServer): string {
 	if (p.name === 'REFERENCES') {
-		return server.isMariaDB ? N_('Not used on MariaDB.') : N_('Allows creating foreign key relations.');
+		return server.isMariaDB
+			? N_('Not used on MariaDB.')
+			: N_('Allows creating foreign key relations.');
 	}
 	return p.scopeDescriptions?.[scope] ?? p.description;
 }

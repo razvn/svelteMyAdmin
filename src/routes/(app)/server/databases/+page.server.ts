@@ -50,10 +50,14 @@ export const actions: Actions = {
 		if (!locals.config.ShowCreateDb || !priv.canCreateDb) {
 			return fail(403, { createError: locals.i18n.t('No privileges to create databases') });
 		}
-		const res = await createDatabase(dbi, {
-			new_db: String(form.get('new_db') ?? ''),
-			db_collation: String(form.get('db_collation') ?? '')
-		}, locals.i18n);
+		const res = await createDatabase(
+			dbi,
+			{
+				new_db: String(form.get('new_db') ?? ''),
+				db_collation: String(form.get('db_collation') ?? '')
+			},
+			locals.i18n
+		);
 		if (!res.ok) return fail(400, { createError: res.error });
 		return { created: res.name };
 	},

@@ -27,7 +27,8 @@
 
 <div class="flex flex-col gap-6">
 	<h2 class="text-lg font-semibold" data-testid="questions">
-		{t('Questions since startup:')} {formatNumber(stats.total)}
+		{t('Questions since startup:')}
+		{formatNumber(stats.total)}
 	</h2>
 
 	<section aria-label={t('Query rates')} class="grid gap-4 sm:grid-cols-3">
@@ -37,7 +38,12 @@
 			icon={Activity}
 			tone="primary"
 		/>
-		<StatCard label={t('ø per minute')} value={formatNumber(stats.perMinute)} icon={Timer} tone="info" />
+		<StatCard
+			label={t('ø per minute')}
+			value={formatNumber(stats.perMinute)}
+			icon={Timer}
+			tone="info"
+		/>
 		<StatCard
 			label={t('ø per second')}
 			value={stats.perSecond >= 1 ? formatNumber(stats.perSecond) : '< 1'}

@@ -107,7 +107,9 @@
 							editing = null;
 						} else if (result.type === 'failure') {
 							const message = result.data?.error;
-							toast.error(typeof message === 'string' ? message : t('Setting the variable failed.'));
+							toast.error(
+								typeof message === 'string' ? message : t('Setting the variable failed.')
+							);
 						}
 						await update({ reset: false });
 					};

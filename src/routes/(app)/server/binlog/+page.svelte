@@ -112,7 +112,8 @@
 					</Table.Row>
 				{:else}
 					<Table.Row>
-						<Table.Cell colspan={6} class="text-center text-muted-foreground">{t('No events.')}</Table.Cell
+						<Table.Cell colspan={6} class="text-center text-muted-foreground"
+							>{t('No events.')}</Table.Cell
 						>
 					</Table.Row>
 				{/each}

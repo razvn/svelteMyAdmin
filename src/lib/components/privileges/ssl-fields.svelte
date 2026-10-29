@@ -13,10 +13,18 @@
 	let { ssl = $bindable(), disabled = false }: Props = $props();
 
 	const TYPES: { value: SslType; label: string; help: string }[] = [
-		{ value: 'NONE', label: 'REQUIRE NONE', help: N_('Does not require SSL-encrypted connections.') },
+		{
+			value: 'NONE',
+			label: 'REQUIRE NONE',
+			help: N_('Does not require SSL-encrypted connections.')
+		},
 		{ value: 'ANY', label: 'REQUIRE SSL', help: N_('Requires SSL-encrypted connections.') },
 		{ value: 'X509', label: 'REQUIRE X509', help: N_('Requires a valid X509 certificate.') },
-		{ value: 'SPECIFIED', label: 'SPECIFIED', help: N_('Requires specific cipher, issuer or subject.') }
+		{
+			value: 'SPECIFIED',
+			label: 'SPECIFIED',
+			help: N_('Requires specific cipher, issuer or subject.')
+		}
 	];
 	const help = $derived(t(TYPES.find((x) => x.value === ssl.type)?.help ?? ''));
 </script>

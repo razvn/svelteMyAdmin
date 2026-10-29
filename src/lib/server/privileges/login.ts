@@ -33,8 +33,9 @@ export async function changeLogin(
 	if (from.user === to.user && from.host === to.host) {
 		return {
 			ok: false,
-			error:
-				N_("Username and hostname didn't change. If you only want to change the password, 'Change password' tab should be used."),
+			error: N_(
+				"Username and hostname didn't change. If you only want to change the password, 'Change password' tab should be used."
+			),
 			results: []
 		};
 	}

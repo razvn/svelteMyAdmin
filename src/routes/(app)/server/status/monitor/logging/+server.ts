@@ -36,6 +36,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const vars = await setLoggingVar(await locals.db, parsed.data.name, parsed.data.value);
 		return Response.json({ vars, table: logsToTable(vars) }, { headers });
 	} catch (e) {
-		return Response.json({ error: sqlMessage(e, locals.i18n.t('Failed')) }, { status: 400, headers });
+		return Response.json(
+			{ error: sqlMessage(e, locals.i18n.t('Failed')) },
+			{ status: 400, headers }
+		);
 	}
 };

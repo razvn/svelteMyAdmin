@@ -58,7 +58,8 @@
 		const div = Number(divisor);
 		if (!title.trim()) return void (error = t('A title is required.'));
 		if (names.length === 0) return void (error = t('Add at least one status variable.'));
-		if (!(div > 0) || !Number.isFinite(div)) return void (error = t('The divisor must be positive.'));
+		if (!(div > 0) || !Number.isFinite(div))
+			return void (error = t('The divisor must be positive.'));
 		const series: SeriesDef[] = [];
 		for (const name of names) {
 			if (!DataPointSchema.safeParse({ type: 'statusvar', name }).success) {
@@ -148,7 +149,9 @@
 					<div class="flex flex-col gap-1.5">
 						<Label for="chart-display">{t('Value')}</Label>
 						<NativeSelect id="chart-display" bind:value={display} class="w-full">
-							<NativeSelectOption value="differential">{t('Per second (difference)')}</NativeSelectOption>
+							<NativeSelectOption value="differential"
+								>{t('Per second (difference)')}</NativeSelectOption
+							>
 							<NativeSelectOption value="absolute">{t('Absolute value')}</NativeSelectOption>
 						</NativeSelect>
 					</div>

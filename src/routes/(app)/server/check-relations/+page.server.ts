@@ -44,7 +44,8 @@ export const actions: Actions = {
 	/** Relation::fixPmaTables on the configured pmadb: only the missing tables. */
 	fixTables: async ({ locals }) => {
 		const { server } = locals;
-		if (!server.pmadb) return fail(400, { error: locals.i18n.t('No configuration storage database is set.') });
+		if (!server.pmadb)
+			return fail(400, { error: locals.i18n.t('No configuration storage database is set.') });
 		try {
 			const created = await createMissingTables(await locals.db, server.pmadb, server);
 			return { created, db: server.pmadb, configured: true };
@@ -57,7 +58,8 @@ export const actions: Actions = {
 		const parsed = dbName.safeParse((await request.formData()).get('db'));
 		if (!parsed.success) return fail(400, { error: locals.i18n.t('Choose a database.') });
 		const dbi = await locals.dbi;
-		if (!(await dbi.databaseExists(parsed.data))) return fail(404, { error: locals.i18n.t('Unknown database.') });
+		if (!(await dbi.databaseExists(parsed.data)))
+			return fail(404, { error: locals.i18n.t('Unknown database.') });
 		try {
 			const created = await createMissingTables(await locals.db, parsed.data, locals.server);
 			return {

@@ -282,7 +282,12 @@
 	<div
 		class="absolute end-3 bottom-3 flex items-center gap-1 rounded-lg border bg-card p-1 shadow-card"
 	>
-		<Button variant="ghost" size="icon-sm" aria-label={t('Zoom out')} onclick={() => zoomBy(1 / 1.2)}>
+		<Button
+			variant="ghost"
+			size="icon-sm"
+			aria-label={t('Zoom out')}
+			onclick={() => zoomBy(1 / 1.2)}
+		>
 			<ZoomOut />
 		</Button>
 		<span

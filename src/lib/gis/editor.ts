@@ -105,7 +105,8 @@ export function buildWkt(
 	if (isTextType(type)) {
 		try {
 			const g = parseWkt(text);
-			if (g.type !== type) return { ok: false, error: t('Expected a {type} value.', { type: type.toUpperCase() }) };
+			if (g.type !== type)
+				return { ok: false, error: t('Expected a {type} value.', { type: type.toUpperCase() }) };
 			return { ok: true, wkt: toWkt(g) };
 		} catch (e) {
 			return { ok: false, error: e instanceof WktError ? e.message : t('Invalid WKT.') };

@@ -208,7 +208,13 @@
 		>
 			<Minus />
 		</Button>
-		<Button type="button" size="icon-sm" variant="outline" aria-label={t('Reset zoom')} onclick={reset}>
+		<Button
+			type="button"
+			size="icon-sm"
+			variant="outline"
+			aria-label={t('Reset zoom')}
+			onclick={reset}
+		>
 			<RotateCcw />
 		</Button>
 	</div>
@@ -231,7 +237,7 @@
 
 	{#if showTiles}
 		<p class="mt-1 text-xs text-muted-foreground">
-			Map tiles ©
+			{t('Map tiles ©')}
 			<a
 				class="underline"
 				href="https://www.openstreetmap.org/copyright"

@@ -421,7 +421,9 @@
 			<Card.Header>
 				<Card.Title>{t('Select up to what step you want to normalize')}</Card.Title>
 				<Card.Description>
-					{t('Hint: please follow the procedure carefully in order to obtain a correct normalization.')}
+					{t(
+						'Hint: please follow the procedure carefully in order to obtain a correct normalization.'
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-3">
@@ -544,7 +546,8 @@
 						aria-label={t('Number of columns')}
 						bind:value={splitCount}
 					/>
-					<Button variant="outline" disabled={!splitColumn} onclick={prepareSplit}>{t('Go')}</Button>
+					<Button variant="outline" disabled={!splitColumn} onclick={prepareSplit}>{t('Go')}</Button
+					>
 				</div>
 				{#if splitCols.length}
 					<ColumnEditor
@@ -588,7 +591,9 @@
 			</Card.Content>
 			<Card.Footer class="gap-2">
 				<Button disabled={busy || !repeatSql} onclick={moveRepeating}>{t('Done')}</Button>
-				<Button variant="outline" onclick={() => (step = afterOneNf())}>{t('No repeating group')}</Button>
+				<Button variant="outline" onclick={() => (step = afterOneNf())}
+					>{t('No repeating group')}</Button
+				>
 			</Card.Footer>
 		</Card.Root>
 	{:else if step === '2.1'}
@@ -634,7 +639,8 @@
 							</p>
 							{#each Object.entries(found) as [det, deps] (det)}
 								<div class="flex items-center gap-2 py-1">
-									<Button size="sm" variant="secondary" onclick={() => pick(det, deps)}>{t('Pick')}</Button
+									<Button size="sm" variant="secondary" onclick={() => pick(det, deps)}
+										>{t('Pick')}</Button
 									>
 									<span>{det} -> {deps.join(', ')}</span>
 								</div>

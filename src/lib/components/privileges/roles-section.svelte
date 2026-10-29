@@ -43,7 +43,9 @@
 			>
 		{:else if result?.created}
 			<Alert variant="success" role="status" class="mx-5 w-auto" data-testid="role-created">
-				<AlertDescription>{t('The role {name} was created.', { name: result.created })}</AlertDescription>
+				<AlertDescription
+					>{t('The role {name} was created.', { name: result.created })}</AlertDescription
+				>
 			</Alert>
 		{/if}
 		<Table.Root data-testid="roles-table">

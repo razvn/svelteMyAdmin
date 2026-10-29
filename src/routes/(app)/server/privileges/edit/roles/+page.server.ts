@@ -25,7 +25,8 @@ function parseRoleValue(
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = await editContext(locals, url);
-	if (!supportsRoles(ctx.server)) error(404, locals.i18n.t('Roles are not supported by this server.'));
+	if (!supportsRoles(ctx.server))
+		error(404, locals.i18n.t('Roles are not supported by this server.'));
 	const base = await loadEditBase(ctx);
 	const common = { account: ctx.account, server: ctx.server, isGrantUser: ctx.caps.isGrantUser };
 	if (base.state !== 'ok') return { ...common, ...base };
@@ -56,7 +57,10 @@ export const actions: Actions = {
 			adminOption: fd.get('admin_option') !== null
 		});
 		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
-		return { saved: locals.i18n.t('The role {name} was granted.', { name: role.role }), results: res.results };
+		return {
+			saved: locals.i18n.t('The role {name} was granted.', { name: role.role }),
+			results: res.results
+		};
 	},
 
 	revoke: async ({ request, locals, url }) => {
@@ -69,7 +73,10 @@ export const actions: Actions = {
 			from: ctx.account
 		});
 		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
-		return { saved: locals.i18n.t('The role {name} was revoked.', { name: role.role }), results: res.results };
+		return {
+			saved: locals.i18n.t('The role {name} was revoked.', { name: role.role }),
+			results: res.results
+		};
 	},
 
 	defaults: async ({ request, locals, url }) => {

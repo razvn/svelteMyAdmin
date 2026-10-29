@@ -46,7 +46,8 @@
 		{#snippet actions()}
 			<Button variant="outline" href="/server/privileges">{t('Back to user accounts')}</Button>
 			{#if data.state === 'ok'}
-				<Button href="/server/user-groups?add" data-testid="add-group">{t('Add user group')}</Button>
+				<Button href="/server/user-groups?add" data-testid="add-group">{t('Add user group')}</Button
+				>
 			{/if}
 		{/snippet}
 	</PageHeader>
@@ -69,7 +70,9 @@
 	{:else if data.state === 'no-privileges'}
 		<Alert variant="destructive" role="alert">
 			<AlertTitle>{t('No Privileges')}</AlertTitle>
-			<AlertDescription>{t('You do not have the privileges to manage user groups.')}</AlertDescription>
+			<AlertDescription
+				>{t('You do not have the privileges to manage user groups.')}</AlertDescription
+			>
 		</Alert>
 	{:else}
 		{#if err}
@@ -77,12 +80,16 @@
 		{/if}
 		{#if form && 'saved' in form && form.saved}
 			<Alert variant="success" role="status" data-testid="group-saved">
-				<AlertDescription>{t('The user group "{name}" was saved.', { name: form.saved })}</AlertDescription>
+				<AlertDescription
+					>{t('The user group "{name}" was saved.', { name: form.saved })}</AlertDescription
+				>
 			</Alert>
 		{/if}
 		{#if form && 'deleted' in form && form.deleted}
 			<Alert variant="success" role="status" data-testid="group-deleted">
-				<AlertDescription>{t('The user group "{name}" was deleted.', { name: form.deleted })}</AlertDescription>
+				<AlertDescription
+					>{t('The user group "{name}" was deleted.', { name: form.deleted })}</AlertDescription
+				>
 			</Alert>
 		{/if}
 
@@ -90,7 +97,9 @@
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>
-						{#if editing}{t("Edit user group: '{name}'", { name: editing.name })}{:else}{t('Add user group')}{/if}
+						{#if editing}{t("Edit user group: '{name}'", { name: editing.name })}{:else}{t(
+								'Add user group'
+							)}{/if}
 					</Card.Title>
 					<Card.Description>{t('User group menu assignments')}</Card.Description>
 				</Card.Header>
@@ -145,7 +154,9 @@
 		{#if data.members}
 			<Card.Root data-testid="group-members">
 				<Card.Header>
-					<Card.Title>{t("Users of '{group}' user group", { group: data.members.group })}</Card.Title>
+					<Card.Title
+						>{t("Users of '{group}' user group", { group: data.members.group })}</Card.Title
+					>
 				</Card.Header>
 				<Card.Content>
 					{#if data.members.users.length === 0}

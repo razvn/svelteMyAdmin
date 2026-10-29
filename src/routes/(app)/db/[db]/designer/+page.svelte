@@ -439,7 +439,8 @@
 			<span class="mx-1 h-5 w-px bg-border"></span>
 			{@render tool(N_('Export schema'), FileDown, false, () => (exportOpen = true))}
 			{@render tool(N_('Help'), CircleHelp, false, () => (helpOpen = true))}
-			{#if saving}<span class="ms-auto px-2 text-xs text-muted-foreground">{t('Saving...')}</span>{/if}
+			{#if saving}<span class="ms-auto px-2 text-xs text-muted-foreground">{t('Saving...')}</span
+				>{/if}
 		</div>
 
 		<div
@@ -454,7 +455,10 @@
 			>
 				<div class="flex items-center justify-between border-b px-3 py-2">
 					<span class="text-sm font-semibold"
-						>{t('Tables ({shown}/{total})', { shown: shown.length, total: data.tables.length })}</span
+						>{t('Tables ({shown}/{total})', {
+							shown: shown.length,
+							total: data.tables.length
+						})}</span
 					>
 					<div class="flex gap-1">
 						<Button variant="ghost" size="xs" onclick={() => setAll(true)}>{t('Add all')}</Button>
@@ -470,13 +474,18 @@
 								onCheckedChange={(v) => setOnPage(tbl.name, v === true)}
 								aria-label={t('Show table {name}', { name: tbl.name })}
 							/>
-							<Label for="designer-tbl-{tbl.name}" class="min-w-0 flex-1 truncate font-mono text-xs">
+							<Label
+								for="designer-tbl-{tbl.name}"
+								class="min-w-0 flex-1 truncate font-mono text-xs"
+							>
 								{tbl.name}
 							</Label>
 						</li>
 					{/each}
 					{#if data.tables.length === 0}
-						<li class="px-2 py-3 text-sm text-muted-foreground">{t('This database has no tables.')}</li>
+						<li class="px-2 py-3 text-sm text-muted-foreground">
+							{t('This database has no tables.')}
+						</li>
 					{/if}
 				</ul>
 			</aside>
@@ -536,7 +545,9 @@
 			{/if}
 			{#if pageError}<p class="text-sm text-destructive" role="alert">{pageError}</p>{/if}
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (pageDialog = null)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (pageDialog = null)}
+					>{t('Cancel')}</Button
+				>
 				<Button type="submit" variant={pageDialog === 'delete' ? 'destructive' : 'default'}>
 					{pageDialog === 'delete' ? t('Delete') : t('Save')}
 				</Button>
@@ -559,7 +570,9 @@
 			<div class="flex flex-col gap-2">
 				<Label for="rel-kind">{t('Type')}</Label>
 				<NativeSelect.Root id="rel-kind" bind:value={relKind} class="w-full">
-					<NativeSelect.Option value="fk">{t('Foreign key constraint (InnoDB)')}</NativeSelect.Option>
+					<NativeSelect.Option value="fk"
+						>{t('Foreign key constraint (InnoDB)')}</NativeSelect.Option
+					>
 					{#if data.storage.relation}
 						<NativeSelect.Option value="internal">{t('Internal relation')}</NativeSelect.Option>
 					{/if}
@@ -596,7 +609,9 @@
 			{/if}
 			{#if relError}<p class="text-sm text-destructive" role="alert">{relError}</p>{/if}
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (connect = null)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (connect = null)}
+					>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={relBusy}>{t('Create relation')}</Button>
 			</Dialog.Footer>
 		</form>
@@ -636,9 +651,12 @@
 				<Dialog.Title>{t('Export schema')}</Dialog.Title>
 				<Dialog.Description>
 					{currentPage
-						? t('Exports the page "{name}" with the positions shown here. Dia and EPS are not offered.', {
-								name: currentPage.name
-							})
+						? t(
+								'Exports the page "{name}" with the positions shown here. Dia and EPS are not offered.',
+								{
+									name: currentPage.name
+								}
+							)
 						: t(
 								'Exports the automatic layout with the positions shown here. Dia and EPS are not offered.'
 							)}
@@ -712,7 +730,9 @@
 				</div>
 			{/if}
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (exportOpen = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (exportOpen = false)}
+					>{t('Cancel')}</Button
+				>
 				<Button type="submit" onclick={() => setTimeout(() => (exportOpen = false), 200)}
 					>{t('Export')}</Button
 				>
@@ -728,16 +748,22 @@
 			<Dialog.Title>{t('Designer help')}</Dialog.Title>
 		</Dialog.Header>
 		<ul class="list-disc space-y-1 ps-5 text-sm text-muted-foreground">
-			<li>{t('Drag a table header to move it; drag the background to pan, Ctrl + wheel to zoom.')}</li>
+			<li>
+				{t('Drag a table header to move it; drag the background to pan, Ctrl + wheel to zoom.')}
+			</li>
 			<li>{t('Drag from a column onto a column of another table to create a relation.')}</li>
 			<li>
 				{t(
 					'Click a relation line to delete it. Solid lines are foreign keys, dashed lines internal relations.'
 				)}
 			</li>
-			<li>{t('Choose the display column of a table with the text cursor tool, then click a column.')}</li>
 			<li>
-				{t('Positions are saved on the current page. The query builder of phpMyAdmin is not available.')}
+				{t('Choose the display column of a table with the text cursor tool, then click a column.')}
+			</li>
+			<li>
+				{t(
+					'Positions are saved on the current page. The query builder of phpMyAdmin is not available.'
+				)}
 			</li>
 		</ul>
 	</Dialog.Content>

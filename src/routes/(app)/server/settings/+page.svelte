@@ -187,7 +187,9 @@
 				<div class="flex flex-col gap-2 border-t pt-4">
 					<p class="text-sm font-medium">{t('Browser storage')}</p>
 					<p class="text-sm text-muted-foreground">
-						{t("Keep a copy of your settings in this browser's local storage and load it back later.")}
+						{t(
+							"Keep a copy of your settings in this browser's local storage and load it back later."
+						)}
 					</p>
 					<div class="flex flex-wrap gap-2">
 						<Button

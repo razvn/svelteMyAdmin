@@ -70,14 +70,17 @@
 		description={t('Create a new account with its login information, privileges and limits.')}
 	>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button
+			>
 		{/snippet}
 	</PageHeader>
 
 	{#if !data.caps.isCreateUser}
 		<Alert variant="destructive" role="alert">
 			<AlertTitle>{t('No Privileges')}</AlertTitle>
-			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
+			<AlertDescription
+				>{t('You do not have the privileges to administrate the users!')}</AlertDescription
+			>
 		</Alert>
 	{:else}
 		{#if created}
@@ -85,14 +88,18 @@
 				<AlertTitle>{t('You have added a new user.')}</AlertTitle>
 				<AlertDescription class="flex flex-wrap items-center gap-3">
 					<span>
-						{t("Account '{user}'@'{host}' was created.", { user: created.user, host: created.host })}
+						{t("Account '{user}'@'{host}' was created.", {
+							user: created.user,
+							host: created.host
+						})}
 					</span>
 					{#if data.caps.isGrantUser}
 						<a class="font-medium underline" href="/server/privileges/edit?{accountQuery(created)}"
 							>{t('Edit privileges')}</a
 						>
 					{/if}
-					<a class="font-medium underline" href="/server/privileges">{t('Back to user accounts')}</a>
+					<a class="font-medium underline" href="/server/privileges">{t('Back to user accounts')}</a
+					>
 				</AlertDescription>
 			</Alert>
 		{:else if form && 'error' in form && form.error}
@@ -208,7 +215,9 @@
 
 						{#if data.plugins.length > 0}
 							<div class="grid gap-1.5">
-								<label for="auth-plugin" class="text-sm font-medium">{t('Authentication plugin')}</label>
+								<label for="auth-plugin" class="text-sm font-medium"
+									>{t('Authentication plugin')}</label
+								>
 								<NativeSelect id="auth-plugin" name="authentication_plugin" bind:value={plugin}>
 									{#each data.plugins as p (p.name)}
 										<NativeSelectOption value={p.name}>{t(p.label)} ({p.name})</NativeSelectOption>

@@ -107,7 +107,8 @@ export async function createRole(
 	name: string
 ): Promise<OperationResult> {
 	if (!caps.isCreateUser) return { ok: false, error: DENIED, results: [] };
-	if (!supportsRoles(server)) return { ok: false, error: N_('Roles are not supported.'), results: [] };
+	if (!supportsRoles(server))
+		return { ok: false, error: N_('Roles are not supported.'), results: [] };
 	if (!validName(name)) return { ok: false, error: N_('The role name is empty!'), results: [] };
 	const results = await runStatements(dbi, [buildCreateRole(server, name)], true);
 	return { ok: results.every((r) => r.ok), error: results.find((r) => !r.ok)?.error, results };

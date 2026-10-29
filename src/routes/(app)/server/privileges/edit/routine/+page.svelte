@@ -43,7 +43,9 @@
 		<Card.Root>
 			<Card.Header>
 				<Card.Title>{t('Database')}</Card.Title>
-				<Card.Description>{t('Choose the database whose routines you want to edit.')}</Card.Description>
+				<Card.Description
+					>{t('Choose the database whose routines you want to edit.')}</Card.Description
+				>
 			</Card.Header>
 			<Card.Content>
 				<form method="GET" class="flex flex-wrap items-center gap-2" data-testid="choose-database">

@@ -103,7 +103,9 @@
 						{v.description ? t(v.description) : ''}
 						{#if v.hasAlert}
 							<Badge class="mt-1 block w-fit" variant={v.isAlert ? 'destructive' : 'success'}>
-								{v.isAlert ? t('Above the recommended threshold.') : t('Within the recommended range.')}
+								{v.isAlert
+									? t('Above the recommended threshold.')
+									: t('Within the recommended range.')}
 							</Badge>
 						{/if}
 					</Table.Cell>

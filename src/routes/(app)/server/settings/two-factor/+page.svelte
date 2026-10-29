@@ -79,7 +79,9 @@
 					<input type="hidden" name="2fa_step" value="confirm" />
 					<ChallengeFields view={confirmView} idPrefix="confirm-2fa" />
 					{#if confirmView.backend !== 'WebAuthn' && confirmView.backend !== 'invalid'}
-						<Button type="submit" variant="destructive">{t('Disable two-factor authentication')}</Button>
+						<Button type="submit" variant="destructive"
+							>{t('Disable two-factor authentication')}</Button
+						>
 					{/if}
 				</form>
 			</Card.Content>
@@ -93,7 +95,8 @@
 			<Card.Content class="grid gap-4 text-sm">
 				<p>{t(data.backend.description)}</p>
 				<form method="POST" action="?/remove" use:enhance>
-					<Button type="submit" variant="secondary">{t('Disable two-factor authentication')}</Button>
+					<Button type="submit" variant="secondary">{t('Disable two-factor authentication')}</Button
+					>
 				</form>
 			</Card.Content>
 		</Card.Root>

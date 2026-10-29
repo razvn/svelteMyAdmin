@@ -162,7 +162,11 @@
 							class="w-64"
 						/>
 						<Select.Root type="single" name="db_collation" bind:value={collation}>
-							<Select.Trigger class="w-64" aria-label={t('Collation')} data-testid="create-collation">
+							<Select.Trigger
+								class="w-64"
+								aria-label={t('Collation')}
+								data-testid="create-collation"
+							>
 								{collation || t('Collation')}
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
@@ -235,7 +239,10 @@
 			</div>
 
 			{#if data.total > data.maxDbList}
-				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label={t('Pagination')}>
+				<nav
+					class="flex items-center gap-2 border-b px-5 py-3 text-sm"
+					aria-label={t('Pagination')}
+				>
 					<Button variant="outline" size="sm" href={href({ pos: 0 })} disabled={data.pos === 0}>
 						{t('Start')}
 					</Button>
@@ -300,7 +307,9 @@
 						<Table.Row>
 							{#if data.dropAllowed}<Table.Head class="w-8"></Table.Head>{/if}
 							<Table.Head>{@render sortHeader('SCHEMA_NAME', N_('Database'))}</Table.Head>
-							<Table.Head>{@render sortHeader('DEFAULT_COLLATION_NAME', N_('Collation'))}</Table.Head>
+							<Table.Head
+								>{@render sortHeader('DEFAULT_COLLATION_NAME', N_('Collation'))}</Table.Head
+							>
 							{#if data.statistics}
 								{#each STAT_HEADERS as h (h.key)}
 									<Table.Head colspan={h.bytes ? 2 : 1} class={h.bytes ? 'text-center' : 'text-end'}
@@ -361,7 +370,7 @@
 										title={t('Check privileges for database "{db}".', { db: db.name })}
 									>
 										<ShieldCheck class="size-4" />
-									{t('Check privileges')}
+										{t('Check privileges')}
 									</a>
 								</Table.Cell>
 							</Table.Row>
@@ -416,7 +425,9 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>{t('Confirm')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				{t('You are about to DESTROY a complete database! This cannot be undone. Databases to drop:')}
+				{t(
+					'You are about to DESTROY a complete database! This cannot be undone. Databases to drop:'
+				)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<ul class="max-h-48 list-disc overflow-auto pl-6 text-sm" data-testid="drop-list">

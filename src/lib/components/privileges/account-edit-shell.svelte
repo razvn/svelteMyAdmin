@@ -35,15 +35,21 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	<PageHeader icon={UserCog} title={t('Edit privileges: User account {account}', { account: title })}>
+	<PageHeader
+		icon={UserCog}
+		title={t('Edit privileges: User account {account}', { account: title })}
+	>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button
+			>
 		{/snippet}
 	</PageHeader>
 
 	{#if state === 'denied'}
 		<Alert variant="destructive" role="alert">
-			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
+			<AlertDescription
+				>{t('You do not have the privileges to administrate the users!')}</AlertDescription
+			>
 		</Alert>
 	{:else}
 		{#if state === 'missing'}
@@ -73,7 +79,10 @@
 						class="font-medium text-primary hover:underline"
 						href={accountTabHref('login', form.newAccount)}
 					>
-						{t("Open '{user}'@'{host}'", { user: form.newAccount.user, host: form.newAccount.host })}
+						{t("Open '{user}'@'{host}'", {
+							user: form.newAccount.user,
+							host: form.newAccount.host
+						})}
 					</a>
 				</AlertDescription>
 			</Alert>

@@ -11,7 +11,7 @@
 	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
-	const { t, tn } = useI18n();
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 
 	let filter = $state('');

@@ -52,7 +52,8 @@
 			});
 			const json = await res.json().catch(() => ({}));
 			if (!res.ok) {
-				error = json.error ?? json.message ?? t('Request failed ({status})', { status: res.status });
+				error =
+					json.error ?? json.message ?? t('Request failed ({status})', { status: res.status });
 				return null;
 			}
 			return json as T;
@@ -340,7 +341,9 @@
 					</Table.Body>
 				</Table.Root>
 			{:else if analysis.executed}
-				<p class="text-xs text-muted-foreground">{t('Profiling is not available on this server.')}</p>
+				<p class="text-xs text-muted-foreground">
+					{t('Profiling is not available on this server.')}
+				</p>
 			{/if}
 		{/if}
 	</Dialog.Content>

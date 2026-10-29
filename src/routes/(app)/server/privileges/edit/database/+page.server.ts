@@ -58,7 +58,8 @@ export const actions: Actions = {
 		const ctx = await editContext(locals, url);
 		const fd = await request.formData();
 		const dbs = clean(fd.getAll('dbname').filter((v): v is string => typeof v === 'string'));
-		if (dbs.length === 0) return fail(400, { error: locals.i18n.t('No database selected.'), results: [] });
+		if (dbs.length === 0)
+			return fail(400, { error: locals.i18n.t('No database selected.'), results: [] });
 		const privileges = parsePrivileges(fd);
 		const grantOption = fd.get('grant_option') !== null;
 		const res = await updateScopedPrivileges(
@@ -74,10 +75,11 @@ export const actions: Actions = {
 		);
 		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: locals.i18n.t(
-				"You have updated the privileges for '{user}'@'{host}' on {target}.",
-				{ user: ctx.account.user, host: ctx.account.host, target: dbs.join(', ') }
-			),
+			saved: locals.i18n.t("You have updated the privileges for '{user}'@'{host}' on {target}.", {
+				user: ctx.account.user,
+				host: ctx.account.host,
+				target: dbs.join(', ')
+			}),
 			results: res.results
 		};
 	},

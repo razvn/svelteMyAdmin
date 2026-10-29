@@ -15,7 +15,11 @@
 	const tabs = [
 		{ href: '/server/settings', label: N_('Manage your settings'), key: 'manage' },
 		...PREF_FORMS.map((f) => ({ href: `/server/settings/${f.id}`, label: f.title, key: f.id })),
-		{ href: '/server/settings/two-factor', label: N_('Two-factor authentication'), key: 'two-factor' }
+		{
+			href: '/server/settings/two-factor',
+			label: N_('Two-factor authentication'),
+			key: 'two-factor'
+		}
 	];
 	const path = $derived(page.url.pathname.replace(/\/$/, ''));
 </script>

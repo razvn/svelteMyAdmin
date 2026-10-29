@@ -79,7 +79,8 @@ export function parsePasswordFields(fd: FormData, mode: 'none' | 'userdefined'):
 	if (mode === 'none') return { ok: true, value: '' };
 	const pw = text(fd, 'pma_pw');
 	const pw2 = text(fd, 'pma_pw2');
-	if (pw.length === 0 || pw2.length === 0) return { ok: false, error: N_('The password is empty!') };
+	if (pw.length === 0 || pw2.length === 0)
+		return { ok: false, error: N_('The password is empty!') };
 	if (pw !== pw2) return { ok: false, error: N_("The passwords aren't the same!") };
 	if (pw.length > 256) return { ok: false, error: N_('Password is too long!') };
 	return { ok: true, value: pw };

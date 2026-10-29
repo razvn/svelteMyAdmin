@@ -44,7 +44,8 @@
 							<span class="font-mono text-sm">{collation.name}</span>
 							<span class="flex gap-1">
 								{#if collation.isServerDefault}
-									<Badge variant="primary" data-testid="server-default">{t('server default')}</Badge>
+									<Badge variant="primary" data-testid="server-default">{t('server default')}</Badge
+									>
 								{/if}
 								{#if collation.isDefault}
 									<Badge variant="muted">{t('default')}</Badge>

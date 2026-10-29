@@ -102,11 +102,7 @@
 		icon={Users}
 		title={t('User accounts')}
 		description={data.state === 'ok'
-			? tn(
-					'{n} user account on this server.',
-					'{n} user accounts on this server.',
-					data.total
-				)
+			? tn('{n} user account on this server.', '{n} user accounts on this server.', data.total)
 			: t('Users and privileges.')}
 	>
 		{#snippet actions()}
@@ -129,7 +125,9 @@
 		<Alert variant="destructive" role="alert">
 			<AlertTitle>{t('No Privileges')}</AlertTitle>
 			<AlertDescription
-				>{t('You do not have the privileges to view or administrate user accounts.')}</AlertDescription
+				>{t(
+					'You do not have the privileges to view or administrate user accounts.'
+				)}</AlertDescription
 			>
 		</Alert>
 	{:else}
@@ -190,7 +188,10 @@
 			{/if}
 
 			{#if data.initials.length > 0}
-				<nav aria-label={t('Pagination of user accounts')} class="flex flex-wrap items-center gap-1">
+				<nav
+					aria-label={t('Pagination of user accounts')}
+					class="flex flex-wrap items-center gap-1"
+				>
 					{#each data.initials as initial (initial)}
 						<Button
 							variant={data.initial === initial ? 'default' : 'outline'}
@@ -199,7 +200,8 @@
 							aria-current={data.initial === initial ? 'page' : undefined}
 							class="min-w-8"
 						>
-							{#if initial === ''}<span class="text-destructive">{t('Any')}</span>{:else}{initial}{/if}
+							{#if initial === ''}<span class="text-destructive">{t('Any')}</span
+								>{:else}{initial}{/if}
 						</Button>
 					{/each}
 					<Button variant={data.showAll ? 'default' : 'outline'} size="sm" href={initialHref(null)}>
@@ -211,9 +213,12 @@
 			{#if data.tooMany}
 				<Alert role="status">
 					<AlertDescription>
-						{t('There are {n} user accounts. Choose an initial letter or "Show all" to list them.', {
-							n: data.total
-						})}
+						{t(
+							'There are {n} user accounts. Choose an initial letter or "Show all" to list them.',
+							{
+								n: data.total
+							}
+						)}
 					</AlertDescription>
 				</Alert>
 			{:else}
@@ -298,7 +303,9 @@
 											<Checkbox
 												checked={selected.includes(a.value)}
 												onCheckedChange={(v) => toggle(a.value, v === true)}
-												aria-label={t('Select {account}', { account: `${a.user || t('Any')}@${a.host}` })}
+												aria-label={t('Select {account}', {
+													account: `${a.user || t('Any')}@${a.host}`
+												})}
 											/>
 										</Table.Cell>
 										<Table.Cell class="font-medium">
@@ -315,7 +322,8 @@
 												{a.user}
 											{/if}
 											{#if a.locked}
-												<Badge variant="warning" class="ms-2"><Lock />
+												<Badge variant="warning" class="ms-2"
+													><Lock />
 													{t('Locked')}</Badge
 												>
 											{/if}
@@ -341,7 +349,9 @@
 											>
 											{#if a.summary.dynamic.length > 0}
 												<Badge variant="muted" class="ms-1" title={a.summary.dynamic.join(', ')}
-													>{a.summary.kind === 'all' ? '+ ' : ''}{t('{n} dynamic', { n: a.summary.dynamic.length })}</Badge
+													>{a.summary.kind === 'all' ? '+ ' : ''}{t('{n} dynamic', {
+														n: a.summary.dynamic.length
+													})}</Badge
 												>
 											{/if}
 										</Table.Cell>
@@ -373,7 +383,9 @@
 														variant="ghost"
 														size="icon-sm"
 														href={editHref(a)}
-														aria-label={t('Edit privileges of {account}', { account: `${a.user || t('Any')}@${a.host}` })}
+														aria-label={t('Edit privileges of {account}', {
+															account: `${a.user || t('Any')}@${a.host}`
+														})}
 														title={t('Edit privileges')}
 													>
 														<Pencil />
@@ -386,7 +398,9 @@
 													formaction="?/export"
 													name="only"
 													value={a.value}
-													aria-label={t('Export {account}', { account: `${a.user || t('Any')}@${a.host}` })}
+													aria-label={t('Export {account}', {
+														account: `${a.user || t('Any')}@${a.host}`
+													})}
 													title={t('Export')}
 												>
 													<Download />
@@ -508,7 +522,9 @@
 			<AlertDialog.Title>{t('Remove selected user accounts')}</AlertDialog.Title>
 			<AlertDialog.Description>
 				{t('The privileges of these accounts are revoked and the accounts are deleted.')}
-				{#if dropDatabases}{t('The databases with the same names as the users are dropped too.')}{/if}
+				{#if dropDatabases}{t(
+						'The databases with the same names as the users are dropped too.'
+					)}{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<ul class="max-h-48 list-disc overflow-auto ps-6 text-sm" data-testid="drop-list">
@@ -571,7 +587,8 @@
 				{/each}
 			</NativeSelect>
 			<Dialog.Footer>
-				<Button type="submit" disabled={savingGroup} data-testid="group-dialog-go">{t('Go')}</Button>
+				<Button type="submit" disabled={savingGroup} data-testid="group-dialog-go">{t('Go')}</Button
+				>
 			</Dialog.Footer>
 		</form>
 	</Dialog.Content>

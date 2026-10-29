@@ -83,7 +83,9 @@ export const PREF_FORMS: PrefForm[] = [
 				'Page_titles',
 				N_('Page titles'),
 				['TitleDefault', 'TitleTable', 'TitleDatabase', 'TitleServer'],
-				N_("Specify browser's title bar text. Refer to documentation for magic strings that can be used to get special values.")
+				N_(
+					"Specify browser's title bar text. Refer to documentation for magic strings that can be used to get special values."
+				)
 			),
 			sec(
 				'Warnings',

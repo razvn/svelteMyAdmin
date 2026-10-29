@@ -30,7 +30,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals, cookies, url }) => {
 		if (!allowed(locals))
-			return fail(403, { error: locals.i18n.t("You don't have sufficient privileges to be here right now!") });
+			return fail(403, {
+				error: locals.i18n.t("You don't have sufficient privileges to be here right now!")
+			});
 		const fd = await request.formData();
 		const none = fd.get('nopass') === '1';
 		const pw = parsePasswordFields(fd, none ? 'none' : 'userdefined');

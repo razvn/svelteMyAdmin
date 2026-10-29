@@ -49,9 +49,14 @@ export const actions: Actions = {
 		if (!parsed.success) return fail(400, { error: event.locals.i18n.t('Invalid request.') });
 		const backend = parsed.data;
 		const stored = await loadTwoFactor(ctx.server, ctx.own, ctx.user);
-		if (!stored) return fail(400, { error: event.locals.i18n.t('Two-factor authentication is not available.') });
+		if (!stored)
+			return fail(400, {
+				error: event.locals.i18n.t('Two-factor authentication is not available.')
+			});
 		if (stored.config.backend !== '') {
-			return fail(400, { error: event.locals.i18n.t('Disable the current two-factor authentication first.') });
+			return fail(400, {
+				error: event.locals.i18n.t('Disable the current two-factor authentication first.')
+			});
 		}
 		if (backend === '' || !availableBackends(ctx.config.DBG).includes(backend)) {
 			return fail(400, { error: event.locals.i18n.t('Choose an authentication method.') });
@@ -73,7 +78,10 @@ export const actions: Actions = {
 		const ctx = flowCtx(event);
 		const fd = await event.request.formData();
 		const stored = await loadTwoFactor(ctx.server, ctx.own, ctx.user);
-		if (!stored) return fail(400, { error: event.locals.i18n.t('Two-factor authentication is not available.') });
+		if (!stored)
+			return fail(400, {
+				error: event.locals.i18n.t('Two-factor authentication is not available.')
+			});
 		const cfg = stored.config;
 		if (cfg.backend === '') redirect(303, '/server/settings/two-factor');
 		if (fd.get('2fa_step') === 'confirm') {

@@ -59,7 +59,9 @@
 	{/if}
 	{#if errors && Object.keys(errors).length > 0}
 		<Alert variant="destructive" role="alert" data-testid="prefs-errors">
-			<AlertDescription>{t('Some values are not valid. Fix the highlighted fields.')}</AlertDescription>
+			<AlertDescription
+				>{t('Some values are not valid. Fix the highlighted fields.')}</AlertDescription
+			>
 		</Alert>
 	{/if}
 
@@ -85,7 +87,9 @@
 							<label for={id} class="flex flex-wrap items-center gap-2 text-sm font-medium">
 								{t(f.label)}
 								{#if differs(f)}
-									<Badge variant="info" data-testid="badge-{f.path}">{t('Differs from default')}</Badge>
+									<Badge variant="info" data-testid="badge-{f.path}"
+										>{t('Differs from default')}</Badge
+									>
 								{/if}
 							</label>
 							{#if f.help}<p class="text-xs text-muted-foreground">{t(f.help)}</p>{/if}
@@ -107,7 +111,9 @@
 								{:else if f.type === 'select'}
 									<NativeSelect {id} name={f.path} bind:value={values[f.path]} class="w-full">
 										{#each f.options ?? [] as o (o.value)}
-											<NativeSelectOption value={o.value}>{o.label ? t(o.label) : t('(none)')}</NativeSelectOption>
+											<NativeSelectOption value={o.value}
+												>{o.label ? t(o.label) : t('(none)')}</NativeSelectOption
+											>
 										{/each}
 									</NativeSelect>
 								{:else if f.type === 'number'}
