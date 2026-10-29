@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import Check from '@lucide/svelte/icons/check';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -17,7 +18,7 @@
 
 	let { data }: PageProps = $props();
 
-	let filter = $state('');
+	let filter = $state(page.url.searchParams.get('filter') ?? '');
 	let editing = $state<string | null>(null);
 	let draft = $state('');
 	let saving = $state(false);
