@@ -1,5 +1,4 @@
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve -- hrefs carry the account query string */
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import AccountEditShell from '#lib/components/privileges/account-edit-shell.svelte';
@@ -10,7 +9,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
-	import { accountTabHref, namedAction } from '#lib/nav/account-tabs.ts';
+	import { namedAction } from '#lib/nav/account-tabs.ts';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
