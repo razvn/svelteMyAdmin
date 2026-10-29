@@ -32,6 +32,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		servers: config.Servers.map((server, i) => ({
 			index: i + 1,
 			label: serverLabel(server),
+			host: server.host,
+			port: server.port,
 			auth: server.auth_type
 		})),
 		nav: toNavConfig(config),

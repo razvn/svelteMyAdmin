@@ -30,10 +30,12 @@ export const load: PageServerLoad = ({ locals, url }) => {
 		servers: config.Servers.map((s, i) => ({
 			index: i + 1,
 			label: serverLabel(s),
+			host: s.host,
+			port: s.port,
 			auth: s.auth_type
 		}))
 			.filter((s) => s.auth === 'cookie')
-			.map(({ index, label }) => ({ index, label })),
+			.map(({ index, label, host, port }) => ({ index, label, host, port })),
 		selectedServer: locals.serverIndex,
 		allowArbitraryServer: config.AllowArbitraryServer
 	};

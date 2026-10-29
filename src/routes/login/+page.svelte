@@ -2,13 +2,13 @@
 	import { enhance } from '$app/forms';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import BrandMark from '#lib/components/app-shell/brand-mark.svelte';
+	import ServerPicker from '#lib/components/app-shell/server-picker.svelte';
 	import ThemeToggle from '#lib/components/theme-toggle.svelte';
 	import * as Alert from '#lib/components/ui/alert/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
-	import * as Select from '#lib/components/ui/select/index.ts';
 	import LanguageSelect from '#lib/components/i18n/language-select.svelte';
 	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
@@ -17,9 +17,8 @@
 
 	let server = $derived(String(form?.server || data.selectedServer));
 	let submitting = $state(false);
+	let noMatch = $state(false);
 	const { t } = useI18n();
-
-	const serverLabel = $derived(data.servers.find((s) => String(s.index) === server)?.label ?? '');
 </script>
 
 <svelte:head>
@@ -100,14 +99,13 @@
 					{#if data.servers.length > 1}
 						<div class="grid gap-2">
 							<Label for="server">{t('Server')}</Label>
-							<Select.Root type="single" name="server" bind:value={server}>
-								<Select.Trigger id="server" class="w-full">{serverLabel}</Select.Trigger>
-								<Select.Content>
-									{#each data.servers as s (s.index)}
-										<Select.Item value={String(s.index)} label={s.label}>{s.label}</Select.Item>
-									{/each}
-								</Select.Content>
-							</Select.Root>
+							<ServerPicker
+								id="server"
+								name="server"
+								servers={data.servers}
+								bind:value={server}
+								bind:noMatch
+							/>
 						</div>
 					{:else}
 						<input type="hidden" name="server" value={data.selectedServer} />
@@ -160,7 +158,7 @@
 						<LanguageSelect id="lang" name="lang" />
 					</div>
 
-					<Button type="submit" disabled={submitting} class="w-full">
+					<Button type="submit" disabled={submitting || noMatch} class="w-full">
 						{submitting ? t('Logging in...') : t('Log in')}
 					</Button>
 				</form>

@@ -21,7 +21,7 @@
 			/** Show "Change password" in the user menu. */
 			canChangePassword?: boolean;
 		};
-		servers: { index: number; label: string; auth: string }[];
+		servers: { index: number; label: string; host: string; port: number; auth: string }[];
 		onsearch: () => void;
 		/** Toggle the SQL console drawer. */
 		onconsole?: () => void;
