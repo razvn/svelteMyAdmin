@@ -23,6 +23,8 @@
 	onMount(() => width.restore());
 
 	const consoleState = new ConsoleState();
+	// svelte-ignore state_referenced_locally
+	consoleState.startMode = data.consoleMode;
 	setConsoleState(consoleState);
 
 	let paletteOpen = $state(false);

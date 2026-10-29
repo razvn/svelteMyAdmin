@@ -232,20 +232,22 @@
 			tone="info"
 			data-testid="stat-rows"
 		/>
-		<StatCard
-			label="Total size"
-			value={sumSize ? `${sumSize[0]} ${sumSize[1]}` : '0 B'}
-			icon={HardDrive}
-			tone="success"
-			data-testid="stat-size"
-		/>
-		<StatCard
-			label="Overhead"
-			value={sumOverhead ? `${sumOverhead[0]} ${sumOverhead[1]}` : '0 B'}
-			icon={Wrench}
-			tone={data.sums.overhead > 0 ? 'warning' : 'primary'}
-			data-testid="stat-overhead"
-		/>
+		{#if data.showStats}
+			<StatCard
+				label="Total size"
+				value={sumSize ? `${sumSize[0]} ${sumSize[1]}` : '0 B'}
+				icon={HardDrive}
+				tone="success"
+				data-testid="stat-size"
+			/>
+			<StatCard
+				label="Overhead"
+				value={sumOverhead ? `${sumOverhead[0]} ${sumOverhead[1]}` : '0 B'}
+				icon={Wrench}
+				tone={data.sums.overhead > 0 ? 'warning' : 'primary'}
+				data-testid="stat-overhead"
+			/>
+		{/if}
 	</div>
 
 	{#if errorMsg}
@@ -358,8 +360,10 @@
 						<Table.Head class="text-end">{@render sortHeader('rows', 'Rows')}</Table.Head>
 						<Table.Head>{@render sortHeader('engine', 'Type')}</Table.Head>
 						<Table.Head>{@render sortHeader('collation', 'Collation')}</Table.Head>
-						<Table.Head class="text-end">{@render sortHeader('size', 'Size')}</Table.Head>
-						<Table.Head class="text-end">{@render sortHeader('overhead', 'Overhead')}</Table.Head>
+						{#if data.showStats}
+							<Table.Head class="text-end">{@render sortHeader('size', 'Size')}</Table.Head>
+							<Table.Head class="text-end">{@render sortHeader('overhead', 'Overhead')}</Table.Head>
+						{/if}
 						<Table.Head>{@render sortHeader('comment', 'Comment')}</Table.Head>
 					</Table.Row>
 				</Table.Header>
@@ -448,7 +452,9 @@
 								</div>
 							</Table.Cell>
 							{#if t.inUse}
-								<Table.Cell colspan={6} class="text-center text-muted-foreground">in use</Table.Cell
+								<Table.Cell
+									colspan={data.showStats ? 6 : 4}
+									class="text-center text-muted-foreground">in use</Table.Cell
 								>
 							{:else}
 								<Table.Cell class="text-end tabular-nums" data-testid="rows-{t.name}">
@@ -474,15 +480,17 @@
 								<Table.Cell>
 									{#if t.collation}<Badge variant="muted">{t.collation}</Badge>{:else}---{/if}
 								</Table.Cell>
-								<Table.Cell class="text-end tabular-nums">
-									{#if size}{size[0]}
-										<span class="text-muted-foreground">{size[1]}</span>{:else}-{/if}
-								</Table.Cell>
-								<Table.Cell class="text-end tabular-nums">
-									{#if over}
-										<Badge variant="warning">{over[0]} {over[1]}</Badge>
-									{:else}-{/if}
-								</Table.Cell>
+								{#if data.showStats}
+									<Table.Cell class="text-end tabular-nums">
+										{#if size}{size[0]}
+											<span class="text-muted-foreground">{size[1]}</span>{:else}-{/if}
+									</Table.Cell>
+									<Table.Cell class="text-end tabular-nums">
+										{#if over}
+											<Badge variant="warning">{over[0]} {over[1]}</Badge>
+										{:else}-{/if}
+									</Table.Cell>
+								{/if}
 								<Table.Cell class="whitespace-normal text-muted-foreground">{t.comment}</Table.Cell>
 							{/if}
 						</Table.Row>
@@ -499,12 +507,14 @@
 						</Table.Cell>
 						<Table.Cell></Table.Cell>
 						<Table.Cell></Table.Cell>
-						<Table.Cell class="text-end font-semibold tabular-nums">
-							{sumSize ? `${sumSize[0]} ${sumSize[1]}` : ''}
-						</Table.Cell>
-						<Table.Cell class="text-end font-semibold tabular-nums">
-							{data.sums.overhead > 0 && sumOverhead ? `${sumOverhead[0]} ${sumOverhead[1]}` : ''}
-						</Table.Cell>
+						{#if data.showStats}
+							<Table.Cell class="text-end font-semibold tabular-nums">
+								{sumSize ? `${sumSize[0]} ${sumSize[1]}` : ''}
+							</Table.Cell>
+							<Table.Cell class="text-end font-semibold tabular-nums">
+								{data.sums.overhead > 0 && sumOverhead ? `${sumOverhead[0]} ${sumOverhead[1]}` : ''}
+							</Table.Cell>
+						{/if}
 						<Table.Cell></Table.Cell>
 					</Table.Row>
 				</Table.Footer>

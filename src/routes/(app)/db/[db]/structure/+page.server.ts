@@ -29,7 +29,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		...data,
 		sort: q.sort,
 		sortOrder: q.sort_order,
-		maxTableList: config.MaxTableList
+		maxTableList: config.MaxTableList,
+		showStats: config.ShowStats
 	};
 };
 

@@ -51,6 +51,11 @@ export class ConsoleState {
 	/** Bumped after every run so the history list refetches. */
 	historyKey = $state(0);
 	#nextId = 1;
+	/**
+	 * `Console/Mode` preference: `show` starts every page expanded, `collapse` collapsed, `info`
+	 * (default) restores the last state from localStorage.
+	 */
+	startMode: 'info' | 'show' | 'collapse' = 'info';
 
 	restore(): void {
 		try {
@@ -61,6 +66,8 @@ export class ConsoleState {
 		} catch {
 			// storage blocked
 		}
+		if (this.startMode === 'show') this.open = true;
+		else if (this.startMode === 'collapse') this.open = false;
 	}
 
 	save(): void {
