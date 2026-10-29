@@ -335,16 +335,16 @@
 	{/each}
 
 	<Card.Root>
-		<Card.Content class="flex flex-col gap-4 lg:flex-row lg:items-end" data-testid="insert-footer">
-			<div class="grid gap-4 lg:flex">
-				<div class="flex flex-col gap-1.5">
+		<Card.Content class="flex flex-row flex-wrap items-end gap-4" data-testid="insert-footer">
+			<div class="flex min-w-0 flex-[1_1_28rem] flex-wrap gap-4">
+				<div class="flex min-w-48 flex-1 flex-col gap-1.5">
 					<Label for="submit-type">{t('Action')}</Label>
 					<NativeSelect
 						id="submit-type"
 						name="submit_type"
 						bind:value={submitType}
 						aria-label={t('Action')}
-						class="w-full lg:w-60"
+						class="w-full"
 					>
 						<NativeSelectOption value="save">
 							{editing ? t('Save') : t('Insert')}
@@ -358,14 +358,14 @@
 						<NativeSelectOption value="showinsert">{t('Show insert query')}</NativeSelectOption>
 					</NativeSelect>
 				</div>
-				<div class="flex flex-col gap-1.5">
+				<div class="flex min-w-48 flex-1 flex-col gap-1.5">
 					<Label for="after-insert">{t('After saving')}</Label>
 					<NativeSelect
 						id="after-insert"
 						name="after_insert"
 						bind:value={afterInsert}
 						aria-label={t('After saving')}
-						class="w-full lg:w-72"
+						class="w-full"
 					>
 						<NativeSelectOption value="back">{t('Go back to previous page')}</NativeSelectOption>
 						<NativeSelectOption value="new_insert">
@@ -379,8 +379,8 @@
 				</div>
 			</div>
 			{#if mode === 'insert'}
-				<div class="flex items-end gap-2 border-t pt-4 lg:border-s lg:border-t-0 lg:ps-4 lg:pt-0">
-					<div class="flex flex-1 flex-col gap-1.5 lg:flex-none">
+				<div class="flex items-end gap-2">
+					<div class="flex flex-col gap-1.5">
 						<Label for="row-count">{t('Continue insertion with rows')}</Label>
 						<Input
 							id="row-count"
@@ -388,13 +388,17 @@
 							min="1"
 							max="100"
 							bind:value={rowCount}
-							class="w-full"
+							class="w-24"
 						/>
 					</div>
 					<Button type="button" variant="outline" onclick={setRowCount}>{t('Apply')}</Button>
 				</div>
 			{/if}
-			<Button type="submit" class="w-full lg:ms-auto lg:w-auto" disabled={busy || hasJsonError}>
+			<Button
+				type="submit"
+				class="ms-auto w-full shrink-0 sm:w-auto"
+				disabled={busy || hasJsonError}
+			>
 				{busy ? t('Saving...') : t('Go')}
 			</Button>
 		</Card.Content>
