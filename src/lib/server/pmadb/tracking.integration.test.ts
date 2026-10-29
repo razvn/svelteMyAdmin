@@ -238,5 +238,27 @@ for (const { name, port } of servers) {
 				await hook?.close();
 			}
 		});
+
+		it('records every statement of concurrent calls, and all of them before close() returns', async (t) => {
+			if (!conn) return t.skip();
+			await conn.query(`CREATE TABLE \`${db}\`.conc (id INT PRIMARY KEY, v VARCHAR(10))`);
+			await createVersion(ctx(conn), conn, { db, table: 'conc', version: 1 });
+			const hook = installTracking(conn, server, 'tester');
+			try {
+				const n = 12;
+				await Promise.all(
+					Array.from({ length: n }, (_, i) =>
+						i % 2
+							? conn!.execute(`INSERT INTO \`${db}\`.conc (id, v) VALUES (?, ?)`, [i, `r${i}`])
+							: conn!.query(`INSERT INTO \`${db}\`.conc (id, v) VALUES (?, ?)`, [i, `r${i}`])
+					)
+				);
+			} finally {
+				await hook?.close();
+			}
+			const data = await getTrackedData(ctx(conn), db, 'conc', 1);
+			expect(data!.dmlog).toHaveLength(12);
+			expect(new Set(data!.dmlog.map((e) => e.statement)).size).toBe(12);
+		});
 	});
 }

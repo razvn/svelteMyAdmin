@@ -162,7 +162,8 @@ test('the Iptolong input transformation stores an integer', async ({ page }) => 
 	await row.getByRole('checkbox', { name: 'Null ip' }).click();
 	await row.getByLabel('Value of ip').fill('10.0.0.5');
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
-	await expect(page.getByTestId('insert-result')).toContainText('1 row affected');
+	// "After saving: go back" (the default) leaves the Insert page, so the result alert is transient.
+	await expect(page).toHaveURL(/\/browse/);
 	const c = await connect();
 	const [rows] = await c.query(`SELECT ip FROM \`${DB}\`.tx WHERE ip IS NOT NULL`);
 	await c.end();

@@ -61,3 +61,22 @@ describe('cookie touch', () => {
 		expect(needsRefresh(0, 1440, 60_000)).toBe(true);
 	});
 });
+
+describe('cookie logout', () => {
+	it('revokes the session: the same cookie, written back by a stale request, is rejected', () => {
+		const { ctx } = ctxWith(Date.now() - 120_000);
+		const token = ctx.cookies.get(SESSION_COOKIE)!;
+		const secret = getSecret(config.blowfish_secret);
+		expect(openSession(token, secret, 1440)).not.toBeNull();
+		(ctx.cookies as unknown as { delete: () => void }).delete = () => {};
+		(ctx as unknown as { server: object }).server = {};
+		cookieAuth.logout(ctx);
+		expect(openSession(token, secret, 1440)).toBeNull();
+		// a fresh login (new createdAt) is unaffected
+		const again = sealSession(
+			{ serverIndex: 1, user: 'u', password: 'p', createdAt: Date.now(), lastActivity: Date.now() },
+			secret
+		);
+		expect(openSession(again, secret, 1440)).not.toBeNull();
+	});
+});

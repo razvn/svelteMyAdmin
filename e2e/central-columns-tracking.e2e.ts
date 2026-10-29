@@ -108,7 +108,9 @@ test('tracks a table: an insert through the Insert page shows in the report', as
 	await gotoReady(page, `/db/${DB}/table/tr/insert`);
 	await page.getByTestId('insert-row-0').getByLabel('Value of name').fill('tracked-row');
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
-	await expect(page.getByTestId('insert-result')).toContainText('1 row affected');
+	// "After saving: go back" (the default) leaves the Insert page, so the result alert is transient:
+	// the browse page is the stable proof that the insert succeeded.
+	await expect(page).toHaveURL(/\/table\/tr\/browse/);
 
 	await gotoReady(page, `/db/${DB}/table/tr/tracking?report=1&version=1`);
 	const report = main.getByTestId('tracking-report');
@@ -131,7 +133,9 @@ test('tracks a table: an insert through the Insert page shows in the report', as
 	await gotoReady(page, `/db/${DB}/table/tr/insert`);
 	await page.getByTestId('insert-row-0').getByLabel('Value of name').fill('untracked-row');
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
-	await expect(page.getByTestId('insert-result')).toContainText('1 row affected');
+	// "After saving: go back" (the default) leaves the Insert page, so the result alert is transient:
+	// the browse page is the stable proof that the insert succeeded.
+	await expect(page).toHaveURL(/\/table\/tr\/browse/);
 	await gotoReady(page, `/db/${DB}/table/tr/tracking?report=1&version=1`);
 	await expect(main.getByTestId('log-dml')).not.toContainText('untracked-row');
 });

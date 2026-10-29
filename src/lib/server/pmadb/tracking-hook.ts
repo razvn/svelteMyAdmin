@@ -36,14 +36,16 @@ export function installTracking(
 	const q = storageTable(server, 'tracking');
 	if (!q) return null;
 
-	let busy = false;
+	// Appends run one after the other (a statement's record is awaited before its result is
+	// returned, and close() waits for the tail), so no write is dropped or lost on close.
+	let chain: Promise<void> = Promise.resolve();
 	let currentDb: string | null = null;
 	let own: Connection | undefined;
 	let broken = false;
 
 	const ctx = async (): Promise<TrackingCtx | null> => {
 		if (broken) return null;
-		let c: Connection = conn;
+		let c: Connection = bare;
 		if (server.controluser) {
 			try {
 				own ??= await createConnection(
@@ -55,7 +57,8 @@ export function installTracking(
 					server.controluser,
 					server.controlpass
 				);
-			} catch {
+			} catch (e) {
+				console.error('[tracking] cannot open the control connection:', e);
 				broken = true;
 				return null;
 			}
@@ -64,23 +67,26 @@ export function installTracking(
 		return { conn: c, q, user, server };
 	};
 
-	const record = async (sql: string | null) => {
-		if (!sql || busy || !CANDIDATE.test(sql.slice(0, 300))) return;
+	const record = (sql: string | null): Promise<void> => {
+		if (!sql || !CANDIDATE.test(sql.slice(0, 300))) return Promise.resolve();
 		const use = parseUse(sql);
 		if (use) {
 			currentDb = use;
-			return;
+			return Promise.resolve();
 		}
-		if (!analyseStatement(sql)) return;
-		busy = true;
-		try {
-			const c = await ctx();
-			if (c) await handleQuery(c, conn, currentDb, sql);
-		} catch {
-			// Tracking must never break the statement of the user.
-		} finally {
-			busy = false;
-		}
+		if (!analyseStatement(sql)) return Promise.resolve();
+		const db = currentDb;
+		const run = chain.then(async () => {
+			try {
+				const c = await ctx();
+				if (c) await handleQuery(c, bare, db, sql);
+			} catch (e) {
+				// Tracking must never break the statement of the user.
+				console.error('[tracking] failed to record statement:', e);
+			}
+		});
+		chain = run;
+		return run;
 	};
 
 	const format = (sql: string, values: unknown): string => {
@@ -92,10 +98,23 @@ export function installTracking(
 		}
 	};
 
+	const originals = {
+		query: conn.query.bind(conn) as (...a: unknown[]) => Promise<unknown>,
+		execute: conn.execute.bind(conn) as (...a: unknown[]) => Promise<unknown>
+	};
+	// The user connection without the wrapper: tracking's own queries must not be tracked again.
+	const bare = new Proxy(conn, {
+		get(target, prop) {
+			if (prop === 'query' || prop === 'execute') return originals[prop];
+			const v = Reflect.get(target, prop, target);
+			return typeof v === 'function' ? v.bind(target) : v;
+		}
+	});
+
 	const restore: (() => void)[] = [];
 	for (const method of ['query', 'execute'] as const) {
 		const previous = Object.getOwnPropertyDescriptor(conn, method);
-		const original = conn[method].bind(conn) as (...a: unknown[]) => Promise<unknown>;
+		const original = originals[method];
 		restore.push(() => {
 			if (previous) Object.defineProperty(conn, method, previous);
 			else delete (conn as unknown as Record<string, unknown>)[method];
@@ -103,7 +122,7 @@ export function installTracking(
 		(conn as unknown as Record<string, unknown>)[method] = async (...args: unknown[]) => {
 			const result = await original(...args);
 			const sql = textOf(args[0]);
-			if (sql !== null && !busy) {
+			if (sql !== null) {
 				const values =
 					args[0] && typeof args[0] === 'object'
 						? (args[0] as { values?: unknown }).values
@@ -116,6 +135,7 @@ export function installTracking(
 
 	return {
 		async close() {
+			await chain;
 			for (const r of restore) r();
 			const c = own;
 			own = undefined;

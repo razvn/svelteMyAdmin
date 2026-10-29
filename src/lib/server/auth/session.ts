@@ -40,6 +40,33 @@ export function getSecret(
 	return generatedSecret;
 }
 
+/**
+ * Sessions ended by a logout (per process). A slow in-flight request of the logged-out browser could
+ * otherwise write its old cookie back; such a cookie is rejected here. Entries expire after the
+ * cookie validity, when the cookie would be invalid anyway.
+ */
+const revoked = new Map<string, number>();
+
+const revocationKey = (s: Pick<SessionPayload, 'serverIndex' | 'user' | 'createdAt'>): string =>
+	`${s.serverIndex}\0${s.user}\0${s.createdAt}`;
+
+export function revokeSession(
+	s: Pick<SessionPayload, 'serverIndex' | 'user' | 'createdAt'>,
+	validitySeconds: number,
+	now: number = Date.now()
+): void {
+	for (const [k, until] of revoked) if (until <= now) revoked.delete(k);
+	revoked.set(revocationKey(s), now + validitySeconds * 1000);
+}
+
+export function isRevoked(
+	s: Pick<SessionPayload, 'serverIndex' | 'user' | 'createdAt'>,
+	now: number = Date.now()
+): boolean {
+	const until = revoked.get(revocationKey(s));
+	return until !== undefined && until > now;
+}
+
 export function sealSession(payload: SessionPayload, secret: string): string {
 	return encrypt(JSON.stringify(payload), deriveKey(secret));
 }
@@ -68,5 +95,6 @@ export function openSession(
 	const s = result.data;
 	if (s.lastActivity > now + 60_000) return null; // from the future
 	if (now - s.lastActivity > validitySeconds * 1000) return null;
+	if (isRevoked(s, now)) return null;
 	return s;
 }

@@ -1,6 +1,6 @@
 import type { Cookies } from '@sveltejs/kit';
 import type { AppConfig } from '../../config/schema';
-import { getSecret, openSession, sealSession, SESSION_COOKIE } from '../session';
+import { getSecret, openSession, revokeSession, sealSession, SESSION_COOKIE } from '../session';
 import { redirectResponse, type AuthContext, type AuthPlugin, type Credentials } from './types';
 
 /** `cookie` auth: login form, credentials in an encrypted session cookie. */
@@ -103,6 +103,8 @@ export const cookieAuth: AuthPlugin = {
 	},
 
 	logout(ctx) {
+		const s = readSession(ctx);
+		if (s) revokeSession(s, ctx.config.LoginCookieValidity);
 		clearSessionCookie(ctx.cookies, ctx.config, ctx.url);
 		const custom = ctx.server.LogoutURL;
 		return redirectResponse(custom || '/login');
