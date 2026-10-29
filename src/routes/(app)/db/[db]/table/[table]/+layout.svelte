@@ -2,12 +2,15 @@
 	import { page } from '$app/state';
 	import TabBar from '#lib/components/app-shell/tab-bar.svelte';
 	import { currentTabPath, tabHref, tableTabs } from '#lib/nav/tabs.ts';
+	import { filterTabs } from '#lib/nav/user-groups.ts';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
 
 	const ctx = $derived({ db: page.params.db ?? '', table: data.table });
-	const tabs = $derived(tableTabs({ isView: data.tableType === 'view' }));
+	const tabs = $derived(
+		filterTabs('table', tableTabs({ isView: data.tableType === 'view' }), data.deniedTabs)
+	);
 	const current = $derived(currentTabPath('table', ctx, page.url.pathname));
 </script>
 

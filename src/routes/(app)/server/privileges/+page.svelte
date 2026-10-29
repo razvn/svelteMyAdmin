@@ -12,6 +12,7 @@
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import UserPlus from '@lucide/svelte/icons/user-plus';
 	import Users from '@lucide/svelte/icons/users';
+	import UsersRound from '@lucide/svelte/icons/users-round';
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import StatementList from '#lib/components/privileges/statement-list.svelte';
@@ -23,6 +24,7 @@
 	import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 	import * as Dialog from '#lib/components/ui/dialog/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
+	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
@@ -37,6 +39,12 @@
 	let dropping = $state(false);
 	let dropForm = $state<HTMLFormElement>();
 	let exportClosedFor = $state<unknown>(null);
+	let groupDialog = $state<{ username: string; group: string } | null>(null);
+	let savingGroup = $state(false);
+
+	function openGroupDialog(username: string, group: string) {
+		groupDialog = { username, group };
+	}
 
 	const accounts = $derived(data.state === 'ok' ? data.accounts : []);
 	const visible = $derived(
@@ -95,6 +103,11 @@
 			: 'Users and privileges.'}
 	>
 		{#snippet actions()}
+			{#if data.state === 'ok' && data.userGroups && data.caps.isSuperUser}
+				<Button variant="outline" href="/server/user-groups" data-testid="user-groups-link">
+					<UsersRound /> User groups
+				</Button>
+			{/if}
 			{#if data.caps.isCreateUser}
 				<Button href="/server/privileges/add" data-testid="add-user">
 					<UserPlus /> Add user account
@@ -145,6 +158,11 @@
 					>
 				{/if}
 				<StatementList results={form.drop.results} title="Removed user accounts" />
+			{/if}
+			{#if form && 'groupError' in form && form.groupError}
+				<Alert variant="destructive" role="alert"
+					><AlertDescription>{form.groupError}</AlertDescription></Alert
+				>
 			{/if}
 			{#if form && 'exportError' in form && form.exportError}
 				<Alert variant="destructive" role="alert"
@@ -313,7 +331,26 @@
 												>
 											{/if}
 										</Table.Cell>
-										<Table.Cell class="text-muted-foreground">-</Table.Cell>
+										<Table.Cell data-testid="user-group-cell">
+											{#if data.userGroups}
+												<span class={a.userGroup ? '' : 'text-muted-foreground'}
+													>{a.userGroup || '-'}</span
+												>
+												{#if a.user !== ''}
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														aria-label="Edit user group of {a.user}"
+														title="Edit user group"
+														onclick={() => openGroupDialog(a.user, a.userGroup)}
+													>
+														<UsersRound />
+													</Button>
+												{/if}
+											{:else}
+												<span class="text-muted-foreground">-</span>
+											{/if}
+										</Table.Cell>
 										<Table.Cell>{a.hasGrant ? 'Yes' : 'No'}</Table.Cell>
 										<Table.Cell class="text-end">
 											<div class="flex justify-end gap-1">
@@ -469,3 +506,46 @@
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
+
+<Dialog.Root
+	open={groupDialog !== null}
+	onOpenChange={(open) => {
+		if (!open) groupDialog = null;
+	}}
+>
+	<Dialog.Content data-testid="group-dialog">
+		<Dialog.Header>
+			<Dialog.Title>Edit user group</Dialog.Title>
+			<Dialog.Description>
+				User group of '{groupDialog?.username}'. Its menu restrictions apply to this user.
+			</Dialog.Description>
+		</Dialog.Header>
+		<form
+			method="POST"
+			action="?/setGroup"
+			class="flex flex-col gap-4"
+			use:enhance={() => {
+				savingGroup = true;
+				return async ({ result, update }) => {
+					await update();
+					savingGroup = false;
+					if (result.type === 'success') {
+						toast.success('The user group was updated.');
+						groupDialog = null;
+					}
+				};
+			}}
+		>
+			<input type="hidden" name="username" value={groupDialog?.username ?? ''} />
+			<NativeSelect name="usergroup" value={groupDialog?.group ?? ''} aria-label="User group">
+				<NativeSelectOption value="">(no group)</NativeSelectOption>
+				{#each data.state === 'ok' && data.userGroups ? data.userGroups.groups : [] as g (g)}
+					<NativeSelectOption value={g}>{g}</NativeSelectOption>
+				{/each}
+			</NativeSelect>
+			<Dialog.Footer>
+				<Button type="submit" disabled={savingGroup} data-testid="group-dialog-go">Go</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>

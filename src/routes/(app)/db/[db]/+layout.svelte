@@ -2,11 +2,12 @@
 	import { page } from '$app/state';
 	import TabBar from '#lib/components/app-shell/tab-bar.svelte';
 	import { currentTabPath, dbTabs, tabHref } from '#lib/nav/tabs.ts';
+	import { filterTabs } from '#lib/nav/user-groups.ts';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
 
-	const tabs = dbTabs();
+	const tabs = $derived(filterTabs('db', dbTabs(), data.deniedTabs));
 	const current = $derived(currentTabPath('db', { db: data.db }, page.url.pathname));
 </script>
 
