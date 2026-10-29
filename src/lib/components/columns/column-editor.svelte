@@ -9,6 +9,7 @@
 		type ColumnDef,
 		type ServerCaps
 	} from '#lib/sql/column-definition.ts';
+	import CentralColumnsPicker from './central-columns-picker.svelte';
 	import ColumnRow from './column-row.svelte';
 	import type { CollationGroup } from './types.ts';
 	import EnumValuesDialog from './enum-values-dialog.svelte';
@@ -27,6 +28,8 @@
 		fixed?: boolean;
 		/** Allow removing the last remaining row (never for CREATE TABLE). */
 		minColumns?: number;
+		/** Database whose central columns can be picked to fill a row. */
+		centralDb?: string;
 	}
 
 	let {
@@ -36,7 +39,8 @@
 		showIndex = true,
 		showAutoIncrement = showIndex,
 		fixed = false,
-		minColumns = 1
+		minColumns = 1,
+		centralDb
 	}: Props = $props();
 
 	const typeGroups = $derived(getTypeGroups(caps));
@@ -84,6 +88,9 @@
 		<p class="text-xs text-muted-foreground">
 			The width of integer types is ignored by this MySQL version, except for TINYINT(1).
 		</p>
+	{/if}
+	{#if centralDb && !fixed}
+		<CentralColumnsPicker db={centralDb} bind:columns />
 	{/if}
 	{#each columns as col, i (col.id)}
 		<ColumnRow

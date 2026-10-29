@@ -166,7 +166,12 @@
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
-				<ColumnEditor bind:columns caps={data.caps} collations={data.collations} />
+				<ColumnEditor
+					bind:columns
+					caps={data.caps}
+					collations={data.collations}
+					centralDb={data.db}
+				/>
 			</Card.Content>
 		</Card.Root>
 

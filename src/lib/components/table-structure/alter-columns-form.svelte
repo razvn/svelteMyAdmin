@@ -116,7 +116,7 @@
 		</Card.Header>
 		<Card.Content>
 			{#if mode === 'add'}
-				<ColumnEditor bind:columns {caps} {collations} />
+				<ColumnEditor bind:columns {caps} {collations} centralDb={db} />
 			{:else}
 				<ColumnEditor bind:columns {caps} {collations} showIndex={false} showAutoIncrement fixed />
 			{/if}
