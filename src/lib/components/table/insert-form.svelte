@@ -335,47 +335,52 @@
 	{/each}
 
 	<Card.Root>
-		<Card.Content class="flex flex-wrap items-end gap-4">
-			<div class="flex flex-col gap-1.5">
-				<Label for="submit-type">{t('Action')}</Label>
-				<NativeSelect
-					id="submit-type"
-					name="submit_type"
-					bind:value={submitType}
-					aria-label={t('Action')}
-				>
-					<NativeSelectOption value="save">{editing ? t('Save') : t('Insert')}</NativeSelectOption>
-					{#if editing}
-						<NativeSelectOption value="insert">{t('Insert as new row')}</NativeSelectOption>
-					{/if}
-					<NativeSelectOption value="insertignore">
-						{editing ? t('Insert as new row and ignore errors') : t('Insert and ignore errors')}
-					</NativeSelectOption>
-					<NativeSelectOption value="showinsert">{t('Show insert query')}</NativeSelectOption>
-				</NativeSelect>
+		<Card.Content class="flex flex-col gap-4 lg:flex-row lg:items-end" data-testid="insert-footer">
+			<div class="grid gap-4 lg:flex">
+				<div class="flex flex-col gap-1.5">
+					<Label for="submit-type">{t('Action')}</Label>
+					<NativeSelect
+						id="submit-type"
+						name="submit_type"
+						bind:value={submitType}
+						aria-label={t('Action')}
+						class="w-full lg:w-60"
+					>
+						<NativeSelectOption value="save">
+							{editing ? t('Save') : t('Insert')}
+						</NativeSelectOption>
+						{#if editing}
+							<NativeSelectOption value="insert">{t('Insert as new row')}</NativeSelectOption>
+						{/if}
+						<NativeSelectOption value="insertignore">
+							{editing ? t('Insert as new row and ignore errors') : t('Insert and ignore errors')}
+						</NativeSelectOption>
+						<NativeSelectOption value="showinsert">{t('Show insert query')}</NativeSelectOption>
+					</NativeSelect>
+				</div>
+				<div class="flex flex-col gap-1.5">
+					<Label for="after-insert">{t('After saving')}</Label>
+					<NativeSelect
+						id="after-insert"
+						name="after_insert"
+						bind:value={afterInsert}
+						aria-label={t('After saving')}
+						class="w-full lg:w-72"
+					>
+						<NativeSelectOption value="back">{t('Go back to previous page')}</NativeSelectOption>
+						<NativeSelectOption value="new_insert">
+							{t('Insert another new row')}
+						</NativeSelectOption>
+						<NativeSelectOption value="same_insert">{t('Go back to this page')}</NativeSelectOption>
+						{#if editing}
+							<NativeSelectOption value="edit_next">{t('Edit next row')}</NativeSelectOption>
+						{/if}
+					</NativeSelect>
+				</div>
 			</div>
-			<div class="flex flex-col gap-1.5">
-				<Label for="after-insert">{t('After saving')}</Label>
-				<NativeSelect
-					id="after-insert"
-					name="after_insert"
-					bind:value={afterInsert}
-					aria-label={t('After saving')}
-				>
-					<NativeSelectOption value="back">{t('Go back to previous page')}</NativeSelectOption>
-					<NativeSelectOption value="new_insert">{t('Insert another new row')}</NativeSelectOption>
-					<NativeSelectOption value="same_insert">{t('Go back to this page')}</NativeSelectOption>
-					{#if editing}
-						<NativeSelectOption value="edit_next">{t('Edit next row')}</NativeSelectOption>
-					{/if}
-				</NativeSelect>
-			</div>
-			<Button type="submit" disabled={busy || hasJsonError}>
-				{busy ? t('Saving...') : t('Go')}
-			</Button>
 			{#if mode === 'insert'}
-				<div class="ms-auto flex items-end gap-2">
-					<div class="flex flex-col gap-1.5">
+				<div class="flex items-end gap-2 border-t pt-4 lg:border-s lg:border-t-0 lg:ps-4 lg:pt-0">
+					<div class="flex flex-1 flex-col gap-1.5 lg:flex-none">
 						<Label for="row-count">{t('Continue insertion with rows')}</Label>
 						<Input
 							id="row-count"
@@ -383,12 +388,15 @@
 							min="1"
 							max="100"
 							bind:value={rowCount}
-							class="w-24"
+							class="w-full"
 						/>
 					</div>
 					<Button type="button" variant="outline" onclick={setRowCount}>{t('Apply')}</Button>
 				</div>
 			{/if}
+			<Button type="submit" class="w-full lg:ms-auto lg:w-auto" disabled={busy || hasJsonError}>
+				{busy ? t('Saving...') : t('Go')}
+			</Button>
 		</Card.Content>
 	</Card.Root>
 </form>

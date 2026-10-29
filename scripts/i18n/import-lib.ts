@@ -21,7 +21,13 @@ import {
 	type PluralCategory
 } from '../../src/lib/i18n/plural.ts';
 import { compilePlural, type MoEntry, type MoFile } from './mo.ts';
-import { CONTEXT_SEPARATOR, isEmptyMessage, splitKey, type Message } from './lib.ts';
+import {
+	CONTEXT_SEPARATOR,
+	isEmptyMessage,
+	splitKey,
+	stripForeignHtml,
+	type Message
+} from './lib.ts';
 
 const MARK = '\u0001';
 const PLACEHOLDER = /%(?:(\d+)\$)?([sd])|%%|%[^a-zA-Z%\s]*[a-zA-Z]/g;
@@ -126,8 +132,25 @@ export function mapPlural(forms: string[], intl: string, index: (n: number) => n
 	return cats.map((c) => pick.get(c) ?? other);
 }
 
-/** Translation for a catalog key + its English value, or undefined when nothing matches safely. */
+/**
+ * Translation for a catalog key + its English value, or undefined when nothing matches safely.
+ * HTML markup in the translation that the msgid does not contain is stripped (see `stripForeignHtml`).
+ */
 export function lookup(
+	index: MoIndex,
+	key: string,
+	source: Message,
+	lang: string
+): Message | undefined {
+	const found = lookupRaw(index, key, source, lang);
+	if (found === undefined) return undefined;
+	const { msgid } = splitKey(key);
+	return Array.isArray(found)
+		? found.map((f) => stripForeignHtml(f, msgid))
+		: stripForeignHtml(found, msgid);
+}
+
+function lookupRaw(
 	index: MoIndex,
 	key: string,
 	source: Message,

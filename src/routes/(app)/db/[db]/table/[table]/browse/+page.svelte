@@ -19,6 +19,7 @@
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import ResultGrid from '#lib/components/results/result-grid.svelte';
+	import RowAction from '#lib/components/results/row-action.svelte';
 	import type { EditResult, GridColumn } from '#lib/components/results/types.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
@@ -45,8 +46,6 @@
 		!data.isView && data.hasUniqueKey && data.settings.gridEditing !== 'disabled'
 	);
 	const showActions = $derived(!data.isView && data.settings.rowActionLinks !== 'none');
-	const showText = $derived(data.settings.rowActionType !== 'icons');
-	const showIcons = $derived(data.settings.rowActionType !== 'text');
 
 	let hidden = $derived(data.hidden);
 	let selected = $state<number[]>([]);
@@ -321,34 +320,25 @@
 				onedit={editable ? onedit : undefined}
 			>
 				{#snippet actions({ row })}
-					<Button
-						variant="ghost"
-						size={showText ? 'sm' : 'icon-sm'}
+					<RowAction
+						icon={Pencil}
+						label={t('Edit')}
+						ariaLabel={t('Edit row {n}', { n: row + 1 })}
 						href={editHref([row])}
-						aria-label={t('Edit row {n}', { n: row + 1 })}
-					>
-						{#if showIcons}<Pencil class="size-4" aria-hidden="true" />{/if}
-						{#if showText}{t('Edit')}{/if}
-					</Button>
-					<Button
-						variant="ghost"
-						size={showText ? 'sm' : 'icon-sm'}
+					/>
+					<RowAction
+						icon={Copy}
+						label={t('Copy')}
+						ariaLabel={t('Copy row {n}', { n: row + 1 })}
 						href={copyHref([row])}
-						aria-label={t('Copy row {n}', { n: row + 1 })}
-					>
-						{#if showIcons}<Copy class="size-4" aria-hidden="true" />{/if}
-						{#if showText}{t('Copy')}{/if}
-					</Button>
-					<Button
-						variant="ghost"
-						size={showText ? 'sm' : 'icon-sm'}
-						class="text-destructive hover:text-destructive"
-						aria-label={t('Delete row {n}', { n: row + 1 })}
+					/>
+					<RowAction
+						icon={Trash2}
+						label={t('Delete')}
+						ariaLabel={t('Delete row {n}', { n: row + 1 })}
+						destructive
 						onclick={() => askDelete([row])}
-					>
-						{#if showIcons}<Trash2 class="size-4" aria-hidden="true" />{/if}
-						{#if showText}{t('Delete')}{/if}
-					</Button>
+					/>
 				{/snippet}
 			</ResultGrid>
 

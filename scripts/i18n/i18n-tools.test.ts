@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { areaOf } from './areas.ts';
 import { checkCatalogs } from './check-lib.ts';
+import { foreignHtml, stripForeignHtml } from './lib.ts';
 import { indexMo, lookup, mapPlural, normalisePrintf } from './import-lib.ts';
 import { PMA_DIR } from './lib.ts';
 import { compilePlural, parseMo } from './mo.ts';
@@ -227,6 +228,16 @@ describe('checkCatalogs', () => {
 		expect(r.errors.join('\n')).toMatch(/expected 3 plural forms/);
 		expect(r.warnings.join('\n')).toMatch(/"Extra" is obsolete/);
 	});
+	it('flags HTML absent from the English msgid, allows what the msgid has', () => {
+		const root = fixture({
+			'en/common.json': { Hi: 'Hi', 'See <b>this</b>': 'See <b>this</b>' },
+			'fr/common.json': { Hi: '<b>Salut</b>&nbsp;!', 'See <b>this</b>': 'Voir <b>ceci</b>' },
+			'es/common.json': { Hi: 'Hola', 'See <b>this</b>': 'Ver <b>esto</b>' }
+		});
+		const r = checkCatalogs({ root, areas: ['common'] });
+		expect(r.errors).toHaveLength(1);
+		expect(r.errors[0]).toMatch(/fr\/common: "Hi": HTML not in the English text: <b> &nbsp;/);
+	});
 	it('only measures coverage for non-strict languages', () => {
 		const root = fixture({
 			...en,
@@ -249,5 +260,26 @@ describe('the shipped catalogs', () => {
 		const areas = process.env.I18N_AREAS?.split(',') as never;
 		const r = checkCatalogs(areas ? { areas } : {});
 		expect(r.errors).toEqual([]);
+	});
+});
+
+describe('HTML stripping', () => {
+	it('removes tags and decodes entities absent from the msgid', () => {
+		expect(stripForeignHtml('<b>Ordonner</b> la table par', 'Alter table order by')).toBe(
+			'Ordonner la table par'
+		);
+		expect(stripForeignHtml('a<br />b<br>c', 'abc')).toBe('a b c');
+		expect(stripForeignHtml('1&nbsp;&amp;&#233;&#x41;', 'x')).toBe('1\u00a0&\u00e9A');
+		expect(stripForeignHtml('<em>x</em> <code>y</code>', 'x y')).toBe('x y');
+	});
+	it('keeps markup the msgid contains', () => {
+		const id = 'See <a href="u">docs</a> <b>now</b>';
+		expect(stripForeignHtml('Voir <a href="u">docs</a> <b>vite</b> <i>ok</i>', id)).toBe(
+			'Voir <a href="u">docs</a> <b>vite</b> ok'
+		);
+	});
+	it('foreignHtml lists offending tags and entities', () => {
+		expect(foreignHtml('<b>x</b>&nbsp;<i>y</i>', 'x <i>y</i>')).toEqual(['<b>', '&nbsp;']);
+		expect(foreignHtml('plain', 'plain')).toEqual([]);
 	});
 });

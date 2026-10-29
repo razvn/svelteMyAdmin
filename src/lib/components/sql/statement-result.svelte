@@ -10,6 +10,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getNavState } from '#lib/components/navigation/nav-state.svelte.ts';
 	import ResultGrid from '#lib/components/results/result-grid.svelte';
+	import RowAction from '#lib/components/results/row-action.svelte';
 	import type { GridColumn } from '#lib/components/results/types.ts';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
@@ -243,26 +244,22 @@
 {#snippet resultTable(set: ResultSetData, interactive: boolean)}
 	{@const sortable = interactive && !!simple}
 	{#snippet rowActions({ row }: { row: number })}
-		<Button
-			variant="ghost"
-			size="sm"
+		<RowAction
+			icon={Pencil}
+			label={t('Edit')}
+			ariaLabel={t('Edit row {n}', { n: row + 1 })}
 			href="{tableBase(set)}/insert?{rowQuery(set, row)}"
-			aria-label={t('Edit row {n}', { n: row + 1 })}
-		>
-			<Pencil class="size-4" aria-hidden="true" />{t('Edit')}
-		</Button>
-		<Button
-			variant="ghost"
-			size="sm"
-			class="text-destructive hover:text-destructive"
-			aria-label={t('Delete row {n}', { n: row + 1 })}
+		/>
+		<RowAction
+			icon={Trash2}
+			label={t('Delete')}
+			ariaLabel={t('Delete row {n}', { n: row + 1 })}
+			destructive
 			onclick={() => {
 				deleteError = '';
 				deleting = { set, row };
 			}}
-		>
-			<Trash2 class="size-4" aria-hidden="true" />{t('Delete')}
-		</Button>
+		/>
 	{/snippet}
 	<ResultGrid
 		columns={gridColumns(set, sortable)}

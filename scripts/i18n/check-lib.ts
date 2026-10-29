@@ -4,11 +4,13 @@ import {
 	LOCALES_DIR,
 	SOURCE_LANG,
 	STRICT_LANGS,
+	foreignHtml,
 	isEmptyMessage,
 	localeDirs,
 	messageParams,
 	pluralCount,
 	readCatalog,
+	splitKey,
 	type Area,
 	type Message
 } from './lib.ts';
@@ -37,7 +39,7 @@ const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, 
 
 /**
  * Compare every language with the English catalog. Errors: a strict language lacks a key or has an empty
- * translation; a translation's `{params}` differ from the English message (for plural forms: use a
+ * translation; a translation contains HTML tags/entities absent from the English msgid; a translation's `{params}` differ from the English message (for plural forms: use a
  * subset of the English params, since e.g. French "Une ligne" legitimately omits `{n}`); wrong number of plural forms.
  */
 export function checkCatalogs(opts: CheckOptions = {}): CheckResult {
@@ -71,6 +73,11 @@ export function checkCatalogs(opts: CheckOptions = {}): CheckResult {
 					continue;
 				}
 				cov.translated++;
+				const html = (Array.isArray(have) ? have : [have])
+					.flatMap((f) => foreignHtml(f, splitKey(key).msgid))
+					.filter((x, i, a) => a.indexOf(x) === i);
+				if (html.length && must)
+					result.errors.push(`${at(key)}: HTML not in the English text: ${html.join(' ')}`);
 				if (Array.isArray(src) !== Array.isArray(have)) {
 					result.errors.push(`${at(key)}: plural/singular shape differs from English`);
 					continue;

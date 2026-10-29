@@ -2,7 +2,8 @@
  * pnpm i18n:check [--ci] [--area=a,b] [--strict=fr,es] [--warnings]
  *
  * Per-language coverage per area. With --ci (or CI=true) exits 1 when a strict language (default fr, es)
- * lacks a key or has an empty translation, or when a translation's {params} differ from the English ones.
+ * lacks a key or has an empty translation, when a translation's {params} differ from the English ones, or when it contains HTML tags/entities
+ * that the English msgid lacks.
  */
 import { checkCatalogs, formatReport } from './check-lib.ts';
 import { option, parseAreas } from './lib.ts';
