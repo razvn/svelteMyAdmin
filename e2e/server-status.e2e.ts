@@ -54,9 +54,9 @@ test('status page shows uptime, traffic and connections with sub navigation', as
 		await expect(subnav(page).getByRole('link', { name: label, exact: true })).toBeVisible();
 	}
 	await subnav(page).getByRole('link', { name: 'Monitor' }).click();
-	await expect(page.getByTestId('not-implemented')).toBeVisible();
-	await gotoReady(page, '/server/status/advisor');
-	await expect(page.getByTestId('not-implemented')).toBeVisible();
+	await expect(page.getByTestId('monitor')).toBeVisible();
+	await subnav(page).getByRole('link', { name: 'Advisor' }).click();
+	await expect(page.getByTestId('advisor')).toBeVisible();
 });
 
 test('query statistics', async ({ page }) => {
