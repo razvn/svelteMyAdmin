@@ -127,7 +127,11 @@ test('the console runs a query in the current context and survives a reload', as
 	await expect(consolePanel.getByTestId('console-table').last()).toContainText('3');
 
 	await consolePanel.getByRole('tab', { name: 'History' }).click();
-	await expect(consolePanel.getByTestId('history-item').first()).toContainText('COUNT(*)');
+	// History is shared by every session of the same login, and parallel specs also log in as
+	// root: look for our statement rather than assuming it is the newest entry.
+	await expect(
+		consolePanel.getByTestId('history-item').filter({ hasText: 'SELECT COUNT(*) AS n FROM books' })
+	).not.toHaveCount(0);
 
 	await reloadReady(page);
 	await expect(page.getByTestId('console')).toBeVisible();
