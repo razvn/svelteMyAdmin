@@ -16,6 +16,8 @@ import { DatabaseInterface } from '#lib/server/db/dbi.ts';
 import { COLLATION_COOKIE } from '#lib/server/db/collation-cookie.ts';
 import { expiredLoginLocation } from '#lib/server/auth/expired.ts';
 import { legacyRedirectTarget } from '#lib/server/routing/legacy.ts';
+import { buildEffectiveConfig } from '#lib/server/preferences/effective.ts';
+import { loadPrefs } from '#lib/server/preferences/store.ts';
 
 /** Reachable without authentication (static assets are served before `handle`). */
 function isPublicPath(pathname: string): boolean {
@@ -134,7 +136,7 @@ const auth: Handle = async ({ event, resolve }) => {
 	});
 	Object.defineProperty(event.locals, 'dbi', {
 		configurable: true,
-		get: () => (dbi ??= event.locals.db.then((c) => new DatabaseInterface(c, server)))
+		get: () => (dbi ??= event.locals.db.then((c) => new DatabaseInterface(c, event.locals.server)))
 	});
 
 	const close = async () => {
@@ -180,6 +182,17 @@ const auth: Handle = async ({ event, resolve }) => {
 					return plugin.rejected(ctx);
 				}
 				throw e;
+			}
+		}
+
+		// From here on `locals.config` is the server config overlaid with the user's preferences
+		// (loaded once per request); the unmerged config stays available via `getConfig()`.
+		if (!isPublic) {
+			const prefs = await loadPrefs(event.locals, event.cookies);
+			const effective = buildEffectiveConfig(config, prefs.data, ctx.serverIndex);
+			event.locals.config = effective.config;
+			if (Object.keys(effective.serverOverrides).length > 0) {
+				event.locals.server = { ...event.locals.server, ...effective.serverOverrides };
 			}
 		}
 

@@ -260,6 +260,10 @@ export const configSchema = z
 		}),
 		maxRowPlotLimit: z.number().int().default(500),
 
+		/** User preferences: paths users may not set, and whether the Developer tab is offered. */
+		UserprefsDisallow: z.array(z.string()).default([]),
+		UserprefsDeveloperTab: z.boolean().default(false),
+
 		// Sub-trees (Export/Import options are modelled later with their features)
 		Export: z.record(z.string(), z.unknown()).default({}),
 		Import: z.record(z.string(), z.unknown()).default({})
