@@ -75,3 +75,31 @@ with the svelte MCP `get-documentation` tool (e.g. "Migrating to SvelteKit v3", 
 - `cn()` is re-exported from the `cn` package in `#lib/utils.ts` (no direct clsx/tailwind-merge deps).
 - There is no `data-table` registry item; `@tanstack/table-core` is **v9** — check its API (the shadcn
   docs pattern targets v8) before building data tables.
+- `Card.Content` already sets `flex-col`: when you want a row layout add `flex-row` explicitly
+  (otherwise `flex-wrap`/`flex-basis` apply vertically). Prefer wrapping layouts (`flex-wrap`,
+  `min-w-*`, `flex-1`) over fixed widths (`lg:w-60`) — French/Spanish labels are much longer.
+- Visible text in buttons/menus that only has an icon needs an `aria-label` + a shadcn `Tooltip`.
+
+## Project rules learned the hard way (read the linked docs before touching these areas)
+
+- **Design**: `docs/DESIGN.md` (page-header, stat-card, badge variants, table conventions, tokens).
+- **i18n**: `docs/I18N.md`. Every user-visible string — including `aria-label`s and server-side
+  messages — goes through `const { t, tn, tc, fmt } = useI18n()` (server code: `locals.i18n`);
+  data tables use `N_()` at the source and `t(x)` at render. English text is the catalog key, so
+  never reword existing English strings casually (it orphans fr/es translations and breaks e2e).
+  Catalogs are per area (`src/lib/i18n/locales/<lang>/<area>.json`, area from the file path, see
+  `scripts/i18n/areas.ts`); never name a client-loaded module `server.*` (SvelteKit treats it as
+  server-only — the `server` area file is `server-pages.json`). No HTML in strings. Run
+  `pnpm i18n:extract`, fill fr/es, then `pnpm i18n:check --ci`.
+- **Hydration**: SSR HTML is clickable before Svelte hydrates. Forms must work as plain HTML
+  (real `name`d fields); controls that need JS are disabled until `hydration.ready`
+  (`#lib/hooks/hydration.svelte.ts`); e2e navigates with `gotoReady`/`reloadReady` from
+  `e2e/helpers.ts`, never `waitForTimeout`/`networkidle`/retry loops.
+- **Signed SQL fragments**: row/filter links carry `where`+`sig` / `filter`+`fsig`
+  (`src/lib/server/table/signed-clause.ts`); never accept a raw WHERE clause from the client.
+- **Config**: read settings from `locals.config` (per-user merged preferences), not `getConfig()`.
+- **Tests**: temp databases/users are `tmp_<suite>_…` and cleaned up; e2e locators are scoped to
+  `main` or a test id (the sidebar repeats table names); never change root's preferences in tests
+  (use a dedicated tmp MySQL user).
+- **Shell on this machine**: `mv`, `cp`, `rm` are aliased to interactive `-i` and hang — use
+  `/bin/mv -f`, `/bin/cp -f`, `/bin/rm -f`; run checks in the foreground.
