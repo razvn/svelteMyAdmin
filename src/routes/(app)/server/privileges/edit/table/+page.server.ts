@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { fail } from '@sveltejs/kit';
 import {
 	COLUMN_PRIVILEGES,
@@ -80,7 +81,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const db = String(fd.get('dbname') ?? '');
 		const table = String(fd.get('tablename') ?? '');
-		if (db === '' || table === '') return fail(400, { error: 'No table selected.', results: [] });
+		if (db === '' || table === '')
+			return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
 		const columns: Record<string, string[]> = {};
 		for (const name of COLUMN_PRIVILEGES) {
 			columns[name] = fd
@@ -96,9 +98,13 @@ export const actions: Actions = {
 				columns
 			}
 		]);
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: `You have updated the privileges for '${ctx.account.user}'@'${ctx.account.host}' on ${db}.${table}.`,
+			saved: locals.i18n.t("You have updated the privileges for '{user}'@'{host}' on {target}.", {
+				user: ctx.account.user,
+				host: ctx.account.host,
+				target: `${db}.${table}`
+			}),
 			results: res.results
 		};
 	},
@@ -108,15 +114,19 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const db = String(fd.get('dbname') ?? '');
 		const table = String(fd.get('tablename') ?? '');
-		if (db === '' || table === '') return fail(400, { error: 'No table selected.', results: [] });
+		if (db === '' || table === '')
+			return fail(400, { error: locals.i18n.t('No table selected.'), results: [] });
 		const res = await revokeScoped(ctx.dbi, ctx.server, ctx.caps, ctx.account, {
 			scope: 'table',
 			db,
 			table
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
-			saved: `You have revoked the privileges for '${ctx.account.user}' on ${db}.${table}.`,
+			saved: locals.i18n.t("You have revoked the privileges for '{user}' on {target}.", {
+				user: ctx.account.user,
+				target: `${db}.${table}`
+			}),
 			results: res.results
 		};
 	}

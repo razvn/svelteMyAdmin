@@ -11,8 +11,10 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { namedAction } from '#lib/nav/account-tabs.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const value = (r: { role?: string; name?: string; host: string | null }) =>
@@ -30,7 +32,7 @@
 </script>
 
 <svelte:head>
-	<title>Edit privileges: roles - svelteMyAdmin</title>
+	<title>{t('Edit privileges: roles')} - svelteMyAdmin</title>
 </svelte:head>
 
 <AccountEditShell
@@ -53,21 +55,21 @@
 			{/each}
 			<Card.Root class="gap-0 py-0">
 				<Card.Header class="border-b py-5">
-					<Card.Title>Granted roles</Card.Title>
+					<Card.Title>{t('Granted roles')}</Card.Title>
 					<Card.Description>
 						{mariaDb
-							? 'MariaDB activates one default role at login.'
-							: 'Default roles are activated automatically at login.'}
+							? t('MariaDB activates one default role at login.')
+							: t('Default roles are activated automatically at login.')}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content class="px-0">
 					<Table.Root data-testid="granted-roles">
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Role</Table.Head>
-								<Table.Head>Admin option</Table.Head>
-								<Table.Head>Default</Table.Head>
-								<Table.Head class="text-end">Action</Table.Head>
+								<Table.Head>{t('Role')}</Table.Head>
+								<Table.Head>{t('Admin option')}</Table.Head>
+								<Table.Head>{t('Default')}</Table.Head>
+								<Table.Head class="text-end">{t('Action')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -78,12 +80,12 @@
 									</Table.Cell>
 									<Table.Cell>
 										<Badge variant={g.adminOption ? 'success' : 'muted'}>
-											{g.adminOption ? 'Yes' : 'No'}
+											{g.adminOption ? t('Yes') : t('No')}
 										</Badge>
 									</Table.Cell>
 									<Table.Cell>
 										<Checkbox
-											aria-label="Default role {g.role}"
+											aria-label={t('Default role {name}', { name: g.role })}
 											disabled={!data.isGrantUser}
 											checked={defaults.includes(value(g))}
 											onCheckedChange={(v) => toggle(value(g), v === true)}
@@ -98,9 +100,10 @@
 												formaction={namedAction(page.url.search, 'revoke')}
 												name="role"
 												value={value(g)}
-												aria-label="Revoke role {g.role}"
+												aria-label={t('Revoke role {name}', { name: g.role })}
 											>
-												<Undo2 /> Revoke
+												<Undo2 />
+												{t('Revoke')}
 											</Button>
 										{/if}
 									</Table.Cell>
@@ -108,7 +111,7 @@
 							{:else}
 								<Table.Row>
 									<Table.Cell colspan={4} class="py-8 text-center text-muted-foreground">
-										No roles granted.
+										{t('No roles granted.')}
 									</Table.Cell>
 								</Table.Row>
 							{/each}
@@ -119,7 +122,7 @@
 			{#if data.isGrantUser && data.granted.length > 0}
 				<div class="mt-4 flex justify-end">
 					<Button type="submit" disabled={!hydration.ready} data-testid="save-defaults">
-						Save default roles
+						{t('Save default roles')}
 					</Button>
 				</div>
 			{/if}
@@ -127,7 +130,7 @@
 
 		{#if data.isGrantUser}
 			<Card.Root>
-				<Card.Header><Card.Title>Grant a role</Card.Title></Card.Header>
+				<Card.Header><Card.Title>{t('Grant a role')}</Card.Title></Card.Header>
 				<Card.Content>
 					<form
 						method="POST"
@@ -136,8 +139,8 @@
 						use:enhance
 						data-testid="grant-role-form"
 					>
-						<NativeSelect name="role" aria-label="Role">
-							<NativeSelectOption value="">Select a role</NativeSelectOption>
+						<NativeSelect name="role" aria-label={t('Role')}>
+							<NativeSelectOption value="">{t('Select a role')}</NativeSelectOption>
 							{#each data.available as r (value({ name: r.name, host: r.host }))}
 								<NativeSelectOption value={value({ name: r.name, host: r.host })}
 									>{r.name}{r.host ? `@${r.host}` : ''}</NativeSelectOption
@@ -154,7 +157,7 @@
 							{#if adminOption}<input type="hidden" name="admin_option" value="1" />{/if}
 						</div>
 						<Button type="submit" disabled={!hydration.ready} data-testid="grant-role-go">
-							Grant
+							{t('Grant')}
 						</Button>
 					</form>
 				</Card.Content>

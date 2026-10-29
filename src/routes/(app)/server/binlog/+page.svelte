@@ -3,7 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import { page } from '$app/state';
-	import { formatBytes, truncate } from '#lib/format.ts';
+	import { truncate } from '#lib/format.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import ScrollText from '@lucide/svelte/icons/scroll-text';
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import { Badge } from '#lib/components/ui/badge/index.ts';
@@ -13,6 +14,8 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, fmt } = useI18n();
+	const formatBytes = fmt.bytes;
 	let { data }: PageProps = $props();
 
 	const SHORT = 100;
@@ -35,21 +38,21 @@
 </script>
 
 <svelte:head>
-	<title>Binary log - svelteMyAdmin</title>
+	<title>{t('Binary log')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={ScrollText}
-		title="Binary log"
-		description="Browse the events recorded in the server binary logs."
+		title={t('Binary log')}
+		description={t('Browse the events recorded in the server binary logs.')}
 	/>
 
 	<Card.Root class="gap-0 py-0">
 		<div class="flex flex-wrap items-center gap-4 border-b p-5">
 			<Select.Root type="single" value={file} onValueChange={(v) => go({ file: v, offset: null })}>
-				<Select.Trigger class="w-72" aria-label="Binary log file" data-testid="binlog-file">
-					{file ? `${file} (${formatBytes(fileSize)})` : 'No binary logs'}
+				<Select.Trigger class="w-72" aria-label={t('Binary log file')} data-testid="binlog-file">
+					{file ? `${file} (${formatBytes(fileSize)})` : t('No binary logs')}
 				</Select.Trigger>
 				<Select.Content>
 					{#each data.files as f (f.name)}
@@ -59,11 +62,11 @@
 				</Select.Content>
 			</Select.Root>
 			<Button variant="outline" size="sm" onclick={() => go({ full: data.full ? null : '1' })}>
-				{data.full ? 'Truncate shown queries' : 'Show full queries'}
+				{data.full ? t('Truncate shown queries') : t('Show full queries')}
 			</Button>
 			<div class="ms-auto flex items-center gap-2 text-sm">
 				{#if data.events.length > 0}
-					<span data-testid="binlog-range">Events {from} - {to}</span>
+					<span data-testid="binlog-range">{t('Events {from} - {to}', { from, to })}</span>
 				{/if}
 				<Button
 					variant="outline"
@@ -71,7 +74,7 @@
 					disabled={data.offset === 0}
 					onclick={() => go({ offset: String(Math.max(0, data.offset - data.pageSize)) })}
 				>
-					Previous
+					{t('Previous')}
 				</Button>
 				<Button
 					variant="outline"
@@ -79,7 +82,7 @@
 					disabled={!data.hasMore}
 					onclick={() => go({ offset: String(data.offset + data.pageSize) })}
 				>
-					Next
+					{t('Next')}
 				</Button>
 			</div>
 		</div>
@@ -87,12 +90,12 @@
 		<Table.Root data-testid="binlog-table">
 			<Table.Header>
 				<Table.Row>
-					<Table.Head>Log name</Table.Head>
-					<Table.Head class="text-end">Position</Table.Head>
-					<Table.Head>Event type</Table.Head>
-					<Table.Head class="text-end">Server ID</Table.Head>
-					<Table.Head class="text-end">Original position</Table.Head>
-					<Table.Head>Information</Table.Head>
+					<Table.Head>{t('Log name')}</Table.Head>
+					<Table.Head class="text-end">{t('Position')}</Table.Head>
+					<Table.Head>{t('Event type')}</Table.Head>
+					<Table.Head class="text-end">{t('Server ID')}</Table.Head>
+					<Table.Head class="text-end">{t('Original position')}</Table.Head>
+					<Table.Head>{t('Information')}</Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
@@ -109,7 +112,8 @@
 					</Table.Row>
 				{:else}
 					<Table.Row>
-						<Table.Cell colspan={6} class="text-center text-muted-foreground">No events.</Table.Cell
+						<Table.Cell colspan={6} class="text-center text-muted-foreground"
+							>{t('No events.')}</Table.Cell
 						>
 					</Table.Row>
 				{/each}

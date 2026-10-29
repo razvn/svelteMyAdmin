@@ -5,6 +5,7 @@
 	import Link2 from '@lucide/svelte/icons/link-2';
 	import ListTree from '@lucide/svelte/icons/list-tree';
 	import { HEADER_H, ROW_H, visibleColumns } from '#lib/designer/geometry.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { DesignerTable } from '#lib/designer/types.ts';
 	import { cn } from '#lib/utils.ts';
 
@@ -28,6 +29,7 @@
 		onselect?: () => void;
 	}
 
+	const { t } = useI18n();
 	let {
 		table,
 		x,
@@ -101,7 +103,9 @@
 		<button
 			type="button"
 			class="flex size-5 shrink-0 items-center justify-center rounded hover:bg-primary/10"
-			aria-label={collapsed ? `Expand ${table.name}` : `Collapse ${table.name}`}
+			aria-label={collapsed
+				? t('Expand {name}', { name: table.name })
+				: t('Collapse {name}', { name: table.name })}
 			aria-expanded={!collapsed}
 			onclick={() => ontoggle?.()}
 		>
@@ -110,7 +114,7 @@
 		<span class="truncate font-mono">{table.name}</span>
 	</div>
 	{#if !collapsed}
-		<ul class="pb-1" aria-label="Columns of {table.name}">
+		<ul class="pb-1" aria-label={t('Columns of {name}', { name: table.name })}>
 			{#each columns as column (column.name)}
 				<li
 					class="flex items-center gap-1 px-2 text-xs hover:bg-muted"
@@ -123,13 +127,13 @@
 				>
 					<span class="flex w-3.5 shrink-0 justify-center">
 						{#if column.primary}
-							<KeyRound class="size-3.5 text-warning" aria-label="Primary key" />
+							<KeyRound class="size-3.5 text-warning" aria-label={t('Primary key')} />
 						{:else if column.foreign}
-							<Link2 class="size-3.5 text-primary" aria-label="Foreign key" />
+							<Link2 class="size-3.5 text-primary" aria-label={t('Foreign key')} />
 						{:else if column.unique || column.indexed}
 							<ListTree
 								class="size-3.5 text-muted-foreground"
-								aria-label={column.unique ? 'Unique key' : 'Indexed'}
+								aria-label={column.unique ? t('Unique key') : t('Indexed')}
 							/>
 						{/if}
 					</span>

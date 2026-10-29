@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Roles: MySQL 8 (`CREATE ROLE 'r'@'%'`, accounts in mysql.user addressed by role_edges / default_roles) and
  * MariaDB 10.0.5+ (`CREATE ROLE r`, no host, mysql.roles_mapping, mysql.user.default_role).
@@ -19,7 +20,7 @@ import { runStatements, type OperationResult } from './operations.ts';
 import { resolveAccount } from './scoped.ts';
 
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
-const DENIED = 'You do not have the privileges to administrate the users!';
+const DENIED = N_('You do not have the privileges to administrate the users!');
 
 export interface RoleRow {
 	name: string;
@@ -106,8 +107,9 @@ export async function createRole(
 	name: string
 ): Promise<OperationResult> {
 	if (!caps.isCreateUser) return { ok: false, error: DENIED, results: [] };
-	if (!supportsRoles(server)) return { ok: false, error: 'Roles are not supported.', results: [] };
-	if (!validName(name)) return { ok: false, error: 'The role name is empty!', results: [] };
+	if (!supportsRoles(server))
+		return { ok: false, error: N_('Roles are not supported.'), results: [] };
+	if (!validName(name)) return { ok: false, error: N_('The role name is empty!'), results: [] };
 	const results = await runStatements(dbi, [buildCreateRole(server, name)], true);
 	return { ok: results.every((r) => r.ok), error: results.find((r) => !r.ok)?.error, results };
 }
@@ -119,7 +121,7 @@ export async function dropRoles(
 	roles: { name: string; host: string }[]
 ): Promise<OperationResult> {
 	if (!caps.isCreateUser) return { ok: false, error: DENIED, results: [] };
-	if (roles.length === 0) return { ok: false, error: 'No roles selected.', results: [] };
+	if (roles.length === 0) return { ok: false, error: N_('No roles selected.'), results: [] };
 	const results = await runStatements(
 		dbi,
 		roles.map((r) => buildDropRole(server, r.name, r.host || '%'))
@@ -134,7 +136,7 @@ export async function grantRoleTo(
 	input: { role: string; roleHost?: string; to: Account; adminOption: boolean }
 ): Promise<OperationResult> {
 	if (!caps.isGrantUser) return { ok: false, error: DENIED, results: [] };
-	if (!validName(input.role)) return { ok: false, error: 'No role selected.', results: [] };
+	if (!validName(input.role)) return { ok: false, error: N_('No role selected.'), results: [] };
 	const to = resolveAccount(server, input.to);
 	const results = await runStatements(
 		dbi,

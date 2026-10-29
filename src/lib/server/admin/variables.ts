@@ -8,6 +8,7 @@
 import type { Connection, RowDataPacket } from 'mysql2/promise';
 import { formatBytes, formatNumber } from '#lib/format.ts';
 import { escapeId } from '#lib/server/db/escape.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { BYTE_VARIABLE_NAMES } from './byte-variables.ts';
 
 const VARIABLE_NAME = /^[A-Za-z0-9_]+$/;
@@ -142,10 +143,11 @@ export async function setGlobalVariable(
 }
 
 /** Human message for a failed statement: MySQL's own text only (`sqlMessage`), never stack or SQL. */
-export function variableErrorMessage(err: unknown): string {
+export function variableErrorMessage(err: unknown, i18n: Translator = SOURCE_TRANSLATOR): string {
+	const { t } = i18n;
 	if (err instanceof VariableError) return err.message;
 	const sqlMessage = (err as { sqlMessage?: unknown } | null)?.sqlMessage;
 	return typeof sqlMessage === 'string' && sqlMessage !== ''
 		? sqlMessage
-		: 'Setting the variable failed.';
+		: t('Setting the variable failed.');
 }

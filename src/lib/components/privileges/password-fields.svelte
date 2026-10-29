@@ -5,6 +5,7 @@
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Progress } from '#lib/components/ui/progress/index.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import { STRENGTH_LABELS, generatePassword, passwordStrength } from '#lib/password.ts';
 
 	interface Props {
@@ -24,9 +25,12 @@
 		disabled = false,
 		userName = '',
 		idPrefix = 'pw',
-		label = 'Password'
+		label
 	}: Props = $props();
 
+	const { t } = useI18n();
+	// STRENGTH_LABELS (lib/password.ts) msgids, listed so the admin catalog carries them.
+	void [N_('Very weak'), N_('Weak'), N_('Fair'), N_('Good'), N_('Strong')];
 	let reveal = $state(false);
 	const strength = $derived(passwordStrength(password, userName));
 
@@ -40,7 +44,7 @@
 
 <div class="grid gap-3">
 	<div class="grid gap-1.5">
-		<label for="{idPrefix}-new" class="text-sm font-medium">{label}</label>
+		<label for="{idPrefix}-new" class="text-sm font-medium">{label ?? t('Password')}</label>
 		<div class="flex flex-wrap items-center gap-2">
 			<Input
 				id="{idPrefix}-new"
@@ -57,19 +61,20 @@
 				variant="ghost"
 				size="icon"
 				{disabled}
-				aria-label={reveal ? 'Hide password' : 'Show password'}
+				aria-label={reveal ? t('Hide password') : t('Show password')}
 				aria-pressed={reveal}
 				onclick={() => (reveal = !reveal)}
 			>
 				{#if reveal}<EyeOff />{:else}<Eye />{/if}
 			</Button>
 			<Button type="button" variant="outline" {disabled} onclick={generate}>
-				<Dices /> Generate
+				<Dices />
+				{t('Generate')}
 			</Button>
 		</div>
 	</div>
 	<div class="grid gap-1.5">
-		<label for="{idPrefix}-confirm" class="text-sm font-medium">Re-type</label>
+		<label for="{idPrefix}-confirm" class="text-sm font-medium">{t('Re-type')}</label>
 		<Input
 			id="{idPrefix}-confirm"
 			name="pma_pw2"
@@ -82,14 +87,14 @@
 		/>
 	</div>
 	<div class="flex max-w-xs items-center gap-3" data-testid="password-strength">
-		<span class="text-xs text-muted-foreground">Strength:</span>
+		<span class="text-xs text-muted-foreground">{t('Strength:')}</span>
 		<Progress
 			value={password === '' ? 0 : (strength + 1) * 20}
 			class="max-w-32"
-			aria-label="Password strength"
+			aria-label={t('Password strength')}
 		/>
 		<span class="text-xs font-medium" data-testid="password-strength-label">
-			{password === '' ? '' : STRENGTH_LABELS[strength]}
+			{password === '' ? '' : t(STRENGTH_LABELS[strength])}
 		</span>
 	</div>
 </div>

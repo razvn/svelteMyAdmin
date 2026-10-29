@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import type { DatabaseInterface } from '../db/dbi';
 import { escapeId } from '../db/escape';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 
 export const SORT_COLUMNS = [
 	'SCHEMA_NAME',
@@ -191,7 +192,7 @@ export async function getServerPrivileges(dbi: DatabaseInterface): Promise<Serve
 }
 
 export const createSchema = z.object({
-	new_db: z.string().min(1, 'The database name is empty!').max(64, 'Name is too long.'),
+	new_db: z.string().min(1).max(64),
 	db_collation: z.string().max(64).optional().default('')
 });
 
@@ -199,12 +200,19 @@ export type CreateResult = { ok: true; name: string } | { ok: false; error: stri
 
 export async function createDatabase(
 	dbi: DatabaseInterface,
-	input: { new_db: string; db_collation?: string }
+	input: { new_db: string; db_collation?: string },
+	i18n: Translator = SOURCE_TRANSLATOR
 ): Promise<CreateResult> {
+	const { t } = i18n;
 	const parsed = createSchema.safeParse(input);
-	if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+	if (!parsed.success) {
+		return {
+			ok: false,
+			error: input.new_db === '' ? t('The database name is empty!') : t('Name is too long.')
+		};
+	}
 	let name = parsed.data.new_db;
-	if (name.includes('\0')) return { ok: false, error: 'Invalid database name.' };
+	if (name.includes('\0')) return { ok: false, error: t('Invalid database name.') };
 	const [lc] = await dbi.conn.query('SELECT @@lower_case_table_names AS v');
 	if (String((lc as Record<string, unknown>[])[0]?.v) === '1') name = name.toLowerCase();
 	let sql = `CREATE DATABASE ${escapeId(name)}`;
@@ -223,7 +231,7 @@ export async function createDatabase(
 }
 
 export const dropSchema = z.object({
-	selected_dbs: z.array(z.string().min(1).max(64)).min(1, 'No databases selected.')
+	selected_dbs: z.array(z.string().min(1).max(64)).min(1)
 });
 
 export type DropResult =
@@ -233,10 +241,12 @@ export type DropResult =
 export async function dropDatabases(
 	dbi: DatabaseInterface,
 	names: string[],
-	opts: { pmadb?: string } = {}
+	opts: { pmadb?: string } = {},
+	i18n: Translator = SOURCE_TRANSLATOR
 ): Promise<DropResult> {
+	const { t } = i18n;
 	const parsed = dropSchema.safeParse({ selected_dbs: names });
-	if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+	if (!parsed.success) return { ok: false, error: t('No databases selected.') };
 	const skipped: string[] = [];
 	const todo: string[] = [];
 	for (const n of new Set(parsed.data.selected_dbs)) {
@@ -244,7 +254,7 @@ export async function dropDatabases(
 		else todo.push(n);
 	}
 	if (todo.length === 0) {
-		return { ok: false, error: 'System databases cannot be dropped.' };
+		return { ok: false, error: t('System databases cannot be dropped.') };
 	}
 	const dropped: string[] = [];
 	for (const n of todo) {

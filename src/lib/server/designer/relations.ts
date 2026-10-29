@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Relations made from the Designer (Designer/Common.php addNewRelation / removeRelation): an InnoDB
  * foreign key through the table relation code of the Relation view, or an internal relation in
@@ -36,7 +37,7 @@ export const deleteRelationSchema = z.object({
 });
 export const displayFieldSchema = z.object({ table: ident, column: z.string().max(64) });
 
-const bad: ActionResult = { ok: false, error: 'Invalid input.', sql: [] };
+const bad: ActionResult = { ok: false, error: N_('Invalid input.'), sql: [] };
 
 export async function createRelation(
 	dbi: DatabaseInterface,

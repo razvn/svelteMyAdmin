@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Database / table / column / routine level privileges: object lists for the pickers, the update diff
  * (Privileges::updatePrivileges), revoke (getMessageAndSqlQueryForPrivilegesRevoke) and the "Users having
@@ -28,7 +29,7 @@ const sqlError = (e: unknown): string => {
 	const err = e as { sqlMessage?: string; message?: string };
 	return err.sqlMessage ?? err.message ?? String(e);
 };
-const DENIED = 'You do not have the privileges to administrate the users!';
+const DENIED = N_('You do not have the privileges to administrate the users!');
 
 /** A MariaDB account with an empty host is a role: addressed without host. */
 export function resolveAccount(server: PrivServer, account: Account): Account {

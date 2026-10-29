@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import {
@@ -50,7 +51,7 @@ export const actions: Actions = {
 		const { server, caps, plugins, lengths, thisHost } = await context(await locals.dbi);
 		if (!caps.isCreateUser) {
 			return fail(403, {
-				error: 'You do not have the privileges to administrate the users!',
+				error: locals.i18n.t('You do not have the privileges to administrate the users!'),
 				results: []
 			});
 		}
@@ -59,9 +60,9 @@ export const actions: Actions = {
 			thisHost,
 			plugins: plugins.map((p) => p.name)
 		});
-		if (!parsed.ok) return fail(400, { error: parsed.error, results: [] });
+		if (!parsed.ok) return fail(400, { error: errorText(parsed, locals.i18n), results: [] });
 		const res = await createAccount(await locals.dbi, server, caps, parsed.value);
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		return {
 			created: { user: parsed.value.account.user, host: parsed.value.account.host },
 			results: res.results

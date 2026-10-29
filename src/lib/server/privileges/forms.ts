@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Parsing and validation of the privilege forms (zod). The form field names follow phpMyAdmin's
  * (`pred_username`, `pred_hostname`, `pma_pw`, `max_questions`, `ssl_type`, ...); privileges are posted as a
@@ -15,7 +16,9 @@ import {
 } from '#lib/sql/privileges/index.ts';
 import type { GlobalUpdateInput, NewAccountInput } from './operations.ts';
 
-export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
+export type Parsed<T> =
+	| { ok: true; value: T }
+	| { ok: false; error: string; errorParams?: Record<string, string | number> };
 
 const text = (fd: FormData, name: string): string => {
 	const v = fd.get(name);
@@ -76,9 +79,10 @@ export function parsePasswordFields(fd: FormData, mode: 'none' | 'userdefined'):
 	if (mode === 'none') return { ok: true, value: '' };
 	const pw = text(fd, 'pma_pw');
 	const pw2 = text(fd, 'pma_pw2');
-	if (pw.length === 0 || pw2.length === 0) return { ok: false, error: 'The password is empty!' };
-	if (pw !== pw2) return { ok: false, error: "The passwords aren't the same!" };
-	if (pw.length > 256) return { ok: false, error: 'Password is too long!' };
+	if (pw.length === 0 || pw2.length === 0)
+		return { ok: false, error: N_('The password is empty!') };
+	if (pw !== pw2) return { ok: false, error: N_("The passwords aren't the same!") };
+	if (pw.length > 256) return { ok: false, error: N_('Password is too long!') };
 	return { ok: true, value: pw };
 }
 
@@ -86,15 +90,16 @@ export function parsePasswordFields(fd: FormData, mode: 'none' | 'userdefined'):
 export function parseNewAccountForm(fd: FormData, ctx: NewAccountContext): Parsed<NewAccountInput> {
 	const user = predUser.parse(text(fd, 'pred_username')) === 'any' ? '' : text(fd, 'username');
 	if (user === '' && predUser.parse(text(fd, 'pred_username')) !== 'any') {
-		return { ok: false, error: 'The user name is empty!' };
+		return { ok: false, error: N_('The user name is empty!') };
 	}
 	if (user.length > ctx.lengths.user) {
 		return {
 			ok: false,
-			error: `The user name is too long (maximum ${ctx.lengths.user} characters).`
+			error: N_('The user name is too long (maximum {max} characters).'),
+			errorParams: { max: ctx.lengths.user }
 		};
 	}
-	if (user.includes('\0')) return { ok: false, error: 'Invalid user name.' };
+	if (user.includes('\0')) return { ok: false, error: N_('Invalid user name.') };
 
 	let host: string;
 	switch (predHost.parse(text(fd, 'pred_hostname'))) {
@@ -112,10 +117,10 @@ export function parseNewAccountForm(fd: FormData, ctx: NewAccountContext): Parse
 			break;
 		default:
 			host = text(fd, 'hostname').trim();
-			if (host === '') return { ok: false, error: 'The host name is empty!' };
+			if (host === '') return { ok: false, error: N_('The host name is empty!') };
 	}
 	if (host.length > ctx.lengths.host || host.includes('\0')) {
-		return { ok: false, error: 'Invalid host name.' };
+		return { ok: false, error: N_('Invalid host name.') };
 	}
 
 	const pw = parsePasswordFields(fd, predPassword.parse(text(fd, 'pred_password')));
@@ -123,7 +128,7 @@ export function parseNewAccountForm(fd: FormData, ctx: NewAccountContext): Parse
 
 	const plugin = text(fd, 'authentication_plugin');
 	if (plugin !== '' && (!isValidPluginName(plugin) || !ctx.plugins.includes(plugin))) {
-		return { ok: false, error: 'Unknown authentication plugin.' };
+		return { ok: false, error: N_('Unknown authentication plugin.') };
 	}
 
 	const databases: DatabaseGrantChoice = {
@@ -205,11 +210,15 @@ export function parseLoginForm(
 	const user = text(fd, 'username') === '' ? from.user : text(fd, 'username');
 	const host = text(fd, 'hostname').trim() === '' ? from.host : text(fd, 'hostname').trim();
 	if (user.length > lengths.user)
-		return { ok: false, error: `The user name is too long (maximum ${lengths.user} characters).` };
-	if (host.length > lengths.host) return { ok: false, error: 'Invalid host name.' };
-	if (user.includes('\0') || host.includes('\0')) return { ok: false, error: 'Invalid name.' };
+		return {
+			ok: false,
+			error: N_('The user name is too long (maximum {max} characters).'),
+			errorParams: { max: lengths.user }
+		};
+	if (host.length > lengths.host) return { ok: false, error: N_('Invalid host name.') };
+	if (user.includes('\0') || host.includes('\0')) return { ok: false, error: N_('Invalid name.') };
 	const mode = Number(text(fd, 'mode') || 4);
-	if (!isCopyMode(mode)) return { ok: false, error: 'Invalid mode.' };
+	if (!isCopyMode(mode)) return { ok: false, error: N_('Invalid mode.') };
 	return { ok: true, value: { from, to: { user, host }, mode } };
 }
 

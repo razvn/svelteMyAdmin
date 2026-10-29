@@ -6,8 +6,10 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const query = $derived(accountQuery(data.account));
@@ -25,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Edit privileges: table - svelteMyAdmin</title>
+	<title>{t('Edit privileges: table')} - svelteMyAdmin</title>
 </svelte:head>
 
 <AccountEditShell
@@ -39,49 +41,53 @@
 	{#if data.state === 'ok'}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Database</Card.Title>
-				<Card.Description>Choose the database whose tables you want to edit.</Card.Description>
+				<Card.Title>{t('Database')}</Card.Title>
+				<Card.Description
+					>{t('Choose the database whose tables you want to edit.')}</Card.Description
+				>
 			</Card.Header>
 			<Card.Content>
 				<form method="GET" class="flex flex-wrap items-center gap-2" data-testid="choose-database">
 					<input type="hidden" name="username" value={data.account.user} />
 					<input type="hidden" name="hostname" value={data.account.host} />
-					<NativeSelect name="dbname" aria-label="Database" value={data.dbname}>
-						<NativeSelectOption value="">Select a database</NativeSelectOption>
+					<NativeSelect name="dbname" aria-label={t('Database')} value={data.dbname}>
+						<NativeSelectOption value="">{t('Select a database')}</NativeSelectOption>
 						{#each data.databases as db (db)}
 							<NativeSelectOption value={db}>{db}</NativeSelectOption>
 						{/each}
 					</NativeSelect>
-					<Button type="submit" variant="outline">Go</Button>
+					<Button type="submit" variant="outline">{t('Go')}</Button>
 				</form>
 			</Card.Content>
 		</Card.Root>
 
 		{#if data.dbname}
 			<GrantList
-				title="Table-specific privileges in {data.dbname}"
-				headings={['Table']}
+				title={t('Table-specific privileges in {db}', { db: data.dbname })}
+				headings={[t('Table')]}
 				{rows}
 				canEdit={data.isGrantUser}
-				empty="No table-specific privileges in this database."
+				empty={t('No table-specific privileges in this database.')}
 				testid="table-grants"
 			/>
 
 			{#if data.isGrantUser}
 				<Card.Root>
-					<Card.Header><Card.Title>Add privileges on the following table</Card.Title></Card.Header>
+					<Card.Header
+						><Card.Title>{t('Add privileges on the following table')}</Card.Title></Card.Header
+					>
 					<Card.Content>
 						<form method="GET" class="flex flex-wrap items-center gap-2" data-testid="choose-table">
 							<input type="hidden" name="username" value={data.account.user} />
 							<input type="hidden" name="hostname" value={data.account.host} />
 							<input type="hidden" name="dbname" value={data.dbname} />
-							<NativeSelect name="tablename" aria-label="Table" value={data.tablename}>
-								<NativeSelectOption value="">Select a table</NativeSelectOption>
-								{#each data.tables as t (t)}
-									<NativeSelectOption value={t}>{t}</NativeSelectOption>
+							<NativeSelect name="tablename" aria-label={t('Table')} value={data.tablename}>
+								<NativeSelectOption value="">{t('Select a table')}</NativeSelectOption>
+								{#each data.tables as tbl (tbl)}
+									<NativeSelectOption value={tbl}>{tbl}</NativeSelectOption>
 								{/each}
 							</NativeSelect>
-							<Button type="submit" data-testid="choose-table-go">Go</Button>
+							<Button type="submit" data-testid="choose-table-go">{t('Go')}</Button>
 						</form>
 					</Card.Content>
 				</Card.Root>
@@ -94,7 +100,9 @@
 				<ScopedEditor
 					server={data.server}
 					scope="table"
-					title="Table-specific privileges on {data.dbname}.{data.tablename}"
+					title={t('Table-specific privileges on {target}', {
+						target: `${data.dbname}.${data.tablename}`
+					})}
 					initial={editing.initial}
 					canEdit={data.isGrantUser}
 					hidden={{ dbname: [data.dbname], tablename: [data.tablename] }}
@@ -102,10 +110,11 @@
 					{#snippet extra()}
 						<Card.Root id="column-privileges">
 							<Card.Header>
-								<Card.Title>Column-specific privileges</Card.Title>
+								<Card.Title>{t('Column-specific privileges')}</Card.Title>
 								<Card.Description>
-									Select the columns each privilege applies to (Ctrl/Cmd-click for several). A
-									privilege already granted on the whole table makes its column list redundant.
+									{t(
+										'Select the columns each privilege applies to (Ctrl/Cmd-click for several). A privilege already granted on the whole table makes its column list redundant.'
+									)}
 								</Card.Description>
 							</Card.Header>
 							<Card.Content class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

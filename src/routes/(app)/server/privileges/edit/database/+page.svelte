@@ -6,8 +6,10 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const query = $derived(accountQuery(data.account));
@@ -25,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Edit privileges: database - svelteMyAdmin</title>
+	<title>{t('Edit privileges: database')} - svelteMyAdmin</title>
 </svelte:head>
 
 <AccountEditShell
@@ -38,21 +40,22 @@
 >
 	{#if data.state === 'ok'}
 		<GrantList
-			title="Database-specific privileges"
-			headings={['Database']}
+			title={t('Database-specific privileges')}
+			headings={[t('Database')]}
 			{rows}
 			canEdit={data.isGrantUser}
-			empty="No database-specific privileges."
+			empty={t('No database-specific privileges.')}
 			testid="database-grants"
 		/>
 
 		{#if data.isGrantUser}
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>Add privileges on the following database(s)</Card.Title>
+					<Card.Title>{t('Add privileges on the following database(s)')}</Card.Title>
 					<Card.Description>
-						Pick existing databases, and/or type a name with wildcards (<code>_</code> and
-						<code>%</code>; escape them with <code>\</code> to match literally).
+						{t(
+							'Pick existing databases, and/or type a name with wildcards (_ and %; escape them with \\ to match literally).'
+						)}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
@@ -60,7 +63,7 @@
 						<input type="hidden" name="username" value={data.account.user} />
 						<input type="hidden" name="hostname" value={data.account.host} />
 						<div class="grid gap-1.5">
-							<label for="dbpick" class="text-sm font-medium">Databases</label>
+							<label for="dbpick" class="text-sm font-medium">{t('Databases')}</label>
 							<select
 								id="dbpick"
 								name="dbpick"
@@ -75,18 +78,18 @@
 						</div>
 						<div class="grid gap-1.5">
 							<label for="dbwild" class="text-sm font-medium"
-								>Use text field (wildcards allowed)</label
+								>{t('Use text field (wildcards allowed)')}</label
 							>
 							<Input
 								id="dbwild"
 								name="dbwild"
-								placeholder="e.g. app\_%"
+								placeholder={t('e.g. app\\_%')}
 								spellcheck={false}
 								class="max-w-sm"
 							/>
 						</div>
 						<div>
-							<Button type="submit" data-testid="add-database-go">Go</Button>
+							<Button type="submit" data-testid="add-database-go">{t('Go')}</Button>
 						</div>
 					</form>
 				</Card.Content>
@@ -98,7 +101,7 @@
 				<ScopedEditor
 					server={data.server}
 					scope="database"
-					title="Database-specific privileges on {data.editing.join(', ')}"
+					title={t('Database-specific privileges on {target}', { target: data.editing.join(', ') })}
 					initial={data.initial}
 					canEdit={data.isGrantUser}
 					hidden={{ dbname: data.editing }}

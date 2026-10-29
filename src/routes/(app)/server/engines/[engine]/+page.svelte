@@ -9,13 +9,15 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { ScrollArea } from '#lib/components/ui/scroll-area/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
-	<title>{data.engine.name} - Storage engines - svelteMyAdmin</title>
+	<title>{data.engine.name} - {t('Storage engines')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -24,7 +26,7 @@
 		href={resolve(bare('/server/engines'))}
 	>
 		<ArrowLeft class="size-4" />
-		All storage engines
+		{t('All storage engines')}
 	</a>
 
 	<PageHeader icon={Cpu} title={data.engine.name} description={data.engine.comment}>
@@ -35,8 +37,8 @@
 
 	<Card.Root class="gap-0 py-0">
 		<Card.Header class="border-b py-5">
-			<Card.Title>Variables</Card.Title>
-			<Card.Description>Global variables of this engine.</Card.Description>
+			<Card.Title>{t('Variables')}</Card.Title>
+			<Card.Description>{t('Global variables of this engine.')}</Card.Description>
 		</Card.Header>
 		<Card.Content class="px-0">
 			{#if data.variables.length > 0}
@@ -44,8 +46,8 @@
 					<Table.Root data-testid="engine-variables">
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Variable</Table.Head>
-								<Table.Head class="text-end">Value</Table.Head>
+								<Table.Head>{t('Variable')}</Table.Head>
+								<Table.Head class="text-end">{t('Value')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -60,7 +62,7 @@
 				</div>
 			{:else}
 				<p class="px-6 py-5 text-sm text-muted-foreground">
-					No variables are known for this engine.
+					{t('No variables are known for this engine.')}
 				</p>
 			{/if}
 		</Card.Content>
@@ -69,8 +71,8 @@
 	{#if data.innodbStatus !== null}
 		<Card.Root class="gap-0 py-0">
 			<Card.Header class="border-b py-5">
-				<Card.Title>InnoDB status</Card.Title>
-				<Card.Description>Output of SHOW ENGINE INNODB STATUS.</Card.Description>
+				<Card.Title>{t('InnoDB status')}</Card.Title>
+				<Card.Description>{t('Output of SHOW ENGINE INNODB STATUS.')}</Card.Description>
 			</Card.Header>
 			<Card.Content class="p-5">
 				<ScrollArea class="h-96 rounded-lg border bg-muted">

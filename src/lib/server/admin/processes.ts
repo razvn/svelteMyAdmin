@@ -1,4 +1,5 @@
 /** Process list and KILL (libraries/classes/Server/Status/Processes.php). */
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import type { Connection } from 'mysql2/promise';
 
 export interface ProcessRow {
@@ -57,11 +58,16 @@ export type KillResult =
 	{ ok: true } | { ok: false; reason: 'invalid' | 'own' | 'error'; message: string };
 
 /** KILL <id>. Refuses invalid ids and the connection that runs the request. */
-export async function killProcess(conn: Connection, rawId: unknown): Promise<KillResult> {
+export async function killProcess(
+	conn: Connection,
+	rawId: unknown,
+	i18n: Translator = SOURCE_TRANSLATOR
+): Promise<KillResult> {
+	const { t } = i18n;
 	const id = parseProcessId(rawId);
-	if (id === null) return { ok: false, reason: 'invalid', message: 'Invalid process id.' };
+	if (id === null) return { ok: false, reason: 'invalid', message: t('Invalid process id.') };
 	if (id === (await connectionId(conn))) {
-		return { ok: false, reason: 'own', message: 'You cannot kill your own connection.' };
+		return { ok: false, reason: 'own', message: t('You cannot kill your own connection.') };
 	}
 	try {
 		await conn.query(`KILL ${id}`);
@@ -71,7 +77,7 @@ export async function killProcess(conn: Connection, rawId: unknown): Promise<Kil
 		return {
 			ok: false,
 			reason: 'error',
-			message: err.sqlMessage ?? `Thread ${id} could not be killed.`
+			message: err.sqlMessage ?? t('Thread {id} could not be killed.', { id })
 		};
 	}
 }

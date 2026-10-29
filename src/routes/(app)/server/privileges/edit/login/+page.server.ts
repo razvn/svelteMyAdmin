@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { fail } from '@sveltejs/kit';
 import {
 	changeLogin,
@@ -36,15 +37,21 @@ export const actions: Actions = {
 			ctx.account,
 			await getAccountNameLengths(ctx.dbi)
 		);
-		if (!parsed.ok) return fail(400, { error: parsed.error, results: [] });
+		if (!parsed.ok) return fail(400, { error: errorText(parsed, locals.i18n), results: [] });
 		const res = await changeLogin(ctx.dbi, ctx.server, ctx.caps, parsed.value);
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
 		const to = parsed.value.to;
 		return {
 			saved:
 				parsed.value.mode === 4
-					? `The account '${to.user}'@'${to.host}' was created with the same privileges.`
-					: `The account was changed to '${to.user}'@'${to.host}'.`,
+					? locals.i18n.t("The account '{user}'@'{host}' was created with the same privileges.", {
+							user: to.user,
+							host: to.host
+						})
+					: locals.i18n.t("The account was changed to '{user}'@'{host}'.", {
+							user: to.user,
+							host: to.host
+						}),
 			newAccount: to,
 			oldRemoved: parsed.value.mode !== 4,
 			results: res.results
@@ -55,27 +62,30 @@ export const actions: Actions = {
 		const ctx = await editContext(locals, url);
 		if (!ctx.caps.isGrantUser) {
 			return fail(403, {
-				error: 'You do not have the privileges to administrate the users!',
+				error: locals.i18n.t('You do not have the privileges to administrate the users!'),
 				results: []
 			});
 		}
 		const fd = await request.formData();
 		const mode = fd.get('pred_password') === 'none' ? 'none' : 'userdefined';
 		const pw = parsePasswordFields(fd, mode);
-		if (!pw.ok) return fail(400, { error: pw.error, results: [] });
+		if (!pw.ok) return fail(400, { error: errorText(pw, locals.i18n), results: [] });
 		const plugins = authPluginsFor(ctx.server, await listActiveAuthPlugins(ctx.dbi)).map(
 			(p) => p.name
 		);
 		const plugin = String(fd.get('authentication_plugin') ?? '');
 		if (plugin !== '' && !plugins.includes(plugin)) {
-			return fail(400, { error: 'Unknown authentication plugin.', results: [] });
+			return fail(400, { error: locals.i18n.t('Unknown authentication plugin.'), results: [] });
 		}
 		const res = await changePassword(ctx.dbi, ctx.server, {
 			account: ctx.account,
 			password: pw.value,
 			plugin: plugin || undefined
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
-		return { saved: 'The password for the account has been changed.', results: res.results };
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
+		return {
+			saved: locals.i18n.t('The password for the account has been changed.'),
+			results: res.results
+		};
 	}
 };

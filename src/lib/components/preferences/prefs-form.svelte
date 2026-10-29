@@ -10,6 +10,7 @@
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import { Textarea } from '#lib/components/ui/textarea/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { FieldView, FormView } from '#lib/server/preferences/page.ts';
 
 	interface Props {
@@ -20,6 +21,7 @@
 		message?: string | null;
 	}
 
+	const { t, tn } = useI18n();
 	let { view, posted = null, errors = null, message = null }: Props = $props();
 
 	const allFields = (): FieldView[] => view.sections.flatMap((s) => s.fields);
@@ -57,15 +59,17 @@
 	{/if}
 	{#if errors && Object.keys(errors).length > 0}
 		<Alert variant="destructive" role="alert" data-testid="prefs-errors">
-			<AlertDescription>Some values are not valid. Fix the highlighted fields.</AlertDescription>
+			<AlertDescription
+				>{t('Some values are not valid. Fix the highlighted fields.')}</AlertDescription
+			>
 		</Alert>
 	{/if}
 
 	{#each view.sections as section (section.id)}
 		<Card.Root data-testid="section-{section.id}">
 			<Card.Header>
-				<Card.Title>{section.title}</Card.Title>
-				{#if section.description}<Card.Description>{section.description}</Card.Description>{/if}
+				<Card.Title>{t(section.title)}</Card.Title>
+				{#if section.description}<Card.Description>{t(section.description)}</Card.Description>{/if}
 			</Card.Header>
 			<Card.Content class="flex flex-col divide-y">
 				{#each section.fields as f (f.path)}
@@ -81,13 +85,15 @@
 					>
 						<div class="flex min-w-0 flex-col gap-1">
 							<label for={id} class="flex flex-wrap items-center gap-2 text-sm font-medium">
-								{f.label}
+								{t(f.label)}
 								{#if differs(f)}
-									<Badge variant="info" data-testid="badge-{f.path}">Differs from default</Badge>
+									<Badge variant="info" data-testid="badge-{f.path}"
+										>{t('Differs from default')}</Badge
+									>
 								{/if}
 							</label>
-							{#if f.help}<p class="text-xs text-muted-foreground">{f.help}</p>{/if}
-							{#if f.comment}<p class="text-xs text-muted-foreground">{f.comment}</p>{/if}
+							{#if f.help}<p class="text-xs text-muted-foreground">{t(f.help)}</p>{/if}
+							{#if f.comment}<p class="text-xs text-muted-foreground">{t(f.comment)}</p>{/if}
 							{#if errors?.[f.path]}
 								<p class="text-xs text-destructive" role="alert">{errors[f.path]}</p>
 							{/if}
@@ -98,14 +104,16 @@
 									<input type="hidden" name={f.path} value={values[f.path]} />
 									<Checkbox
 										{id}
-										aria-label={f.label}
+										aria-label={t(f.label)}
 										checked={values[f.path] === '1'}
 										onCheckedChange={(c) => (values[f.path] = c ? '1' : '0')}
 									/>
 								{:else if f.type === 'select'}
 									<NativeSelect {id} name={f.path} bind:value={values[f.path]} class="w-full">
 										{#each f.options ?? [] as o (o.value)}
-											<NativeSelectOption value={o.value}>{o.label || '(none)'}</NativeSelectOption>
+											<NativeSelectOption value={o.value}
+												>{o.label ? t(o.label) : t('(none)')}</NativeSelectOption
+											>
 										{/each}
 									</NativeSelect>
 								{:else if f.type === 'number'}
@@ -135,8 +143,8 @@
 								variant="ghost"
 								size="icon"
 								class="shrink-0"
-								title="Restore default value"
-								aria-label="Restore default value of {f.label}"
+								title={t('Restore default value')}
+								aria-label={t('Restore default value of {name}', { name: t(f.label) })}
 								disabled={!differs(f)}
 								onclick={() => (values[f.path] = f.serverDefault)}
 								data-testid="restore-{f.path}"
@@ -155,14 +163,14 @@
 	>
 		{#if dirtyCount > 0}
 			<span class="mr-auto text-sm text-muted-foreground" data-testid="dirty-count">
-				{dirtyCount} unsaved {dirtyCount === 1 ? 'change' : 'changes'}
+				{tn('{n} unsaved change', '{n} unsaved changes', dirtyCount)}
 			</span>
 		{/if}
 		<Button type="button" variant="outline" onclick={resetAll} data-testid="prefs-reset">
-			Reset
+			{t('Reset')}
 		</Button>
 		<Button type="submit" disabled={!hydration.ready || submitting} data-testid="prefs-apply">
-			Apply
+			{t('Apply')}
 		</Button>
 	</div>
 </form>

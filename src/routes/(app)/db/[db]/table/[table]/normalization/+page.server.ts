@@ -5,10 +5,10 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const { tableType } = await parent();
-	if (tableType === 'view') error(400, 'A view cannot be normalized.');
+	if (tableType === 'view') error(400, locals.i18n.t('A view cannot be normalized.'));
 	const dbi = await locals.dbi;
 	const info = await loadTableInfo(dbi, params.db, params.table);
-	if (!info) error(404, 'Table not found');
+	if (!info) error(404, locals.i18n.t('Table not found'));
 	return {
 		db: params.db,
 		table: params.table,

@@ -188,7 +188,7 @@ export async function guardTab(
 	const denied = await getDeniedTabs(locals);
 	const path = currentTabPath(level, ctx, pathname);
 	if (path && !isPathAllowed(level, path, denied)) {
-		error(403, 'Your user group does not allow access to this page.');
+		error(403, locals.i18n.t('Your user group does not allow access to this page.'));
 	}
 	return denied;
 }

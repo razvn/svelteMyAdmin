@@ -11,6 +11,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
 
 	interface Props {
@@ -20,6 +21,7 @@
 	}
 
 	let { roles, canManage, result = null }: Props = $props();
+	const { t } = useI18n();
 	let name = $state('');
 	let toDrop = $state<{ name: string; host: string } | null>(null);
 	let dropForm = $state<HTMLFormElement>();
@@ -27,10 +29,11 @@
 
 <Card.Root class="gap-0 py-0" data-testid="roles-section">
 	<Card.Header class="border-b py-5">
-		<Card.Title>Roles</Card.Title>
+		<Card.Title>{t('Roles')}</Card.Title>
 		<Card.Description>
-			Roles bundle privileges that can be granted to user accounts. Edit a role to set its own
-			privileges.
+			{t(
+				'Roles bundle privileges that can be granted to user accounts. Edit a role to set its own privileges.'
+			)}
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="grid gap-4 px-0 pb-5">
@@ -40,16 +43,18 @@
 			>
 		{:else if result?.created}
 			<Alert variant="success" role="status" class="mx-5 w-auto" data-testid="role-created">
-				<AlertDescription>The role {result.created} was created.</AlertDescription>
+				<AlertDescription
+					>{t('The role {name} was created.', { name: result.created })}</AlertDescription
+				>
 			</Alert>
 		{/if}
 		<Table.Root data-testid="roles-table">
 			<Table.Header>
 				<Table.Row>
-					<Table.Head>Role</Table.Head>
-					<Table.Head>Host name</Table.Head>
-					<Table.Head class="text-end">Members</Table.Head>
-					<Table.Head class="text-end">Action</Table.Head>
+					<Table.Head>{t('Role')}</Table.Head>
+					<Table.Head>{t('Host name')}</Table.Head>
+					<Table.Head class="text-end">{t('Members')}</Table.Head>
+					<Table.Head class="text-end">{t('Action')}</Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
@@ -57,7 +62,7 @@
 					<Table.Row data-testid="role-row" data-role={r.name}>
 						<Table.Cell class="font-mono text-[13px] font-medium">
 							{r.name}
-							<Badge variant="muted">role</Badge>
+							<Badge variant="muted">{t('role')}</Badge>
 						</Table.Cell>
 						<Table.Cell class="font-mono text-[13px]">{r.host || '-'}</Table.Cell>
 						<Table.Cell class="text-end tabular-nums">{r.members}</Table.Cell>
@@ -67,8 +72,8 @@
 									variant="ghost"
 									size="icon-sm"
 									href="/server/privileges/edit?{accountQuery({ user: r.name, host: r.host })}"
-									aria-label="Edit privileges of role {r.name}"
-									title="Edit privileges"
+									aria-label={t('Edit privileges of role {name}', { name: r.name })}
+									title={t('Edit privileges')}
 								>
 									<Pencil />
 								</Button>
@@ -78,8 +83,8 @@
 										size="icon-sm"
 										disabled={!hydration.ready}
 										onclick={() => (toDrop = { name: r.name, host: r.host })}
-										aria-label="Drop role {r.name}"
-										title="Drop role"
+										aria-label={t('Drop role {name}', { name: r.name })}
+										title={t('Drop role')}
 									>
 										<Trash2 />
 									</Button>
@@ -90,7 +95,7 @@
 				{:else}
 					<Table.Row>
 						<Table.Cell colspan={4} class="py-6 text-center text-muted-foreground">
-							No roles.
+							{t('No roles.')}
 						</Table.Cell>
 					</Table.Row>
 				{/each}
@@ -109,14 +114,15 @@
 			>
 				<Input
 					name="role_name"
-					aria-label="Role name"
-					placeholder="Role name"
+					aria-label={t('Role name')}
+					placeholder={t('Role name')}
 					spellcheck={false}
 					class="max-w-xs"
 					bind:value={name}
 				/>
 				<Button type="submit" variant="outline" data-testid="create-role">
-					<Plus /> Create role
+					<Plus />
+					{t('Create role')}
 				</Button>
 			</form>
 		{/if}
@@ -139,13 +145,15 @@
 <AlertDialog.Root open={toDrop !== null} onOpenChange={(o) => !o && (toDrop = null)}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Drop role</AlertDialog.Title>
+			<AlertDialog.Title>{t('Drop role')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				The role {toDrop?.name} is removed from every account it was granted to.
+				{t('The role {name} is removed from every account it was granted to.', {
+					name: toDrop?.name ?? ''
+				})}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				onclick={(e: MouseEvent) => {
@@ -153,7 +161,7 @@
 					dropForm?.requestSubmit();
 				}}
 			>
-				Drop
+				{t('Drop')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

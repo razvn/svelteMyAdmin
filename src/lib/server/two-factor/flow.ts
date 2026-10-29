@@ -3,6 +3,7 @@
  * Mirrors TwoFactorPlugin::{render,check,setup,configure} of the phpMyAdmin backends.
  */
 import type { Cookies } from '@sveltejs/kit';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import QRCode from 'qrcode';
 import type { AppConfig, ServerConfig } from '#lib/server/config/schema.ts';
 import { availableBackends, effectiveBackend, type TwoFactorConfig } from './config.ts';
@@ -20,6 +21,8 @@ export interface FlowCtx {
 	url: URL;
 	user: string;
 	serverIndex: number;
+	/** Translator for the error messages (English when omitted). */
+	i18n?: Translator;
 }
 
 export type { ChallengeView, SetupView } from '#lib/two-factor/types.ts';
@@ -27,7 +30,18 @@ import type { ChallengeView, SetupView } from '#lib/two-factor/types.ts';
 
 export type CheckResult = { ok: true } | { ok: false; error: string };
 
-const FAILED = 'Two-factor authentication failed.';
+const failedText = (ctx: FlowCtx, message = ''): string => {
+	const { t } = ctx.i18n ?? SOURCE_TRANSLATOR;
+	return message
+		? t('Two-factor authentication failed: {message}', { message })
+		: t('Two-factor authentication failed.');
+};
+const tooMany = (ctx: FlowCtx, wait: number): string =>
+	(ctx.i18n ?? SOURCE_TRANSLATOR).tn(
+		'Too many failed attempts. Try again in {n} second.',
+		'Too many failed attempts. Try again in {n} seconds.',
+		wait
+	);
 const secure = (ctx: FlowCtx) => ctx.url.protocol === 'https:';
 const rp = (ctx: FlowCtx) => webauthn.relyingParty(ctx.url, ctx.config.PmaAbsoluteUri);
 const formString = (fd: FormData, name: string) => {
@@ -76,10 +90,7 @@ export async function check(
 	const lk = limiterKey(ctx.serverIndex, ctx.user);
 	const wait = secondFactorLimiter.retryAfter(lk);
 	if (wait > 0) {
-		return {
-			ok: false,
-			error: `Too many failed attempts. Try again in ${wait} second${wait === 1 ? '' : 's'}.`
-		};
+		return { ok: false, error: tooMany(ctx, wait) };
 	}
 	const backend = effective(ctx, cfg);
 	let ok = false;
@@ -121,7 +132,7 @@ export async function check(
 		return { ok: true };
 	}
 	secondFactorLimiter.fail(lk);
-	return { ok: false, error: message ? `${FAILED.slice(0, -1)}: ${message}` : FAILED };
+	return { ok: false, error: failedText(ctx, message) };
 }
 
 /** Setup step (TwoFactorPlugin::setup): what the configure form shows. */
@@ -185,11 +196,10 @@ export async function configure(
 ): Promise<ConfigureResult> {
 	const lk = limiterKey(ctx.serverIndex, ctx.user);
 	const wait = secondFactorLimiter.retryAfter(lk);
-	if (wait > 0)
-		return { ok: false, error: `Too many failed attempts. Try again in ${wait} seconds.` };
+	if (wait > 0) return { ok: false, error: tooMany(ctx, wait) };
 	const secret = ctx.config.blowfish_secret;
 	const state = getState(ctx.cookies, secret, 'setup', ctx.user, ctx.serverIndex);
-	let result: ConfigureResult = { ok: false, error: FAILED };
+	let result: ConfigureResult = { ok: false, error: failedText(ctx) };
 	if (backend === 'application') {
 		const key = state?.backend === 'application' ? String(state.secret ?? '') : '';
 		if (key && verifyTotp(key, formString(fd, '2fa_code'))) {
@@ -214,7 +224,7 @@ export async function configure(
 			} catch (e) {
 				result = {
 					ok: false,
-					error: `${FAILED.slice(0, -1)}: ${e instanceof Error ? e.message : ''}`
+					error: failedText(ctx, e instanceof Error ? e.message : '')
 				};
 			}
 		}
