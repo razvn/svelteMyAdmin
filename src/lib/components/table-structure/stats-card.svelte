@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
-		import type { TableStats } from '#lib/server/table/structure.ts';
+	import type { TableStats } from '#lib/server/table/structure.ts';
 	const { t, fmt } = useI18n();
 
 	interface Props {
@@ -83,7 +83,9 @@
 	<Card.Header>
 		<Card.Title>{t('Information')}</Card.Title>
 		{#if stats.comment}
-			<Card.Description>{t('Table comments: {comment}', { comment: stats.comment })}</Card.Description>
+			<Card.Description
+				>{t('Table comments: {comment}', { comment: stats.comment })}</Card.Description
+			>
 		{/if}
 	</Card.Header>
 	<Card.Content class="flex flex-col gap-5">

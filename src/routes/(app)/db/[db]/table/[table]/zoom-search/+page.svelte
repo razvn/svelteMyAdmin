@@ -73,7 +73,10 @@
 	<PageHeader
 		icon={ChartScatter}
 		title={t('Zoom search')}
-		description={t('Plot the rows of {table} matching up to four criteria; the first two columns are the X and Y axes.', { table })}
+		description={t(
+			'Plot the rows of {table} matching up to four criteria; the first two columns are the X and Y axes.',
+			{ table }
+		)}
 	/>
 	<SearchNav {db} {table} current="zoom-search" />
 
@@ -247,7 +250,8 @@
 						<Sheet.Footer>
 							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- signed URL built on the server -->
 							<a href={selectedPoint.editHref} class={buttonVariants()}>
-								<SquarePen /> {t('Edit this row')}
+								<SquarePen />
+								{t('Edit this row')}
 							</a>
 						</Sheet.Footer>
 					{/if}

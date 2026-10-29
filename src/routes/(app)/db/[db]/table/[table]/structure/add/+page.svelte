@@ -29,7 +29,11 @@
 	<PageHeader
 		icon={Columns3}
 		title={t('Add columns')}
-		description="{data.db}.{data.table} · {tn('{n} new column', '{n} new columns', data.num)} {where}"
+		description="{data.db}.{data.table} · {tn(
+			'{n} new column',
+			'{n} new columns',
+			data.num
+		)} {where}"
 	/>
 	<AlterColumnsForm
 		mode="add"

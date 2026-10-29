@@ -60,7 +60,9 @@
 				return true;
 			}
 			toast.error(
-				result.type === 'failure' ? String(result.data?.error ?? t('Failed.')) : t('Unexpected error.')
+				result.type === 'failure'
+					? String(result.data?.error ?? t('Failed.'))
+					: t('Unexpected error.')
 			);
 		} catch {
 			toast.error(t('Unexpected error.'));
@@ -130,7 +132,8 @@
 					</Card.Description>
 				</div>
 				<Button size="sm" onclick={() => openEditor(null)} disabled={!data.fkSupported}>
-					<Plus /> {t('Add foreign key')}
+					<Plus />
+					{t('Add foreign key')}
 				</Button>
 			</Card.Header>
 			{#if !data.fkSupported}
@@ -334,7 +337,11 @@
 					<Button
 						size="sm"
 						onclick={() =>
-							post('saveDisplay', { column: displayColumn }, t('The display column has been saved.'))}
+							post(
+								'saveDisplay',
+								{ column: displayColumn },
+								t('The display column has been saved.')
+							)}
 					>
 						{t('Save')}
 					</Button>

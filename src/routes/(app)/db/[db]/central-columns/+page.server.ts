@@ -118,7 +118,10 @@ export const actions: Actions = {
 					})
 				};
 			} catch (e) {
-				return { error: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Could not save the column.') };
+				return {
+					error:
+						(e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Could not save the column.')
+				};
 			}
 		});
 		if (!done) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
@@ -151,7 +154,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const table = String(fd.get('table') ?? '');
 		const list = names(fd);
-		if (!table || list.length === 0) return fail(400, { error: locals.i18n.t('No columns selected.') });
+		if (!table || list.length === 0)
+			return fail(400, { error: locals.i18n.t('No columns selected.') });
 		const dbi = await locals.dbi;
 		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			addTableColumns(conn, q, dbi, params.db, table, list)

@@ -14,7 +14,7 @@
 	import type { CollationGroup } from './types.ts';
 	import EnumValuesDialog from './enum-values-dialog.svelte';
 	import { useI18n } from '#lib/i18n/index.ts';
-	const { t, tn } = useI18n();
+	const { t } = useI18n();
 
 	interface Props {
 		columns: ColumnDef[];
@@ -126,7 +126,8 @@
 				class="w-20"
 			/>
 			<Button type="button" variant="outline" onclick={add}>
-				<Plus /> {tn('Add {n} column', 'Add {n} columns', addCount)}
+				<Plus />
+				{t('Add {n} column(s)', { n: addCount })}
 			</Button>
 		</div>
 	{/if}

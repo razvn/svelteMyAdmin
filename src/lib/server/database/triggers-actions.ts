@@ -37,7 +37,10 @@ export function triggerActions() {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
 		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid trigger.') });
 		const trigger = await getTrigger(await locals.db, params.db!, ref.data.name, params.table);
-		if (!trigger) return fail(404, { error: locals.i18n.t('No trigger with name {name} found.', { name: ref.data.name }) });
+		if (!trigger)
+			return fail(404, {
+				error: locals.i18n.t('No trigger with name {name} found.', { name: ref.data.name })
+			});
 		return { trigger };
 	};
 	const exportAction: Action = async ({ request, params, locals }) => {
@@ -45,7 +48,8 @@ export function triggerActions() {
 		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid trigger.') });
 		try {
 			const sql = await exportTrigger(await locals.db, params.db!, ref.data.name);
-			if (sql === null) return fail(404, { error: locals.i18n.t('The trigger definition is not available.') });
+			if (sql === null)
+				return fail(404, { error: locals.i18n.t('The trigger definition is not available.') });
 			return { sql };
 		} catch {
 			return fail(400, { error: locals.i18n.t('The trigger could not be exported.') });

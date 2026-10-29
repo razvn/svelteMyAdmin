@@ -131,7 +131,8 @@
 	>
 		{#snippet actions()}
 			<Button variant="outline" href="{dbHref(dbName)}/data-dictionary">
-				<BookOpen class="size-4" /> {t('Data dictionary')}
+				<BookOpen class="size-4" />
+				{t('Data dictionary')}
 			</Button>
 		{/snippet}
 	</PageHeader>

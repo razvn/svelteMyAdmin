@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
-		import type { PartitionData } from '#lib/server/table/structure.ts';
+	import type { PartitionData } from '#lib/server/table/structure.ts';
 	import { useI18n } from '#lib/i18n/index.ts';
 	const { t, fmt } = useI18n();
 

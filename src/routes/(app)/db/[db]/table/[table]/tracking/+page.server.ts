@@ -169,7 +169,9 @@ export const actions: Actions = {
 			await conn.query(`USE \`${params.db.replaceAll('`', '``')}\``);
 			for (const e of entries.value) await conn.query(`/*NOTRACK*/\n${e.statement}`);
 		} catch (e) {
-			return fail(400, { error: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Execution failed.') });
+			return fail(400, {
+				error: (e as { sqlMessage?: string }).sqlMessage ?? locals.i18n.t('Execution failed.')
+			});
 		}
 		return {
 			message: locals.i18n.tn(

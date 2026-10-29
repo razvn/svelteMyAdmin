@@ -110,26 +110,27 @@
 		def.refColumns.splice(i, 1);
 	}
 
-	const submit = alterEnhance({
-		start: () => {
-			busy = true;
-			error = '';
+	const submit = alterEnhance(
+		{
+			start: () => {
+				busy = true;
+				error = '';
+			},
+			fail: (m) => {
+				busy = false;
+				error = m;
+			},
+			success: () => {
+				busy = false;
+				open = false;
+				toast.success(
+					original ? t('The foreign key has been modified.') : t('The foreign key has been added.')
+				);
+				if (page.params.db) void navState.load(page.params.db, true);
+			}
 		},
-		fail: (m) => {
-			busy = false;
-			error = m;
-		},
-		success: () => {
-			busy = false;
-			open = false;
-			toast.success(
-				original
-					? t('The foreign key has been modified.')
-					: t('The foreign key has been added.')
-			);
-			if (page.params.db) void navState.load(page.params.db, true);
-		}
-	}, t);
+		t
+	);
 </script>
 
 <Dialog.Root bind:open>
@@ -232,7 +233,11 @@
 			<div class="flex flex-col gap-2" data-testid="fk-pairs">
 				<span class="text-sm font-medium">{t('Columns')}</span>
 				{#each def.columns as col, i (i)}
-					<div class="flex items-center gap-2" role="group" aria-label={t('Column pair {n}', { n: i + 1 })}>
+					<div
+						class="flex items-center gap-2"
+						role="group"
+						aria-label={t('Column pair {n}', { n: i + 1 })}
+					>
 						<Select.Root
 							type="single"
 							value={def.columns[i]}
@@ -255,7 +260,8 @@
 							disabled={def.refTable === ''}
 						>
 							<Select.Trigger class="min-w-0 flex-1" aria-label={t('Referenced column')}>
-								<span class="truncate font-mono">{def.refColumns[i] || t('Referenced column')}</span>
+								<span class="truncate font-mono">{def.refColumns[i] || t('Referenced column')}</span
+								>
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each refColumns as c (c)}
@@ -276,7 +282,8 @@
 					</div>
 				{/each}
 				<Button type="button" variant="outline" size="sm" class="self-start" onclick={addPair}>
-					<Plus /> {t('Add column')}
+					<Plus />
+					{t('Add column')}
 				</Button>
 			</div>
 
@@ -294,7 +301,8 @@
 			{/if}
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={busy || problem !== null}>{t('Save')}</Button>
 			</Dialog.Footer>
 		</form>

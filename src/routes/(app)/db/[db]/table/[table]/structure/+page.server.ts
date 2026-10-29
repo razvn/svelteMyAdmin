@@ -62,7 +62,8 @@ export const actions: Actions = {
 		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			addTableColumns(conn, q, dbi, params.db, params.table, columns)
 		);
-		if (!res) return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
+		if (!res)
+			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
 		return {
 			message:
 				locals.i18n.tn(
@@ -81,7 +82,8 @@ export const actions: Actions = {
 		const missing = await withStorageTable(locals, 'central_columns', (conn, q) =>
 			deleteCentral(conn, q, params.db, columns)
 		);
-		if (!missing) return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
+		if (!missing)
+			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
 		return {
 			message:
 				locals.i18n.tn(

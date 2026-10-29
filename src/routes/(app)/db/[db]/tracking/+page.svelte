@@ -39,7 +39,9 @@
 	<PageHeader
 		icon={History}
 		title={t('Tracking')}
-		description={t('Version the structure and data changes of the tables of {db}.', { db: data.db })}
+		description={t('Version the structure and data changes of the tables of {db}.', {
+			db: data.db
+		})}
 	/>
 
 	{#if message}
@@ -101,14 +103,16 @@
 										</Table.Cell>
 										<Table.Cell class="flex gap-1">
 											<Button variant="ghost" size="sm" href={tableBase(v.table)}>
-												<History /> {t('Versions')}
+												<History />
+												{t('Versions')}
 											</Button>
 											<Button
 												variant="ghost"
 												size="sm"
 												href="{tableBase(v.table)}?report=1&version={v.version}"
 											>
-												<FileText /> {t('Report')}
+												<FileText />
+												{t('Report')}
 											</Button>
 										</Table.Cell>
 									</Table.Row>
@@ -121,7 +125,8 @@
 								variant="destructive"
 								disabled={!hydration.ready || selectedTracked.length === 0}
 							>
-								<Trash2 /> {t('Delete tracking')}
+								<Trash2 />
+								{t('Delete tracking')}
 							</Button>
 						</div>
 					</form>
@@ -155,7 +160,8 @@
 									<Table.Cell class="font-mono font-medium">{tbl}</Table.Cell>
 									<Table.Cell>
 										<Button variant="ghost" size="sm" href={tableBase(tbl)}>
-											<Eye /> {t('Track table')}
+											<Eye />
+											{t('Track table')}
 										</Button>
 									</Table.Cell>
 								</Table.Row>
@@ -169,7 +175,8 @@
 							disabled={selectedUntracked.length === 0}
 							onclick={() => (showVersionForm = true)}
 						>
-							<Eye /> {t('Track selected tables')}
+							<Eye />
+							{t('Track selected tables')}
 						</Button>
 					</div>
 					{#if showVersionForm && selectedUntracked.length > 0}

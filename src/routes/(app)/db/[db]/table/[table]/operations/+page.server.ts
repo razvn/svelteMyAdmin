@@ -70,7 +70,14 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		return reply(
 			'reorder',
-			await reorderTable(dbi, params.db, params.table, p.data.order_field, p.data.order_order, locals.i18n)
+			await reorderTable(
+				dbi,
+				params.db,
+				params.table,
+				p.data.order_field,
+				p.data.order_order,
+				locals.i18n
+			)
 		);
 	},
 	move: async ({ request, locals, params }) => {
@@ -102,7 +109,12 @@ export const actions: Actions = {
 			? (await dbi.listCollations()).find((c) => c.name === d.tbl_collation)
 			: undefined;
 		if (d.tbl_collation && !collation) {
-			return fail(400, { action: 'options', ok: false, message: locals.i18n.t('Unknown collation.'), sql: [] });
+			return fail(400, {
+				action: 'options',
+				ok: false,
+				message: locals.i18n.t('Unknown collation.'),
+				sql: []
+			});
 		}
 		return reply(
 			'options',
@@ -172,7 +184,10 @@ export const actions: Actions = {
 		const p = dangerSchema.safeParse(formToObject(await request.formData()));
 		if (!p.success) return invalid('empty', locals.i18n.t);
 		const dbi = await locals.dbi;
-		return reply('empty', await emptyTable(dbi, params.db, params.table, p.data.fk_checks, locals.i18n));
+		return reply(
+			'empty',
+			await emptyTable(dbi, params.db, params.table, p.data.fk_checks, locals.i18n)
+		);
 	},
 	drop: async ({ request, locals, params }) => {
 		const p = dangerSchema.safeParse(formToObject(await request.formData()));
@@ -195,11 +210,21 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		return reply(
 			'partition',
-			await maintainPartitions(dbi, params.db, params.table, p.data.operation, p.data.partitions, locals.i18n)
+			await maintainPartitions(
+				dbi,
+				params.db,
+				params.table,
+				p.data.operation,
+				p.data.partitions,
+				locals.i18n
+			)
 		);
 	},
 	unpartition: async ({ locals, params }) => {
 		const dbi = await locals.dbi;
-		return reply('unpartition', await maintainPartitions(dbi, params.db, params.table, null, [], locals.i18n));
+		return reply(
+			'unpartition',
+			await maintainPartitions(dbi, params.db, params.table, null, [], locals.i18n)
+		);
 	}
 };

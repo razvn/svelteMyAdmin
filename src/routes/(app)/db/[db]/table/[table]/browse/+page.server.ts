@@ -292,7 +292,9 @@ export const actions: Actions = {
 		}
 		const meta = await loadTableMeta(g.dbi, params.db, params.table);
 		if (!meta.hasUniqueKey) {
-			return fail(400, { error: locals.i18n.t('This table has no unique key; use the edit page.') });
+			return fail(400, {
+				error: locals.i18n.t('This table has no unique key; use the edit page.')
+			});
 		}
 		const value = d.isNull === '1' ? null : (d.value ?? '');
 		const res = await updateCell(

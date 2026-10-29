@@ -57,7 +57,9 @@
 
 	let filter = $state('');
 	const visible = $derived(
-		triggers.filter((trg) => matchesFilter(filter, trg.name, trg.table, trg.event, trg.timing, trg.definer))
+		triggers.filter((trg) =>
+			matchesFilter(filter, trg.name, trg.table, trg.event, trg.timing, trg.definer)
+		)
 	);
 
 	let editorOpen = $state(false);
@@ -82,7 +84,8 @@
 
 	async function openEdit(name: string) {
 		const res = await callAction<{ trigger: TriggerDef }>(page.url.pathname, 'get', { name });
-		if (!res.ok || !res.data?.trigger) return void toast.error(res.message ?? t('Trigger not found.'));
+		if (!res.ok || !res.data?.trigger)
+			return void toast.error(res.message ?? t('Trigger not found.'));
 		def = res.data.trigger;
 		original = name;
 		errors = [];
@@ -213,7 +216,9 @@
 						{:else}
 							<Table.Row>
 								<Table.Cell colspan={6} class="py-8 text-center text-muted-foreground">
-									{triggers.length === 0 ? t('No triggers found.') : t('No triggers match the filter.')}
+									{triggers.length === 0
+										? t('No triggers found.')
+										: t('No triggers match the filter.')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -227,7 +232,9 @@
 <Dialog.Root bind:open={editorOpen}>
 	<Dialog.Content class="max-h-[92vh] overflow-y-auto sm:max-w-2xl" data-testid="trigger-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? t('Edit trigger {name}', { name: original }) : t('Add trigger')}</Dialog.Title>
+			<Dialog.Title
+				>{original ? t('Edit trigger {name}', { name: original }) : t('Add trigger')}</Dialog.Title
+			>
 			<Dialog.Description>
 				{t('Editing drops and re-creates the trigger; the original is restored if creation fails.')}
 			</Dialog.Description>
@@ -278,7 +285,9 @@
 				<Input id="trigger-definer" bind:value={def.definer} placeholder="root@localhost" />
 			</div>
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (editorOpen = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (editorOpen = false)}
+					>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={saving} data-testid="trigger-save">
 					{saving ? t('Saving...') : t('Save')}
 				</Button>

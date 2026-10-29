@@ -83,7 +83,8 @@ export function validateIndexDef(
 		if (c.size !== '' && (def.kind === 'FULLTEXT' || def.kind === 'SPATIAL')) {
 			return tr.t('{kind} index parts cannot have a length.', { kind: def.kind });
 		}
-		if (tableColumns && !tableColumns.includes(c.name)) return tr.t('Unknown column {name}.', { name: c.name });
+		if (tableColumns && !tableColumns.includes(c.name))
+			return tr.t('Unknown column {name}.', { name: c.name });
 	}
 	if (def.name.length > 64) return tr.t('The index name is too long.');
 	if (def.kind === 'PRIMARY' && def.name !== '' && def.name !== 'PRIMARY') {
@@ -92,8 +93,10 @@ export function validateIndexDef(
 	if (def.keyBlockSize !== '' && !/^\d{1,5}$/.test(def.keyBlockSize)) {
 		return tr.t('Invalid key block size.');
 	}
-	if (def.parser !== '' && def.kind !== 'FULLTEXT') return tr.t('A parser is only for FULLTEXT indexes.');
-	if (def.parser !== '' && !/^[A-Za-z0-9_$]+$/.test(def.parser)) return tr.t('Invalid parser name.');
+	if (def.parser !== '' && def.kind !== 'FULLTEXT')
+		return tr.t('A parser is only for FULLTEXT indexes.');
+	if (def.parser !== '' && !/^[A-Za-z0-9_$]+$/.test(def.parser))
+		return tr.t('Invalid parser name.');
 	if (def.indexType !== '' && (def.kind === 'FULLTEXT' || def.kind === 'SPATIAL')) {
 		return tr.t('{kind} indexes have no BTREE/HASH type.', { kind: def.kind });
 	}

@@ -125,9 +125,7 @@
 {:else if column.protected}
 	<div class="flex flex-wrap items-center gap-2 text-sm">
 		<span class="text-muted-foreground">
-			{size !== null
-				? t('Binary - do not edit ({size} B)', { size })
-				: t('Binary - do not edit')}
+			{size !== null ? t('Binary - do not edit ({size} B)', { size }) : t('Binary - do not edit')}
 		</span>
 		<input
 			type="file"

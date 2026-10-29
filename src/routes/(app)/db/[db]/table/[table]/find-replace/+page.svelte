@@ -97,7 +97,9 @@
 					<Label for="fr-regex" class="font-normal">{t('Use regular expression')}</Label>
 				</div>
 				<p class="text-xs text-muted-foreground">
-					{t('Regular expressions use REGEXP_REPLACE: MySQL (ICU) references groups as $1, MariaDB (PCRE) as \\1.')}
+					{t(
+						'Regular expressions use REGEXP_REPLACE: MySQL (ICU) references groups as $1, MariaDB (PCRE) as \\1.'
+					)}
 				</p>
 			</Card.Content>
 			<Card.Footer class="flex gap-2">
@@ -158,7 +160,8 @@
 							</Table.Row>
 						{:else}
 							<Table.Row>
-								<Table.Cell colspan={3} class="text-muted-foreground">{t('No matches.')}</Table.Cell>
+								<Table.Cell colspan={3} class="text-muted-foreground">{t('No matches.')}</Table.Cell
+								>
 							</Table.Row>
 						{/each}
 					</Table.Body>

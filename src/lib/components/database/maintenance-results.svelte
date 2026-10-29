@@ -28,7 +28,8 @@
 	<div class="flex items-center justify-between gap-2">
 		<code class="font-mono text-xs text-muted-foreground">{r.statement}</code>
 		<Button variant="outline" size="sm" onclick={() => copy(r.statement)}>
-			<Copy /> {t('Copy')}
+			<Copy />
+			{t('Copy')}
 		</Button>
 	</div>
 	<Table.Root data-testid="maintenance-result">

@@ -7,7 +7,8 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, url, parent }) => {
 	const { tableType } = await parent();
-	if (tableType === 'view') error(400, locals.i18n.t('The columns of a view cannot be changed here.'));
+	if (tableType === 'view')
+		error(400, locals.i18n.t('The columns of a view cannot be changed here.'));
 	const dbi = await locals.dbi;
 	const ctx = await getColumnEditorContext(dbi);
 	const all = await loadColumns(dbi, params.db, params.table, ctx.caps);

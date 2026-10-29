@@ -257,7 +257,8 @@
 		{#snippet actions()}
 			{#if !data.isView}
 				<Button variant="outline" href="{base}/relation">
-					<ArrowLeftRight class="size-4" /> {t('Relation view')}
+					<ArrowLeftRight class="size-4" />
+					{t('Relation view')}
 				</Button>
 				<Button variant="outline" href="{base}/normalization">{t('Normalize')}</Button>
 			{/if}
@@ -418,7 +419,9 @@
 													<DropdownMenu.Separator />
 													<DropdownMenu.Item>
 														{#snippet child({ props })}
-															<a {...props} href={distinctHref(c.def.name)}>{t('Distinct values')}</a>
+															<a {...props} href={distinctHref(c.def.name)}
+																>{t('Distinct values')}</a
+															>
 														{/snippet}
 													</DropdownMenu.Item>
 												</DropdownMenu.Content>
@@ -703,9 +706,16 @@
 		<Dialog.Header>
 			<Dialog.Title>{t('Rename index {name}', { name: renaming?.name ?? '' })}</Dialog.Title>
 		</Dialog.Header>
-		<Input bind:value={newName} placeholder={t('New index name')} maxlength={64} autocomplete="off" />
+		<Input
+			bind:value={newName}
+			placeholder={t('New index name')}
+			maxlength={64}
+			autocomplete="off"
+		/>
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => (renameOpen = false)}>{t('Cancel')}</Button>
+			<Button type="button" variant="outline" onclick={() => (renameOpen = false)}
+				>{t('Cancel')}</Button
+			>
 			<Button type="button" disabled={newName.trim() === ''} onclick={askRename}
 				>{t('Preview SQL')}</Button
 			>

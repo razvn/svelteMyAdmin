@@ -76,7 +76,9 @@
 		<Alert.Root role="status" data-testid="central-disabled">
 			<Alert.Title>{t('The central list of columns is not available')}</Alert.Title>
 			<Alert.Description>
-				{t('The central_columns table of the configuration storage is not configured or not reachable.')}
+				{t(
+					'The central_columns table of the configuration storage is not configured or not reachable.'
+				)}
 			</Alert.Description>
 		</Alert.Root>
 	{:else}
@@ -202,7 +204,10 @@
 
 		{#if editing}
 			<Card.Root data-testid="central-edit">
-				<Card.Header><Card.Title>{t('Edit column {name}', { name: editing.original })}</Card.Title></Card.Header>
+				<Card.Header
+					><Card.Title>{t('Edit column {name}', { name: editing.original })}</Card.Title
+					></Card.Header
+				>
 				<form
 					method="POST"
 					action="?/save"
@@ -229,7 +234,9 @@
 					</Card.Content>
 					<Card.Footer class="gap-2">
 						<Button type="submit" disabled={!hydration.ready}>{t('Save')}</Button>
-						<Button type="button" variant="outline" onclick={() => (editing = null)}>{t('Cancel')}</Button>
+						<Button type="button" variant="outline" onclick={() => (editing = null)}
+							>{t('Cancel')}</Button
+						>
 					</Card.Footer>
 				</form>
 			</Card.Root>

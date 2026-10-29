@@ -122,7 +122,10 @@ interface Ctx {
 const fail = (error: string, sql: string[] = []): ActionResult => ({ ok: false, error, sql });
 
 /** Add a foreign key, or replace `original` (drop + add; the original is restored on failure). */
-export async function saveForeignKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function saveForeignKey(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const parsed = saveFkSchema.safeParse(raw);
 	if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? tr.t('Invalid input.'));
 	const def = parsed.data.def as FkDef;
@@ -140,10 +143,10 @@ export async function saveForeignKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }:
 	const refTables = await listTableNames(dbi, def.refDb);
 	if (!refTables.includes(def.refTable)) {
 		return fail(
-				tr.t('The referenced table {table} does not exist.', {
-					table: `${def.refDb}.${def.refTable}`
-				})
-			);
+			tr.t('The referenced table {table} does not exist.', {
+				table: `${def.refDb}.${def.refTable}`
+			})
+		);
 	}
 	const refCols = await listColumnNames(dbi, def.refDb, def.refTable);
 	const unknownRef = def.refColumns.find((c) => !refCols.includes(c));
@@ -199,7 +202,10 @@ export async function saveForeignKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }:
 	}
 }
 
-export async function dropForeignKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function dropForeignKey(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const parsed = dropFkSchema.safeParse(raw);
 	if (!parsed.success) return fail(tr.t('Invalid input.'));
 	const existing = await loadForeignKeys(dbi, db, table);
@@ -332,9 +338,11 @@ export async function saveInternalRelation(
 		}
 	];
 	if (!remove) {
-		if (!rel.refDb || !rel.refTable || !rel.refColumn) return fail(tr.t('Choose the referenced column.'));
+		if (!rel.refDb || !rel.refTable || !rel.refColumn)
+			return fail(tr.t('Choose the referenced column.'));
 		const refCols = await listColumnNames(dbi, rel.refDb, rel.refTable);
-		if (!refCols.includes(rel.refColumn)) return fail(tr.t('The referenced column does not exist.'));
+		if (!refCols.includes(rel.refColumn))
+			return fail(tr.t('The referenced column does not exist.'));
 		statements.push({
 			sql:
 				`INSERT INTO ${target} (master_db, master_table, master_field, foreign_db, foreign_table, ` +

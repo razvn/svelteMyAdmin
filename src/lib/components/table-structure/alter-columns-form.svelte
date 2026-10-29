@@ -109,27 +109,30 @@
 	);
 	const structureHref = $derived(resolve(bare(tabHref('table', { db, table }, 'structure'))));
 
-	const submit = alterEnhance({
-		start: () => {
-			busy = true;
-			error = '';
+	const submit = alterEnhance(
+		{
+			start: () => {
+				busy = true;
+				error = '';
+			},
+			fail: (m) => {
+				busy = false;
+				error = m;
+				previewOpen = false;
+			},
+			success: async () => {
+				busy = false;
+				toast.success(
+					mode === 'add'
+						? t('The columns have been added.')
+						: t('The table has been altered successfully.')
+				);
+				void navState.load(db, true);
+				await goto(structureHref);
+			}
 		},
-		fail: (m) => {
-			busy = false;
-			error = m;
-			previewOpen = false;
-		},
-		success: async () => {
-			busy = false;
-			toast.success(
-				mode === 'add'
-					? t('The columns have been added.')
-					: t('The table has been altered successfully.')
-			);
-			void navState.load(db, true);
-			await goto(structureHref);
-		}
-	}, t);
+		t
+	);
 </script>
 
 {#snippet extra({ col, index }: { col: ColumnDef; index: number })}
@@ -157,7 +160,9 @@
 			<Card.Title>{mode === 'add' ? t('New columns') : t('Change columns')}</Card.Title>
 			<Card.Description>
 				{#if mode === 'add'}
-					{t("Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'.")}
+					{t(
+						"Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'."
+					)}
 				{:else}
 					{t('Rename a column or change its definition. Indexes and foreign keys are kept.')}
 				{/if}

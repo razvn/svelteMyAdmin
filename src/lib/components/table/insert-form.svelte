@@ -203,7 +203,9 @@
 		<Card.Root class="gap-0 py-0" data-testid="insert-row-{r}">
 			<Card.Header class="flex flex-row items-center justify-between border-b py-3">
 				<Card.Title class="text-base">
-					{#if mode === 'edit'}{t('Edit')}{:else if mode === 'copy'}{t('Copy of')}{:else}{t('Row')}{/if}
+					{#if mode === 'edit'}{t('Edit')}{:else if mode === 'copy'}{t('Copy of')}{:else}{t(
+							'Row'
+						)}{/if}
 					{rows.length > 1 || mode !== 'insert' ? r + 1 : ''}
 				</Card.Title>
 				{#if mode === 'insert' && r > 0}
@@ -253,7 +255,8 @@
 									{#if column.autoIncrement}
 										<Badge variant="info" class="ms-1">auto_increment</Badge>
 									{/if}
-									{#if column.generated}<Badge variant="muted" class="ms-1">{t('generated')}</Badge>{/if}
+									{#if column.generated}<Badge variant="muted" class="ms-1">{t('generated')}</Badge
+										>{/if}
 								</Table.Cell>
 								{#if showTypes}
 									<Table.Cell class="font-mono text-xs text-muted-foreground">

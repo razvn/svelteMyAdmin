@@ -160,7 +160,8 @@
 				{/each}
 				<div>
 					<Button type="button" variant="outline" size="sm" onclick={addParam}>
-						<Plus /> {t('Add parameter')}
+						<Plus />
+						{t('Add parameter')}
 					</Button>
 				</div>
 			</fieldset>
@@ -189,7 +190,11 @@
 								emptyLabel={t('(none)')}
 							/>
 						{:else if optionsKind(def.returns.type) === 'charset'}
-							<Input id="routine-return-opts" placeholder={t('Charset')} bind:value={def.returns.opts} />
+							<Input
+								id="routine-return-opts"
+								placeholder={t('Charset')}
+								bind:value={def.returns.opts}
+							/>
 						{:else}
 							<Input id="routine-return-opts" disabled />
 						{/if}
@@ -241,7 +246,8 @@
 			</div>
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={saving} data-testid="routine-save">
 					{saving ? t('Saving...') : t('Save')}
 				</Button>

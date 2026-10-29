@@ -170,7 +170,10 @@
 				/>
 			</div>
 			<p class="text-sm text-muted-foreground" data-testid="routines-count">
-				{t('{shown} of {total} routines shown', { shown: visible.length, total: data.routines.length })}
+				{t('{shown} of {total} routines shown', {
+					shown: visible.length,
+					total: data.routines.length
+				})}
 			</p>
 		</div>
 		<Card.Content class="px-0">

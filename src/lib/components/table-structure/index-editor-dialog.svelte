@@ -89,32 +89,40 @@
 		[def.columns[i], def.columns[j]] = [def.columns[j], def.columns[i]];
 	}
 
-	const submit = alterEnhance({
-		start: () => {
-			busy = true;
-			error = '';
+	const submit = alterEnhance(
+		{
+			start: () => {
+				busy = true;
+				error = '';
+			},
+			fail: (m) => {
+				busy = false;
+				error = m;
+			},
+			success: () => {
+				busy = false;
+				open = false;
+				toast.success(
+					original ? t('The index has been modified.') : t('The index has been created.')
+				);
+				if (page.params.db) void navState.load(page.params.db, true);
+			}
 		},
-		fail: (m) => {
-			busy = false;
-			error = m;
-		},
-		success: () => {
-			busy = false;
-			open = false;
-			toast.success(
-				original ? t('The index has been modified.') : t('The index has been created.')
-			);
-			if (page.params.db) void navState.load(page.params.db, true);
-		}
-	}, t);
+		t
+	);
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] max-w-3xl overflow-y-auto" data-testid="index-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? t('Edit index {name}', { name: original.name }) : t('Add index')}</Dialog.Title>
+			<Dialog.Title
+				>{original ? t('Edit index {name}', { name: original.name }) : t('Add index')}</Dialog.Title
+			>
 			<Dialog.Description>
-				{t('Table {table}. Choose the columns, in order; a sub-part limits how many characters are indexed.', { table })}
+				{t(
+					'Table {table}. Choose the columns, in order; a sub-part limits how many characters are indexed.',
+					{ table }
+				)}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -209,7 +217,11 @@
 			<div class="flex flex-col gap-2" data-testid="index-columns">
 				<span class="text-sm font-medium">{t('Columns')}</span>
 				{#each def.columns as c, i (i)}
-					<div class="flex items-center gap-2" role="group" aria-label={t('Index column {n}', { n: i + 1 })}>
+					<div
+						class="flex items-center gap-2"
+						role="group"
+						aria-label={t('Index column {n}', { n: i + 1 })}
+					>
 						<Select.Root type="single" value={c.name} onValueChange={(v) => (c.name = v)}>
 							<Select.Trigger class="min-w-0 flex-1" aria-label={t('Column')}>
 								<span class="truncate font-mono">{c.name || t('Choose a column')}</span>
@@ -261,7 +273,8 @@
 					</div>
 				{/each}
 				<Button type="button" variant="outline" size="sm" class="self-start" onclick={addColumn}>
-					<Plus /> {t('Add column')}
+					<Plus />
+					{t('Add column')}
 				</Button>
 			</div>
 
@@ -279,7 +292,8 @@
 			{/if}
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={busy || problem !== null}>{t('Save')}</Button>
 			</Dialog.Footer>
 		</form>

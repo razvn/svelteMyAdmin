@@ -91,8 +91,9 @@ function inline(id: string, mime: string, name: string): OutputPlugin {
 		name,
 		dir: 'output',
 		title: N_('Inline'),
-		description:
-			N_('Displays a clickable thumbnail. The options are the maximum width and height in pixels. The original aspect ratio is preserved.'),
+		description: N_(
+			'Displays a clickable thumbnail. The options are the maximum width and height in pixels. The original aspect ratio is preserved.'
+		),
 		apply(input, options, ctx) {
 			const o = withDefaults(options, ['100', 100]);
 			const src = wrapperOrNull(ctx);
@@ -150,8 +151,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Download',
 		dir: 'output',
 		title: N_('Download'),
-		description:
-			N_('Displays a link to download the binary data of the column. You can use the first option to specify the filename, or use the second option as the name of a column which contains the filename. If you use the second option, you need to set the first option to the empty string.'),
+		description: N_(
+			'Displays a link to download the binary data of the column. You can use the first option to specify the filename, or use the second option as the name of a column which contains the filename. If you use the second option, you need to set the first option to the empty string.'
+		),
 		apply(_input, options, ctx) {
 			let name = options[0];
 			if (!name && options[1]) name = ctx.rowValue(options[1]) ?? '';
@@ -184,8 +186,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Binarytoip',
 		dir: 'output',
 		title: N_('Binary To IPv4/IPv6'),
-		description:
-			N_('Converts an Internet network address stored as a binary string into a string in Internet standard (IPv4/IPv6) format.'),
+		description: N_(
+			'Converts an Internet network address stored as a binary string into a string in Internet standard (IPv4/IPv6) format.'
+		),
 		apply: (input, _options, ctx) => text(binaryToIp(input.text, ctx.column.isBinary, input.bytes))
 	},
 	{
@@ -194,8 +197,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Bool2Text',
 		dir: 'output',
 		title: N_('Bool2Text'),
-		description:
-			N_("Converts Boolean values to text (default 'T' and 'F'). First option is for TRUE, second for FALSE. Nonzero=true."),
+		description: N_(
+			"Converts Boolean values to text (default 'T' and 'F'). First option is for TRUE, second for FALSE. Nonzero=true."
+		),
 		apply(input, options) {
 			const o = withDefaults(options, ['T', 'F']);
 			return text(isZero(input.text) ? (o[1] ?? '') : (o[0] ?? ''));
@@ -207,8 +211,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Dateformat',
 		dir: 'output',
 		title: N_('Date Format'),
-		description:
-			N_('Displays a TIME, TIMESTAMP, DATETIME or numeric unix timestamp column as formatted date. The first option is the offset (in hours) which will be added to the timestamp (Default: 0). Use second option to specify a different date/time format string. Third option determines whether you want to see local date or UTC one (use "local" or "utc" strings) for that. According to that, date format has different value - for "local" see the documentation for PHP\'s strftime() function and for "utc" it is done using gmdate() function.'),
+		description: N_(
+			'Displays a TIME, TIMESTAMP, DATETIME or numeric unix timestamp column as formatted date. The first option is the offset (in hours) which will be added to the timestamp (Default: 0). Use second option to specify a different date/time format string. Third option determines whether you want to see local date or UTC one (use "local" or "utc" strings) for that. According to that, date format has different value - for "local" see the documentation for PHP\'s strftime() function and for "utc" it is done using gmdate() function.'
+		),
 		apply(input, options, ctx) {
 			const o = withDefaults(options, [0, '', 'local']);
 			const type = (o[2] ?? '').toLowerCase();
@@ -231,8 +236,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'External',
 		dir: 'output',
 		title: N_('External'),
-		description:
-			N_('Launches an external application. Not supported in svelteMyAdmin for security reasons: the value is shown as stored.'),
+		description: N_(
+			'Launches an external application. Not supported in svelteMyAdmin for security reasons: the value is shown as stored.'
+		),
 		unsupported: true,
 		apply: (input) => text(input.text, N_('The External transformation is not supported'))
 	},
@@ -242,8 +248,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Formatted',
 		dir: 'output',
 		title: N_('Formatted'),
-		description:
-			N_('Displays the contents of the column as-is, without running it through htmlspecialchars(). That is, the column is assumed to contain valid HTML (shown in a sandboxed frame).'),
+		description: N_(
+			'Displays the contents of the column as-is, without running it through htmlspecialchars(). That is, the column is assumed to contain valid HTML (shown in a sandboxed frame).'
+		),
 		apply: (input) => ({ type: 'frame', srcdoc: input.text.replaceAll('"', "'") })
 	},
 	{
@@ -252,8 +259,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Imagelink',
 		dir: 'output',
 		title: N_('Image Link'),
-		description:
-			N_('Displays an image and a link; the column contains the filename. The first option is a URL prefix like "https://www.example.com/". The second and third options are the width and the height in pixels.'),
+		description: N_(
+			'Displays an image and a link; the column contains the filename. The first option is a URL prefix like "https://www.example.com/". The second and third options are the width and the height in pixels.'
+		),
 		apply(input, options) {
 			const o = withDefaults(options, [null, 100, 50]);
 			const url = (o[0] ?? '') + input.text;
@@ -294,8 +302,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Link',
 		dir: '',
 		title: N_('TextLink'),
-		description:
-			N_('Displays a link; the column contains the filename. The first option is a URL prefix like "https://www.example.com/". The second option is a title for the link.'),
+		description: N_(
+			'Displays a link; the column contains the filename. The first option is a URL prefix like "https://www.example.com/". The second option is a title for the link.'
+		),
 		apply(input, options) {
 			const o = withDefaults(options, [null, null, null]);
 			const url = (o[0] ?? '') + (o[2] ? '' : input.text);
@@ -309,8 +318,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Longtoipv4',
 		dir: '',
 		title: N_('Long To IPv4'),
-		description:
-			N_('Converts an (IPv4) Internet network address stored as a BIGINT into a string in Internet standard dotted format.'),
+		description: N_(
+			'Converts an (IPv4) Internet network address stored as a BIGINT into a string in Internet standard dotted format.'
+		),
 		apply: (input) => text(longToIp(input.text))
 	},
 	{
@@ -319,8 +329,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'PreApPend',
 		dir: '',
 		title: N_('PreApPend'),
-		description:
-			N_('Prepends and/or Appends text to a string. First option is text to be prepended, second is appended (enclosed in single quotes, default empty string).'),
+		description: N_(
+			'Prepends and/or Appends text to a string. First option is text to be prepended, second is appended (enclosed in single quotes, default empty string).'
+		),
 		apply(input, options) {
 			const o = withDefaults(options, ['', '']);
 			return text((o[0] ?? '') + input.text + (o[1] ?? ''));
@@ -332,8 +343,9 @@ export const OUTPUT_PLUGINS: OutputPlugin[] = [
 		name: 'Substring',
 		dir: '',
 		title: N_('Substring'),
-		description:
-			N_('Displays a part of a string. The first option is the number of characters to skip from the beginning of the string (Default 0). The second option is the number of characters to return (Default: until end of string). The third option is the string to append and/or prepend when truncation occurs (Default: "…").'),
+		description: N_(
+			'Displays a part of a string. The first option is the number of characters to skip from the beginning of the string (Default 0). The second option is the number of characters to return (Default: until end of string). The third option is the string to append and/or prepend when truncation occurs (Default: "…").'
+		),
 		apply(input, options) {
 			const o = withDefaults(options, [0, 'all', '…']);
 			const skip = intval(o[0]);

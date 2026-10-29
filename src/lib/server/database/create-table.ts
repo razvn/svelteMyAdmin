@@ -114,12 +114,19 @@ export function normalizeColumns(
 		index: c.index as IndexChoice
 	}));
 	for (const c of namedColumns(columns)) {
-		if (!types.has(c.type)) return { ok: false, error: tr.t('Unsupported column type {type}.', { type: c.type }) };
+		if (!types.has(c.type))
+			return { ok: false, error: tr.t('Unsupported column type {type}.', { type: c.type }) };
 		if (!attributes.has(c.attribute)) {
-			return { ok: false, error: tr.t('Unsupported attribute {attribute}.', { attribute: c.attribute }) };
+			return {
+				ok: false,
+				error: tr.t('Unsupported attribute {attribute}.', { attribute: c.attribute })
+			};
 		}
 		if (!virtualities.has(c.virtuality)) {
-			return { ok: false, error: tr.t('Unsupported virtuality {virtuality}.', { virtuality: c.virtuality }) };
+			return {
+				ok: false,
+				error: tr.t('Unsupported virtuality {virtuality}.', { virtuality: c.virtuality })
+			};
 		}
 		if (c.virtuality !== '' && c.expression.trim() === '') {
 			return { ok: false, error: tr.t('Column {name} needs an expression.', { name: c.name }) };
@@ -156,7 +163,10 @@ export async function createTable(
 		return { ok: false, error: tr.t('Unknown storage engine {engine}.', { engine: input.engine }) };
 	}
 	if (input.collation && !ctx.collations.some((c) => c.name === input.collation)) {
-		return { ok: false, error: tr.t('Unknown collation {collation}.', { collation: input.collation }) };
+		return {
+			ok: false,
+			error: tr.t('Unknown collation {collation}.', { collation: input.collation })
+		};
 	}
 
 	let table = input.name;

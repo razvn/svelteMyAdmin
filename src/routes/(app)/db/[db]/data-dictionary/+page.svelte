@@ -20,15 +20,12 @@
 		title={dict.database}
 		description={dict.comment
 			? t('Database comment: {comment}', { comment: dict.comment })
-			: tn(
-					'Data dictionary, {n} table.',
-					'Data dictionary, {n} tables.',
-					dict.tables.length
-				)}
+			: tn('Data dictionary, {n} table.', 'Data dictionary, {n} tables.', dict.tables.length)}
 	>
 		{#snippet actions()}
 			<Button variant="outline" class="print:hidden" onclick={() => window.print()}>
-				<Printer class="size-4" /> {t('Print')}
+				<Printer class="size-4" />
+				{t('Print')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -38,7 +35,9 @@
 			<Card.Header class="border-b py-5">
 				<Card.Title class="font-mono">{table.name}</Card.Title>
 				{#if table.comment}
-					<Card.Description>{t('Table comments: {comment}', { comment: table.comment })}</Card.Description>
+					<Card.Description
+						>{t('Table comments: {comment}', { comment: table.comment })}</Card.Description
+					>
 				{/if}
 			</Card.Header>
 			<Card.Content class="px-0">

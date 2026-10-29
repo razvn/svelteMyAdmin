@@ -107,7 +107,8 @@ export async function deleteMatches(
 	table: string,
 	tr: Translator = SOURCE_TRANSLATOR
 ): Promise<DeleteResult> {
-	if (!req.tables.includes(table)) return { ok: false, error: tr.t('Table is not part of this search.') };
+	if (!req.tables.includes(table))
+		return { ok: false, error: tr.t('Table is not part of this search.') };
 	const info = selectedTables(tables, req).find((t) => t.name === table);
 	if (!info) return { ok: false, error: tr.t('Table does not exist.') };
 	if (info.type !== 'BASE TABLE')

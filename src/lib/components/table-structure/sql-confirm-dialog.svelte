@@ -46,23 +46,26 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	const submit = alterEnhance({
-		start: () => {
-			busy = true;
-			error = '';
+	const submit = alterEnhance(
+		{
+			start: () => {
+				busy = true;
+				error = '';
+			},
+			fail: (m) => {
+				busy = false;
+				error = m;
+			},
+			success: () => {
+				busy = false;
+				open = false;
+				toast.success(message);
+				onsuccess?.();
+				if (refreshTree && page.params.db) void navState.load(page.params.db, true);
+			}
 		},
-		fail: (m) => {
-			busy = false;
-			error = m;
-		},
-		success: () => {
-			busy = false;
-			open = false;
-			toast.success(message);
-			onsuccess?.();
-			if (refreshTree && page.params.db) void navState.load(page.params.db, true);
-		}
-	}, t);
+		t
+	);
 </script>
 
 <Dialog.Root bind:open onOpenChange={(o) => o && (error = '')}>
@@ -82,7 +85,8 @@
 		<form method="POST" action="?/{action}" use:enhance={submit}>
 			<input type="hidden" name="payload" value={JSON.stringify(payload)} />
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button
+				>
 				<Button type="submit" variant={destructive ? 'destructive' : 'default'} disabled={busy}>
 					{label ?? t('Confirm')}
 				</Button>

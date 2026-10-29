@@ -57,12 +57,7 @@ const LIST_RE = /^\s*'(?:[^'\\]|\\.|'')*'(\s*,\s*'(?:[^'\\]|\\.|'')*')*\s*$/;
 const CHARSET_RE = /^[A-Za-z0-9_]{1,64}$/;
 
 /** Length/values suffix "(...)" validated so it cannot break out of the parameter list. */
-function lengthSuffix(
-	type: string,
-	length: string,
-	errors: string[],
-	tr: Translator
-): string {
+function lengthSuffix(type: string, length: string, errors: string[], tr: Translator): string {
 	const len = length.trim();
 	if (len === '') {
 		if (requiresLength(type)) {
@@ -123,13 +118,17 @@ export function buildParamList(
 			break;
 		}
 		if (!validType(p.type)) {
-			errors.push(tr.t('Invalid type "{type}" for parameter {name}.', { type: p.type, name: p.name }));
+			errors.push(
+				tr.t('Invalid type "{type}" for parameter {name}.', { type: p.type, name: p.name })
+			);
 			continue;
 		}
 		let part = '';
 		if (type === 'PROCEDURE') {
 			if (!(PARAM_DIRECTIONS as readonly string[]).includes(p.direction)) {
-				errors.push(tr.t('Invalid direction "{direction}" given for parameter.', { direction: p.direction }));
+				errors.push(
+					tr.t('Invalid direction "{direction}" given for parameter.', { direction: p.direction })
+				);
 				continue;
 			}
 			part += `${p.direction} `;

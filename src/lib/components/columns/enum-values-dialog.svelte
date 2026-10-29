@@ -40,13 +40,19 @@
 		<Dialog.Header>
 			<Dialog.Title>{t('Values for the column')}</Dialog.Title>
 			<Dialog.Description>
-				{t('Create the list of {type} values. Quotes and backslashes are escaped for you.', { type })}
+				{t('Create the list of {type} values. Quotes and backslashes are escaped for you.', {
+					type
+				})}
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="flex max-h-80 flex-col gap-2 overflow-y-auto pe-1">
 			{#each items as item, i (item.key)}
 				<div class="flex items-center gap-2">
-					<Input bind:value={item.text} aria-label={t('Value {n}', { n: i + 1 })} autocomplete="off" />
+					<Input
+						bind:value={item.text}
+						aria-label={t('Value {n}', { n: i + 1 })}
+						autocomplete="off"
+					/>
 					<Button
 						type="button"
 						variant="ghost"
@@ -60,7 +66,8 @@
 			{/each}
 		</div>
 		<div class="text-sm text-muted-foreground">
-			{t('Result:')} <code class="font-mono text-foreground">
+			{t('Result:')}
+			<code class="font-mono text-foreground">
 				{formatEnumValues(items.map((i) => i.text).filter((tbl) => tbl !== ''))}
 			</code>
 		</div>
@@ -70,7 +77,8 @@
 				variant="outline"
 				onclick={() => (items = [...items, { key: seq++, text: '' }])}
 			>
-				<Plus /> {t('Add a value')}
+				<Plus />
+				{t('Add a value')}
 			</Button>
 			<div class="flex gap-2">
 				<Button type="button" variant="ghost" onclick={() => (open = false)}>{t('Cancel')}</Button>

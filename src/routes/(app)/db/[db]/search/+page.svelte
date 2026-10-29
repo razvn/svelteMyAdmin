@@ -82,7 +82,9 @@
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-6">
 				<div class="flex flex-col gap-2">
-					<Label for="criteriaSearchString">{t('Words or values to search for (wildcard: "%"):')}</Label>
+					<Label for="criteriaSearchString"
+						>{t('Words or values to search for (wildcard: "%"):')}</Label
+					>
 					<Input
 						id="criteriaSearchString"
 						name="criteriaSearchString"
@@ -105,7 +107,9 @@
 								<Label for="criteriaSearchTypeRadio{type.value}" class="font-normal">
 									{searchTypeLabel(type.value)}
 									{#if type.value === 1 || type.value === 2}
-										<span class="text-muted-foreground">{t('(words are separated by a space)')}</span>
+										<span class="text-muted-foreground"
+											>{t('(words are separated by a space)')}</span
+										>
 									{/if}
 								</Label>
 							</div>
@@ -158,7 +162,9 @@
 								{/if}
 							</div>
 						{:else}
-							<p class="text-sm text-muted-foreground sm:col-span-2">{t('No tables in this database.')}</p>
+							<p class="text-sm text-muted-foreground sm:col-span-2">
+								{t('No tables in this database.')}
+							</p>
 						{/each}
 					</div>
 				</fieldset>
@@ -235,7 +241,8 @@
 												deleteOpen = true;
 											}}
 										>
-											<Trash2 /> {t('Delete')}
+											<Trash2 />
+											{t('Delete')}
 										</Button>
 									{/if}
 								</Table.Cell>

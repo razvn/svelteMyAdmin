@@ -165,11 +165,16 @@ export async function saveSearch(
 			);
 			return { id: Number((r as { insertId: number }).insertId), affected: 1 };
 		});
-		if (!res) return { ok: false, error: locals.i18n.t('The configuration storage is not reachable.') };
-		if (res.affected === 0) return { ok: false, error: locals.i18n.t('The saved search no longer exists.') };
+		if (!res)
+			return { ok: false, error: locals.i18n.t('The configuration storage is not reachable.') };
+		if (res.affected === 0)
+			return { ok: false, error: locals.i18n.t('The saved search no longer exists.') };
 		return { ok: true, id: res.id };
 	} catch {
-		return { ok: false, error: locals.i18n.t('Could not save the search (is the name already used?).') };
+		return {
+			ok: false,
+			error: locals.i18n.t('Could not save the search (is the name already used?).')
+		};
 	}
 }
 

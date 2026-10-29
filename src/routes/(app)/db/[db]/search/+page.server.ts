@@ -36,7 +36,9 @@ export const actions: Actions = {
 		const req = parseSearchRequest(url.searchParams);
 		const table = z.string().min(1).safeParse(form.get('table'));
 		if (!req.submitted || !table.success) {
-			return fail(400, { deleteError: locals.i18n.t('The search is incomplete, nothing was deleted.') });
+			return fail(400, {
+				deleteError: locals.i18n.t('The search is incomplete, nothing was deleted.')
+			});
 		}
 
 		const dbi = await locals.dbi;

@@ -116,10 +116,12 @@
 								{/each}
 							</NativeSelect>
 							<label class="flex items-center gap-1.5 text-sm">
-								<input type="radio" name="order" value="ASC" checked /> {t('Ascending')}
+								<input type="radio" name="order" value="ASC" checked />
+								{t('Ascending')}
 							</label>
 							<label class="flex items-center gap-1.5 text-sm">
-								<input type="radio" name="order" value="DESC" /> {t('Descending')}
+								<input type="radio" name="order" value="DESC" />
+								{t('Descending')}
 							</label>
 						</div>
 					</div>

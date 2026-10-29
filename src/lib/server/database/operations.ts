@@ -510,7 +510,11 @@ async function transfer(
 		return { ok: false, message: tr.t('System databases cannot be renamed.'), sql: [] };
 	}
 	if (move && (await dbi.databaseExists(newName))) {
-		return { ok: false, message: tr.t('Database {name} already exists.', { name: newName }), sql: [] };
+		return {
+			ok: false,
+			message: tr.t('Database {name} already exists.', { name: newName }),
+			sql: []
+		};
 	}
 	const snap = await loadSnapshot(dbi, db);
 	const plan = planDatabaseCopy(snap, {

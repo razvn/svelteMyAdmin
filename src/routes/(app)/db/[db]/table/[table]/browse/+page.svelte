@@ -152,7 +152,8 @@
 	>
 		{#snippet actions()}
 			{#if data.columns.some((c) => c.kind === 'geometry')}
-				<Button href="{tableBase}/gis" size="sm" variant="outline">{t('Visualize GIS data')}</Button>
+				<Button href="{tableBase}/gis" size="sm" variant="outline">{t('Visualize GIS data')}</Button
+				>
 			{/if}
 			{#if !data.isView}
 				<Button href="{tableBase}/insert" size="sm">
@@ -229,7 +230,9 @@
 						</Select.Trigger>
 						<Select.Content class="max-h-72">
 							{#each pages as p (p)}
-								<Select.Item value={String(p)} label={t('Page {page}', { page: p })}>{p}</Select.Item>
+								<Select.Item value={String(p)} label={t('Page {page}', { page: p })}
+									>{p}</Select.Item
+								>
 							{/each}
 						</Select.Content>
 					</Select.Root>
@@ -255,13 +258,13 @@
 					onValueChange={(v) => go({ rows: v, pos: null })}
 				>
 					<Select.Trigger size="sm" class="w-36" aria-label={t('Rows per page')}>
-						{data.rowsPerPage === 'all'
-							? t('Show all')
-							: t('{n} rows', { n: data.rowsPerPage })}
+						{data.rowsPerPage === 'all' ? t('Show all') : t('{n} rows', { n: data.rowsPerPage })}
 					</Select.Trigger>
 					<Select.Content>
 						{#each data.rowsOptions as n (n)}
-							<Select.Item value={String(n)} label={t('{n} rows', { n })}>{t('{n} rows', { n })}</Select.Item>
+							<Select.Item value={String(n)} label={t('{n} rows', { n })}
+								>{t('{n} rows', { n })}</Select.Item
+							>
 						{/each}
 						{#if data.showAllAllowed}
 							<Select.Item value="all" label={t('Show all')}>{t('Show all')}</Select.Item>
@@ -283,7 +286,9 @@
 				</span>
 				{#if data.filter}
 					<p class="font-medium">{t('No rows match the filter.')}</p>
-					<Button href={data.clearFilterHref} variant="outline" size="sm">{t('Clear filter')}</Button>
+					<Button href={data.clearFilterHref} variant="outline" size="sm"
+						>{t('Clear filter')}</Button
+					>
 				{:else}
 					<p class="font-medium">
 						{data.isView ? t('This view has no rows yet.') : t('This table has no rows yet.')}
@@ -359,13 +364,15 @@
 						variant="outline"
 						size="sm"
 						href={selected.length ? editHref(selected) : undefined}
-						disabled={!selected.length}><Pencil class="size-4" aria-hidden="true" />{t('Edit')}</Button
+						disabled={!selected.length}
+						><Pencil class="size-4" aria-hidden="true" />{t('Edit')}</Button
 					>
 					<Button
 						variant="outline"
 						size="sm"
 						href={selected.length ? copyHref(selected) : undefined}
-						disabled={!selected.length}><Copy class="size-4" aria-hidden="true" />{t('Copy')}</Button
+						disabled={!selected.length}
+						><Copy class="size-4" aria-hidden="true" />{t('Copy')}</Button
 					>
 					<Button
 						variant="outline"
@@ -379,7 +386,8 @@
 						variant="outline"
 						size="sm"
 						href={selected.length ? exportHref(selected) : undefined}
-						disabled={!selected.length}><Download class="size-4" aria-hidden="true" />{t('Export')}</Button
+						disabled={!selected.length}
+						><Download class="size-4" aria-hidden="true" />{t('Export')}</Button
 					>
 				</div>
 			{/if}
@@ -418,7 +426,9 @@
 					: t('Delete {n} rows?', { n: deleting?.length ?? 0 })}</AlertDialog.Title
 			>
 			<AlertDialog.Description
-				>{t('The following queries will be executed. This cannot be undone.')}</AlertDialog.Description
+				>{t(
+					'The following queries will be executed. This cannot be undone.'
+				)}</AlertDialog.Description
 			>
 		</AlertDialog.Header>
 		<pre

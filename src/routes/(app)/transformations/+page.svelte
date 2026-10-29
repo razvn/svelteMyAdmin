@@ -19,7 +19,9 @@
 	<PageHeader
 		icon={Wand}
 		title={t('Transformations')}
-		description={t('Media types and the display and input transformations available for table columns.')}
+		description={t(
+			'Media types and the display and input transformations available for table columns.'
+		)}
 	/>
 
 	<Card.Root>
@@ -52,7 +54,8 @@
 						<Table.Row>
 							<Table.Cell class="align-top font-medium">
 								{row.name}
-								{#if row.unsupported}<Badge variant="warning" class="ms-2">{t('not supported')}</Badge
+								{#if row.unsupported}<Badge variant="warning" class="ms-2"
+										>{t('not supported')}</Badge
 									>{/if}
 							</Table.Cell>
 							<Table.Cell class="whitespace-normal text-muted-foreground"

@@ -25,8 +25,8 @@
 	<span
 		class="whitespace-pre-wrap"
 		title={value.title ? t(value.title) : undefined}
-		data-transformed="text"
-	>{value.text}</span>
+		data-transformed="text">{value.text}</span
+	>
 {:else if value.type === 'link'}
 	<a
 		class="text-primary underline-offset-2 hover:underline"

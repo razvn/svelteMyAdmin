@@ -73,8 +73,14 @@
 		{#if data.view === 'report'}
 			<Card.Root data-testid="tracking-report">
 				<Card.Header>
-					<Card.Title>{t('Tracking report, version {version}', { version: data.version ?? 0 })}</Card.Title>
-					<Card.Description>{t('Tracking statements: {statements}', { statements: data.tracking })}</Card.Description>
+					<Card.Title
+						>{t('Tracking report, version {version}', { version: data.version ?? 0 })}</Card.Title
+					>
+					<Card.Description
+						>{t('Tracking statements: {statements}', {
+							statements: data.tracking
+						})}</Card.Description
+					>
 					<Card.Action><Button variant="outline" href={base}>{t('Close')}</Button></Card.Action>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-5">
@@ -86,7 +92,9 @@
 							<NativeSelect id="logtype" name="logtype" value={data.filter.logtype}>
 								<NativeSelectOption value="schema">{t('Structure only')}</NativeSelectOption>
 								<NativeSelectOption value="data">{t('Data only')}</NativeSelectOption>
-								<NativeSelectOption value="schema_and_data">{t('Structure and data')}</NativeSelectOption>
+								<NativeSelectOption value="schema_and_data"
+									>{t('Structure and data')}</NativeSelectOption
+								>
 							</NativeSelect>
 						</div>
 						<div class="flex flex-col gap-1.5">
@@ -172,7 +180,8 @@
 					<div class="flex flex-wrap items-center gap-2 border-t pt-4" data-testid="report-export">
 						<span class="text-sm text-muted-foreground">{t('Export as')}</span>
 						<Button variant="outline" size="sm" href="{base}?{filterQuery({ export: 'sqldump' })}">
-							<FileText /> {t('SQL dump')}
+							<FileText />
+							{t('SQL dump')}
 						</Button>
 						<Button
 							variant="outline"
@@ -180,7 +189,8 @@
 							href="{base}/download?{filterQuery({})}"
 							data-sveltekit-reload
 						>
-							<Download /> {t('SQL dump (file download)')}
+							<Download />
+							{t('SQL dump (file download)')}
 						</Button>
 						<form method="POST" action="?/execute" use:enhance class="contents">
 							<input type="hidden" name="version" value={data.version} />
@@ -213,7 +223,11 @@
 		{#if data.view === 'snapshot' && data.snapshot}
 			<Card.Root data-testid="tracking-snapshot">
 				<Card.Header>
-					<Card.Title>{t('Structure snapshot, version {version}', { version: data.version ?? 0 })}</Card.Title>
+					<Card.Title
+						>{t('Structure snapshot, version {version}', {
+							version: data.version ?? 0
+						})}</Card.Title
+					>
 					<Card.Action><Button variant="outline" href={base}>{t('Close')}</Button></Card.Action>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-4">
@@ -323,7 +337,8 @@
 													size="sm"
 													aria-label={t('Delete version {version}', { version: v.version })}
 												>
-													<Trash2 /> {t('Delete version')}
+													<Trash2 />
+													{t('Delete version')}
 												</Button>
 											</form>
 										</div>
@@ -344,7 +359,10 @@
 						: t('Create version {version}', { version: data.nextVersion })}
 				</Card.Title>
 				<Card.Description>
-					{t('Creates a snapshot of the structure of {table} and starts recording the chosen statements.', { table: data.table })}
+					{t(
+						'Creates a snapshot of the structure of {table} and starts recording the chosen statements.',
+						{ table: data.table }
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>

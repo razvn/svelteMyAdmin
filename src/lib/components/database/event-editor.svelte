@@ -48,7 +48,9 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[92vh] overflow-y-auto sm:max-w-2xl" data-testid="event-editor">
 		<Dialog.Header>
-			<Dialog.Title>{original ? t('Edit event {name}', { name: original }) : t('Add event')}</Dialog.Title>
+			<Dialog.Title
+				>{original ? t('Edit event {name}', { name: original }) : t('Add event')}</Dialog.Title
+			>
 			<Dialog.Description>
 				{t('Editing drops and re-creates the event; the original is restored if creation fails.')}
 			</Dialog.Description>
@@ -130,7 +132,8 @@
 				</div>
 			</div>
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+				<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button
+				>
 				<Button type="submit" disabled={saving} data-testid="event-save">
 					{saving ? t('Saving...') : t('Save')}
 				</Button>

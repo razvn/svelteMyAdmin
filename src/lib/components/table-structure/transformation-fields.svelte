@@ -96,7 +96,9 @@
 	{@render field(t('Input transformation options'), inOptions)}
 
 	<p class="text-xs text-muted-foreground md:col-span-3 xl:col-span-5">
-		{t("Options are written like 'a', 100, b,'c'; precede a backslash or a single quote with a backslash.")}
+		{t(
+			"Options are written like 'a', 100, b,'c'; precede a backslash or a single quote with a backslash."
+		)}
 		<a class="text-primary hover:underline" href={resolve('/(app)/transformations')}
 			>{t('List of available transformations')}</a
 		>

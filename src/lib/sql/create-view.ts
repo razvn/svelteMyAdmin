@@ -1,6 +1,7 @@
 /** CREATE VIEW statement from the "Create view" dialog (Controllers/View/CreateController.php). */
 import { buildDefinerClause } from './definer.ts';
 import { escapeId } from './escape.ts';
+import { N_ } from '#lib/i18n/translator.ts';
 
 export const VIEW_ALGORITHMS = ['UNDEFINED', 'MERGE', 'TEMPTABLE'] as const;
 export const VIEW_SECURITY = ['DEFINER', 'INVOKER'] as const;
@@ -30,9 +31,9 @@ export const splitColumnNames = (text: string): string[] =>
 
 export function buildCreateView(f: CreateViewForm): CreateViewResult {
 	const name = f.name.trim();
-	if (name === '') return { sql: '', error: 'The view name must not be empty.' };
+	if (name === '') return { sql: '', error: N_('The view name must not be empty.') };
 	const query = f.as.trim().replace(/;+\s*$/, '');
-	if (query === '') return { sql: '', error: 'The view needs a SELECT statement.' };
+	if (query === '') return { sql: '', error: N_('The view needs a SELECT statement.') };
 	const definer = buildDefinerClause(f.definer);
 	if (definer.error !== null) return { sql: '', error: definer.error };
 

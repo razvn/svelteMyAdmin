@@ -435,7 +435,10 @@ async function checkTarget(
 		return { ok: false, error: tr.t('Tables cannot be created in a system database.') };
 	}
 	if (!(await dbi.databaseExists(input.targetDb))) {
-		return { ok: false, error: tr.t('Target database {db} was not found!', { db: input.targetDb }) };
+		return {
+			ok: false,
+			error: tr.t('Target database {db} was not found!', { db: input.targetDb })
+		};
 	}
 	return { ok: true, name };
 }
@@ -535,7 +538,9 @@ export async function copyTable(
 	if (!t.ok) return fail(t.error);
 	const to = { db: input.targetDb, table: t.name };
 	if (to.db === db && to.table === table) {
-		return fail(tr.t('Cannot copy a table to itself. Change the name or the database and try again.'));
+		return fail(
+			tr.t('Cannot copy a table to itself. Change the name or the database and try again.')
+		);
 	}
 	const src = await loadCopySource(dbi, db, table);
 	if (!src) return fail(tr.t('Table not found.'));
@@ -675,11 +680,16 @@ export async function reorderTable(
 ): Promise<TableOutcome> {
 	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const cols = await dbi.getColumns(db, table);
-	if (!cols.some((c) => c.field === column)) return fail(tr.t('Unknown column: {name}', { name: column }));
+	if (!cols.some((c) => c.field === column))
+		return fail(tr.t('Unknown column: {name}', { name: column }));
 	const sql = buildReorderSql(table, column, order);
 	const run = await withSessionRestored(dbi, db, () => runStatements(dbi.conn, [sql]));
 	if (run.error) return fail(run.error, run.sql);
-	return { ok: true, message: tr.t('Table {table} has been reordered by {column}.', { table, column }), sql: run.sql };
+	return {
+		ok: true,
+		message: tr.t('Table {table} has been reordered by {column}.', { table, column }),
+		sql: run.sql
+	};
 }
 
 function fromExec(res: ExecResult, sql: string[], message: string): TableOutcome {
@@ -742,7 +752,10 @@ export async function emptyTable(
 	if (isSystemSchema(db)) return fail(tr.t('Tables of a system database cannot be modified.'));
 	const sql = [buildTruncateSql(db, table)];
 	const res = await executePlan(dbi, plan(sql, !fkChecks));
-	return { ...fromExec(res, sql, tr.t('Table {table} has been emptied.', { table })), reload: true };
+	return {
+		...fromExec(res, sql, tr.t('Table {table} has been emptied.', { table })),
+		reload: true
+	};
 }
 
 /** DROP TABLE / VIEW; goes to the database structure afterwards. */

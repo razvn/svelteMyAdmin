@@ -250,7 +250,9 @@
 	{#if showIndex}
 		{#snippet indexField()}
 			<Select.Root type="single" value={col.index} onValueChange={setIndex}>
-				<Select.Trigger class="w-full" aria-label={t('Index')}>{indexLabel(col.index)}</Select.Trigger>
+				<Select.Trigger class="w-full" aria-label={t('Index')}
+					>{indexLabel(col.index)}</Select.Trigger
+				>
 				<Select.Content>
 					{#each INDEX_CHOICES as v (v)}
 						<Select.Item value={v} label={indexLabel(v)}>{indexLabel(v)}</Select.Item>
@@ -287,7 +289,12 @@
 	{@render field(t('Null / Auto-increment'), 'col-span-1 md:col-span-2 xl:col-span-2', flagsField)}
 
 	{#snippet commentField()}
-		<Input bind:value={col.comment} aria-label={t('Comments')} maxlength={1024} autocomplete="off" />
+		<Input
+			bind:value={col.comment}
+			aria-label={t('Comments')}
+			maxlength={1024}
+			autocomplete="off"
+		/>
 	{/snippet}
 	{@render field(t('Comments'), 'col-span-2 md:col-span-4 xl:col-span-4', commentField)}
 

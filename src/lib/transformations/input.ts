@@ -62,8 +62,9 @@ export const INPUT_PLUGINS: InputPlugin[] = [
 		mime: 'Image/JPEG',
 		name: 'Upload',
 		title: N_('Image upload'),
-		description:
-			N_('Image upload functionality which also displays a thumbnail. The options are the width and height of the thumbnail in pixels. Defaults to 100 X 100.'),
+		description: N_(
+			'Image upload functionality which also displays a thumbnail. The options are the width and height of the thumbnail in pixels. Defaults to 100 X 100.'
+		),
 		widget: 'image',
 		apply: (value) => ({ value })
 	},
@@ -72,8 +73,9 @@ export const INPUT_PLUGINS: InputPlugin[] = [
 		mime: 'Text/Plain',
 		name: 'FileUpload',
 		title: N_('Text file upload'),
-		description:
-			N_('File upload functionality for TEXT columns. It does not have a textarea for input.'),
+		description: N_(
+			'File upload functionality for TEXT columns. It does not have a textarea for input.'
+		),
 		widget: 'file',
 		apply: (value) => ({ value })
 	},
@@ -101,7 +103,9 @@ export const INPUT_PLUGINS: InputPlugin[] = [
 		mime: 'Text/Plain',
 		name: 'Iptolong',
 		title: N_('IPv4/IPv6 To Long'),
-		description: N_('Converts an Internet network address in (IPv4/IPv6) format into a long integer.'),
+		description: N_(
+			'Converts an Internet network address in (IPv4/IPv6) format into a long integer.'
+		),
 		widget: 'text',
 		toForm: (stored) => (stored === '' ? '' : longToIp(stored)),
 		apply: (value) => ({ value: ipToLong(value) })
@@ -112,8 +116,9 @@ export const INPUT_PLUGINS: InputPlugin[] = [
 		mime: 'Text/Plain',
 		name: 'RegexValidation',
 		title: N_('Regex Validation'),
-		description:
-			N_('Validates the string using regular expression and performs insert only if string matches it. The first option is the Regular Expression.'),
+		description: N_(
+			'Validates the string using regular expression and performs insert only if string matches it. The first option is the Regular Expression.'
+		),
 		widget: 'default',
 		apply(value, options) {
 			const pattern = options[0];

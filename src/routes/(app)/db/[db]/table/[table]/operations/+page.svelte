@@ -340,9 +340,13 @@
 					</div>
 					<p class="text-sm text-muted-foreground" data-testid="reorder-hint">
 						{#if data.innodbClustered}
-							{t('InnoDB always keeps rows ordered by its PRIMARY KEY (or first NOT NULL UNIQUE index), so this has no lasting effect on this table.')}
+							{t(
+								'InnoDB always keeps rows ordered by its PRIMARY KEY (or first NOT NULL UNIQUE index), so this has no lasting effect on this table.'
+							)}
 						{:else}
-							{t('Reorders the rows once; rows inserted later are not kept in this order. Most useful for MyISAM tables.')}
+							{t(
+								'Reorders the rows once; rows inserted later are not kept in this order. Most useful for MyISAM tables.'
+							)}
 						{/if}
 					</p>
 					{#if reorderPreview}
@@ -436,7 +440,8 @@
 					<div class="flex flex-wrap items-center gap-3">
 						<span class="w-40 text-sm font-medium">{t('Storage engine')}</span>
 						<Select.Root type="single" name="new_tbl_storage_engine" bind:value={engine}>
-							<Select.Trigger class="w-56" aria-label={t('Storage engine')}>{engine}</Select.Trigger>
+							<Select.Trigger class="w-56" aria-label={t('Storage engine')}>{engine}</Select.Trigger
+							>
 							<Select.Content class="max-h-72">
 								{#each data.engines as e (e)}
 									<Select.Item value={e} label={e}>{e}</Select.Item>
@@ -466,7 +471,9 @@
 								value="1"
 								bind:checked={changeAll}
 							/>
-							<Label for="opt-change-all" class="font-normal">{t('Change all column collations')}</Label>
+							<Label for="opt-change-all" class="font-normal"
+								>{t('Change all column collations')}</Label
+							>
 						</div>
 					</div>
 
@@ -552,7 +559,9 @@
 						{#if optionsPreview.length > 0}
 							{@render sqlBlock(optionsPreview, 'options-preview')}
 						{:else}
-							<p class="text-sm text-muted-foreground" data-testid="options-preview">{t('No change.')}</p>
+							<p class="text-sm text-muted-foreground" data-testid="options-preview">
+								{t('No change.')}
+							</p>
 						{/if}
 					</div>
 					<div><Button type="submit" disabled={busy === 'options'}>{t('Go')}</Button></div>
@@ -749,7 +758,9 @@
 	{/if}
 
 	<p class="text-sm text-muted-foreground">
-		<a class="underline underline-offset-2" href="{dbHref(db)}/structure">{t('Back to {db}', { db })}</a>
+		<a class="underline underline-offset-2" href="{dbHref(db)}/structure"
+			>{t('Back to {db}', { db })}</a
+		>
 	</p>
 </div>
 
@@ -757,7 +768,9 @@
 <AlertDialog.Root bind:open={dangerOpen}>
 	<AlertDialog.Content class="sm:max-w-xl" data-testid="confirm-dialog">
 		<AlertDialog.Header>
-			<AlertDialog.Title>{t('Do you really want to execute the following query?')}</AlertDialog.Title>
+			<AlertDialog.Title
+				>{t('Do you really want to execute the following query?')}</AlertDialog.Title
+			>
 			<AlertDialog.Description>{t('This cannot be undone.')}</AlertDialog.Description>
 		</AlertDialog.Header>
 		<pre

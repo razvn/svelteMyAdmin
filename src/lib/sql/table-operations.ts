@@ -19,7 +19,10 @@ export function buildRenameSql(db: string, table: string, newDb: string, newTabl
 }
 
 /** Table::isValidName($name, true): non empty, no trailing space, <= 64 chars, no path characters. */
-export function validateTableName(name: string, tr: Pick<Translator, 't'> = SOURCE_TRANSLATOR): string | null {
+export function validateTableName(
+	name: string,
+	tr: Pick<Translator, 't'> = SOURCE_TRANSLATOR
+): string | null {
 	if (name.length === 0) return tr.t('The table name is empty!');
 	if ([...name].length > 64 || /[\0/\\.]/.test(name) || /\s$/.test(name)) {
 		return tr.t('Invalid table name: {name}', { name });

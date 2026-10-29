@@ -27,7 +27,8 @@ async function parse(request: Request) {
 export const actions: Actions = {
 	preview: async ({ request, params, locals }) => {
 		const { values, parsed } = await parse(request);
-		if (!parsed.success) return fail(400, { values, error: locals.i18n.t(parsed.error.issues[0].message) });
+		if (!parsed.success)
+			return fail(400, { values, error: locals.i18n.t(parsed.error.issues[0].message) });
 		try {
 			const dbi = await locals.dbi;
 			return { values, preview: await previewReplace(dbi, params.db, params.table, parsed.data) };
@@ -37,7 +38,8 @@ export const actions: Actions = {
 	},
 	replace: async ({ request, params, locals }) => {
 		const { values, parsed } = await parse(request);
-		if (!parsed.success) return fail(400, { values, error: locals.i18n.t(parsed.error.issues[0].message) });
+		if (!parsed.success)
+			return fail(400, { values, error: locals.i18n.t(parsed.error.issues[0].message) });
 		try {
 			const dbi = await locals.dbi;
 			return { values, replaced: await runReplace(dbi, params.db, params.table, parsed.data) };

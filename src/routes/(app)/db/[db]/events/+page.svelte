@@ -116,7 +116,11 @@
 	}
 
 	function schedule(e: (typeof data.events)[number]): string {
-		if (e.type === 'RECURRING') return t('every {value} {unit}', { value: e.intervalValue ?? '', unit: e.intervalField ?? '' });
+		if (e.type === 'RECURRING')
+			return t('every {value} {unit}', {
+				value: e.intervalValue ?? '',
+				unit: e.intervalField ?? ''
+			});
 		return e.executeAt ?? '';
 	}
 </script>
@@ -158,7 +162,9 @@
 					</Badge>
 				</label>
 				{#if !data.scheduler.canToggle}
-					<span class="text-xs text-muted-foreground">{t('You cannot change it (needs SUPER).')}</span>
+					<span class="text-xs text-muted-foreground"
+						>{t('You cannot change it (needs SUPER).')}</span
+					>
 				{/if}
 			</div>
 			<div class="relative w-full max-w-xs">

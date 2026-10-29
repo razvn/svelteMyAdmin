@@ -40,7 +40,11 @@
 {#if withGeometry}
 	<Table.Cell>
 		{#if column.isGeometry}
-			<NativeSelect name="geom_{key}" bind:value={geomFunc} aria-label={t('Function for {name}', { name: label })}>
+			<NativeSelect
+				name="geom_{key}"
+				bind:value={geomFunc}
+				aria-label={t('Function for {name}', { name: label })}
+			>
 				<option value=""></option>
 				{#each column.geomFuncs as f (f.name)}
 					<option value={f.name}>{f.name}</option>
@@ -50,7 +54,11 @@
 	</Table.Cell>
 {/if}
 <Table.Cell>
-	<NativeSelect name="op_{key}" bind:value={operator} aria-label={t('Operator for {name}', { name: label })}>
+	<NativeSelect
+		name="op_{key}"
+		bind:value={operator}
+		aria-label={t('Operator for {name}', { name: label })}
+	>
 		{#each column.operators as o (o)}
 			<option value={o}>{o}</option>
 		{/each}
@@ -90,7 +98,11 @@
 			{/each}
 		</NativeSelect>
 	{:else if column.foreign && !geomFunc && op !== 'IN (...)' && op !== 'NOT IN (...)'}
-		<NativeSelect name="val_{key}" class="max-w-64" aria-label={t('Value for {name}', { name: label })}>
+		<NativeSelect
+			name="val_{key}"
+			class="max-w-64"
+			aria-label={t('Value for {name}', { name: label })}
+		>
 			<option value=""></option>
 			{#each column.foreign as f (f.value)}
 				<option value={f.value} selected={f.value === first}>{f.label}</option>

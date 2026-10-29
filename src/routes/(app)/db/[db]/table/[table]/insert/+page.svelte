@@ -57,7 +57,9 @@
 					<Collapsible.Root open={result.kind !== 'success'}>
 						<Collapsible.Trigger>
 							{#snippet child({ props })}
-								<Button {...props} variant="link" size="sm" class="h-auto p-0">{t('SQL query')}</Button>
+								<Button {...props} variant="link" size="sm" class="h-auto p-0"
+									>{t('SQL query')}</Button
+								>
 							{/snippet}
 						</Collapsible.Trigger>
 						<Collapsible.Content>

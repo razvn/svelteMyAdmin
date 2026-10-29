@@ -347,7 +347,8 @@ export function validateRenames(
 	const moving = new Set(renames.map((r) => r.from));
 	for (const { to } of renames) {
 		if (to === '' || [...to].length > 64) return tr.t('Invalid table name: {name}', { name: to });
-		if (/[\0/\\.]/.test(to) || to.endsWith(' ')) return tr.t('Invalid table name: {name}', { name: to });
+		if (/[\0/\\.]/.test(to) || to.endsWith(' '))
+			return tr.t('Invalid table name: {name}', { name: to });
 		if (seen.has(to)) return tr.t('Duplicate target table name: {name}', { name: to });
 		seen.add(to);
 		if (!opts.allowExisting && existing.includes(to) && !moving.has(to)) {
@@ -381,7 +382,8 @@ export function buildPlan(
 ): PlanResult {
 	const byName = new Map(tables.map((t) => [t.name, t]));
 	const unique = [...new Set(input.selected)];
-	for (const n of unique) if (!byName.has(n)) return { ok: false, error: tr.t('Unknown table: {name}', { name: n }) };
+	for (const n of unique)
+		if (!byName.has(n)) return { ok: false, error: tr.t('Unknown table: {name}', { name: n }) };
 	const q = (name: string) => (db === null ? escapeId(name) : escapeQualified(db, name));
 	const sel = unique.map((n) => byName.get(n)!);
 	const baseTables = sel.filter((t) => !t.isView);

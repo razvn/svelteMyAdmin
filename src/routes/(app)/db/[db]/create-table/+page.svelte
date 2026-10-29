@@ -163,7 +163,9 @@
 			<Card.Header>
 				<Card.Title>{t('Structure')}</Card.Title>
 				<Card.Description>
-					{t("Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'.")}
+					{t(
+						"Columns without a name are skipped. For ENUM and SET enter the values like 'a','b','c'."
+					)}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>

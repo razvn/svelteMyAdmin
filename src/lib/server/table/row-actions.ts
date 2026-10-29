@@ -54,8 +54,10 @@ export async function updateCell(
 	const idx = meta.columns.findIndex((c) => c.name === column);
 	if (idx < 0) return { ok: false, error: tr.t('Unknown column {name}.', { name: column }) };
 	const col = meta.columns[idx];
-	if (!col.editable) return { ok: false, error: tr.t('Column {name} cannot be edited here.', { name: column }) };
-	if (value === null && !col.nullable) return { ok: false, error: tr.t('Column {name} is NOT NULL.', { name: column }) };
+	if (!col.editable)
+		return { ok: false, error: tr.t('Column {name} cannot be edited here.', { name: column }) };
+	if (value === null && !col.nullable)
+		return { ok: false, error: tr.t('Column {name} is NOT NULL.', { name: column }) };
 
 	const qualified = escapeQualified(db, table);
 	const statement = `UPDATE ${qualified} SET ${escapeId(column)} = ? WHERE ${clause} LIMIT 1`;

@@ -3,8 +3,7 @@
 	import type { ColumnKind } from '#lib/table/column-kind.ts';
 	import {
 		binarySize,
-	binaryTitle,
-		formatBinary,
+		binaryTitle,
 		isBinaryCell,
 		prettyJson,
 		truncate,

@@ -35,7 +35,7 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import FavoriteStar from '#lib/components/table/favorite-star.svelte';
 	import { N_, useI18n } from '#lib/i18n/index.ts';
-		import type { PageProps } from './$types';
+	import type { PageProps } from './$types';
 	const { t, tn, fmt } = useI18n();
 
 	type Op =
@@ -102,9 +102,7 @@
 		visibleNames.length > 0 && visibleNames.every((n) => selected.includes(n))
 	);
 	const sumSize = $derived(fmt.byteDown(data.sums.size, 3, 1));
-	const sumOverhead = $derived(
-		fmt.byteDown(data.sums.overhead, 3, data.sums.overhead > 0 ? 1 : 0)
-	);
+	const sumOverhead = $derived(fmt.byteDown(data.sums.overhead, 3, data.sums.overhead > 0 ? 1 : 0));
 	const hasOverhead = $derived(data.rows.some((tbl) => tbl.overhead > 0));
 
 	const prefixOps: Op[] = ['add_prefix', 'replace_prefix', 'copy_prefix'];
@@ -215,7 +213,8 @@
 	>
 		{#snippet actions()}
 			<Button variant="outline" href="/db/{encodeURIComponent(data.db)}/data-dictionary">
-				<BookOpen class="size-4" /> {t('Data dictionary')}
+				<BookOpen class="size-4" />
+				{t('Data dictionary')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -286,8 +285,11 @@
 						{#if !data.isSystem}
 							<Select.Group>
 								<Select.GroupHeading>{t('Delete data or table')}</Select.GroupHeading>
-								<Select.Item value="empty" label={t(OP_LABELS.empty)}>{t(OP_LABELS.empty)}</Select.Item>
-								<Select.Item value="drop" label={t(OP_LABELS.drop)}>{t(OP_LABELS.drop)}</Select.Item>
+								<Select.Item value="empty" label={t(OP_LABELS.empty)}
+									>{t(OP_LABELS.empty)}</Select.Item
+								>
+								<Select.Item value="drop" label={t(OP_LABELS.drop)}>{t(OP_LABELS.drop)}</Select.Item
+								>
 							</Select.Group>
 						{/if}
 						<Select.Group>
@@ -312,7 +314,8 @@
 					<Button
 						variant="link"
 						size="sm"
-						onclick={() => (selected = data.rows.filter((tbl) => tbl.overhead > 0).map((tbl) => tbl.name))}
+						onclick={() =>
+							(selected = data.rows.filter((tbl) => tbl.overhead > 0).map((tbl) => tbl.name))}
 					>
 						{t('Check tables having overhead')}
 					</Button>
@@ -327,7 +330,10 @@
 			</div>
 
 			{#if data.maxTableList > 0 && data.total > data.maxTableList}
-				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label={t('Pagination')}>
+				<nav
+					class="flex items-center gap-2 border-b px-5 py-3 text-sm"
+					aria-label={t('Pagination')}
+				>
 					<Button variant="outline" size="sm" href={href({ pos: null })} disabled={data.pos === 0}>
 						{t('Start')}
 					</Button>
@@ -340,7 +346,11 @@
 						{t('Previous')}
 					</Button>
 					<span class="text-muted-foreground">
-						{t('Showing {from} - {to} of {total}', { from: data.pos + 1, to: Math.min(data.total, data.pos + data.maxTableList), total: data.total })}
+						{t('Showing {from} - {to} of {total}', {
+							from: data.pos + 1,
+							to: Math.min(data.total, data.pos + data.maxTableList),
+							total: data.total
+						})}
 					</span>
 					<Button
 						variant="outline"
@@ -364,14 +374,17 @@
 						<Table.Head>{@render sortHeader('collation', t('Collation'))}</Table.Head>
 						{#if data.showStats}
 							<Table.Head class="text-end">{@render sortHeader('size', t('Size'))}</Table.Head>
-							<Table.Head class="text-end">{@render sortHeader('overhead', t('Overhead'))}</Table.Head>
+							<Table.Head class="text-end"
+								>{@render sortHeader('overhead', t('Overhead'))}</Table.Head
+							>
 						{/if}
 						<Table.Head>{@render sortHeader('comment', t('Comment'))}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
 					{#each visible as tbl (tbl.name)}
-						{@const size = tbl.size === null ? null : fmt.byteDown(tbl.size, 3, tbl.size > 0 ? 1 : 0)}
+						{@const size =
+							tbl.size === null ? null : fmt.byteDown(tbl.size, 3, tbl.size > 0 ? 1 : 0)}
 						{@const over = tbl.overhead > 0 ? fmt.byteDown(tbl.overhead, 3, 1) : null}
 						<Table.Row data-testid="table-row-{tbl.name}">
 							<Table.Cell>
@@ -498,7 +511,9 @@
 										{:else}-{/if}
 									</Table.Cell>
 								{/if}
-								<Table.Cell class="whitespace-normal text-muted-foreground">{tbl.comment}</Table.Cell>
+								<Table.Cell class="whitespace-normal text-muted-foreground"
+									>{tbl.comment}</Table.Cell
+								>
 							{/if}
 						</Table.Row>
 					{/each}
@@ -606,7 +621,10 @@
 					resultsOpen = true;
 				} else {
 					toast.success(
-						t('{operation}: done ({count}).', { operation: t(OP_LABELS[done.op]), count: done.count })
+						t('{operation}: done ({count}).', {
+							operation: t(OP_LABELS[done.op]),
+							count: done.count
+						})
 					);
 				}
 				const mutated = !['show_create', 'check', 'checksum'].includes(done.op);
@@ -685,7 +703,9 @@
 <AlertDialog.Root bind:open={confirmOpen}>
 	<AlertDialog.Content class="sm:max-w-xl">
 		<AlertDialog.Header>
-			<AlertDialog.Title>{t('Do you really want to execute the following query?')}</AlertDialog.Title>
+			<AlertDialog.Title
+				>{t('Do you really want to execute the following query?')}</AlertDialog.Title
+			>
 			<AlertDialog.Description>{t('This cannot be undone.')}</AlertDialog.Description>
 		</AlertDialog.Header>
 		<pre
@@ -730,7 +750,8 @@
 						<div class="flex items-center justify-between gap-2">
 							<span class="font-mono text-sm font-medium">{createName(row)}</span>
 							<Button variant="outline" size="sm" onclick={() => copy(createSql(row))}>
-								<Copy /> {t('Copy')}
+								<Copy />
+								{t('Copy')}
 							</Button>
 						</div>
 						<pre class="overflow-auto rounded-lg bg-muted p-3 font-mono text-xs">{createSql(

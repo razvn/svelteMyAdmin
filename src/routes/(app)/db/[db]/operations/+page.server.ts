@@ -58,7 +58,8 @@ export const actions: Actions = {
 	},
 	rename: async ({ request, locals, params }) => {
 		const dbi = await locals.dbi;
-		if (isSystemSchema(params.db)) return failure('rename', locals.i18n.t('System databases cannot be renamed.'));
+		if (isSystemSchema(params.db))
+			return failure('rename', locals.i18n.t('System databases cannot be renamed.'));
 		const parsed = renameSchema.safeParse(formToObject(await request.formData()));
 		if (!parsed.success) return failure('rename', locals.i18n.t('Invalid input.'));
 		const res = await renameDatabase(
@@ -99,11 +100,16 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		const parsed = collationSchema.safeParse(formToObject(await request.formData()));
 		if (!parsed.success) return failure('collation', locals.i18n.t('No collation provided.'));
-		const res = await changeCollation(dbi, params.db, {
-			collation: parsed.data.db_collation,
-			changeTables: parsed.data.change_all_tables_collations,
-			changeColumns: parsed.data.change_all_tables_columns_collations
-		}, locals.i18n);
+		const res = await changeCollation(
+			dbi,
+			params.db,
+			{
+				collation: parsed.data.db_collation,
+				changeTables: parsed.data.change_all_tables_collations,
+				changeColumns: parsed.data.change_all_tables_columns_collations
+			},
+			locals.i18n
+		);
 		const body = { action: 'collation', ...res };
 		return res.ok ? body : fail(400, body);
 	},

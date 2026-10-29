@@ -28,7 +28,10 @@ export const actions: Actions = {
 		const ref = nameSchema.safeParse(Object.fromEntries(await request.formData()));
 		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid event.') });
 		const event = await getEvent(await locals.db, params.db, ref.data.name);
-		if (!event) return fail(404, { error: locals.i18n.t('No event with name {name} found.', { name: ref.data.name }) });
+		if (!event)
+			return fail(404, {
+				error: locals.i18n.t('No event with name {name} found.', { name: ref.data.name })
+			});
 		return { event };
 	},
 
@@ -37,7 +40,8 @@ export const actions: Actions = {
 		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid event.') });
 		try {
 			const sql = await exportEvent(await locals.db, params.db, ref.data.name);
-			if (sql === null) return fail(404, { error: locals.i18n.t('The event definition is not available.') });
+			if (sql === null)
+				return fail(404, { error: locals.i18n.t('The event definition is not available.') });
 			return { sql };
 		} catch {
 			return fail(400, { error: locals.i18n.t('The event could not be exported.') });

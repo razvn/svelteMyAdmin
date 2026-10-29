@@ -354,16 +354,15 @@ interface Ctx {
 	tr?: Translator;
 }
 
-function parse<S extends z.ZodType>(
-	schema: S,
-	raw: unknown,
-	tr: Translator
-): z.infer<S> | string {
+function parse<S extends z.ZodType>(schema: S, raw: unknown, tr: Translator): z.infer<S> | string {
 	const res = schema.safeParse(raw);
 	return res.success ? res.data : (res.error.issues[0]?.message ?? tr.t('Invalid input.'));
 }
 
-export async function dropColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function dropColumns(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.dropColumns, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -376,14 +375,18 @@ export async function dropColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ct
 	return run(dbi, db, [buildDropColumns(db, table, input.columns)]);
 }
 
-export async function addKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function addKey(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.addKey, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
 	const existing = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 	const unknown = input.columns.find((c) => !existing.includes(c));
 	if (unknown) return fail(tr.t('Unknown column {name}.', { name: unknown }));
-	if (new Set(input.columns).size !== input.columns.length) return fail(tr.t('A column is used twice.'));
+	if (new Set(input.columns).size !== input.columns.length)
+		return fail(tr.t('A column is used twice.'));
 	const indexes = await loadIndexes(dbi, db, table);
 	const hasPrimary = indexes.some((i) => i.kind === 'PRIMARY');
 	const kind = input.kind as IndexKind;
@@ -395,7 +398,10 @@ export async function addKey({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, ra
 	]);
 }
 
-export async function moveColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function moveColumns(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.moveColumns, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -413,7 +419,10 @@ export async function moveColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ct
 	return run(dbi, db, [sql]);
 }
 
-export async function saveIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function saveIndex(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.saveIndex, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -446,7 +455,10 @@ export async function saveIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
 	return run(dbi, db, [buildSaveIndex(db, table, def, original, caps)]);
 }
 
-export async function dropIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function dropIndex(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.dropIndex, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const found = (await loadIndexes(dbi, db, table)).find((i) => i.name === input.name);
@@ -454,7 +466,10 @@ export async function dropIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
 	return run(dbi, db, [buildDropIndex(db, table, found.name, found.kind)]);
 }
 
-export async function renameIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function renameIndex(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.renameIndex, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -470,7 +485,10 @@ export async function renameIndex({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ct
 	return run(dbi, db, [buildRenameIndex(db, table, input.from, input.to)]);
 }
 
-export async function addColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function addColumns(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.addColumns, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -481,7 +499,8 @@ export async function addColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx
 	const existing = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 	const lower = new Set(existing.map((n) => n.toLowerCase()));
 	for (const c of columns) {
-		if (lower.has(c.name.toLowerCase())) return fail(tr.t('Column {name} already exists.', { name: c.name }));
+		if (lower.has(c.name.toLowerCase()))
+			return fail(tr.t('Column {name} already exists.', { name: c.name }));
 		lower.add(c.name.toLowerCase());
 	}
 	if (input.placement.where === 'after' && !existing.includes(input.placement.after)) {
@@ -496,7 +515,10 @@ export async function addColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx
 	]);
 }
 
-export async function changeColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx, raw: unknown): Promise<ActionResult> {
+export async function changeColumns(
+	{ dbi, db, table, tr = SOURCE_TRANSLATOR }: Ctx,
+	raw: unknown
+): Promise<ActionResult> {
 	const input = parse(schemas.changeColumns, raw, tr);
 	if (typeof input === 'string') return fail(input);
 	const caps = await getCaps(dbi);
@@ -508,7 +530,8 @@ export async function changeColumns({ dbi, db, table, tr = SOURCE_TRANSLATOR }: 
 	const existing = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 	const changes = input.changes.map((c, i) => ({ oldName: c.oldName, col: checked.columns[i] }));
 	for (const c of changes) {
-		if (!existing.includes(c.oldName)) return fail(tr.t('Unknown column {name}.', { name: c.oldName }));
+		if (!existing.includes(c.oldName))
+			return fail(tr.t('Unknown column {name}.', { name: c.oldName }));
 		if (c.col.name.trim() === '') return fail(tr.t('A column name is empty.'));
 	}
 	// final names must be unique

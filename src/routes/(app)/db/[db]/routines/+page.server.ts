@@ -52,7 +52,8 @@ export const actions: Actions = {
 		if (!ref.success) return fail(400, { error: locals.i18n.t('Invalid routine.') });
 		try {
 			const sql = await exportRoutine(await locals.db, params.db, ref.data.type, ref.data.name);
-			if (sql === null) return fail(404, { error: locals.i18n.t('The routine definition is not available.') });
+			if (sql === null)
+				return fail(404, { error: locals.i18n.t('The routine definition is not available.') });
 			return { sql };
 		} catch {
 			return fail(400, { error: locals.i18n.t('The routine could not be exported.') });
