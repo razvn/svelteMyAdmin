@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import type { Component } from 'svelte';
@@ -9,6 +10,8 @@
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
 	import { filterNames } from '#lib/nav/grouping.ts';
 	import { cn } from '#lib/utils.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		/** Group title, e.g. "Tables". */
@@ -37,7 +40,7 @@
 		hrefFor,
 		isActive = () => false,
 		quickHref,
-		quickLabel = 'Open',
+		quickLabel,
 		onhide,
 		newEntry,
 		itemFilterMinimum,
@@ -67,7 +70,7 @@
 	>
 		<ChevronRight class={cn('size-3.5 shrink-0 transition-transform', isOpen && 'rotate-90')} />
 		<Icon class="size-3.5 shrink-0" />
-		<span class="truncate">{title}</span>
+		<span class="truncate">{t(title)}</span>
 		<span
 			class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium text-muted-foreground tabular-nums"
 			data-testid="count">{items.length}</span
@@ -80,8 +83,8 @@
 				{#if showFilter}
 					<Sidebar.MenuSubItem>
 						<Sidebar.Input
-							placeholder="Filter {title.toLowerCase()}"
-							aria-label="Filter {title.toLowerCase()}"
+							placeholder={t('Filter {items}', { items: t(title).toLowerCase() })}
+							aria-label={t('Filter {items}', { items: t(title).toLowerCase() })}
 							class="h-7 text-xs"
 							bind:value={query}
 						/>
@@ -94,7 +97,7 @@
 							{#snippet child({ props })}
 								<a {...props} href={resolve(bare(newEntry.href))}>
 									<Plus />
-									<span>{newEntry.label}</span>
+									<span>{t(newEntry.label)}</span>
 								</a>
 							{/snippet}
 						</Sidebar.MenuSubButton>
@@ -119,8 +122,8 @@
 						{#if quickHref}
 							<a
 								href={resolve(bare(quickHref(name)))}
-								aria-label={quickLabel}
-								title={quickLabel}
+								aria-label={quickLabel ?? t('Open')}
+								title={quickLabel ?? t('Open')}
 								class={cn(
 									'absolute top-1/2 hidden size-5 -translate-y-1/2 items-center justify-center rounded text-sidebar-foreground/70 outline-hidden group-focus-within/item:flex group-hover/item:flex hover:bg-sidebar-border focus-visible:ring-2 focus-visible:ring-sidebar-ring',
 									onhide ? 'end-7' : 'end-1'
@@ -132,8 +135,8 @@
 						{#if onhide}
 							<button
 								type="button"
-								aria-label="Hide {name}"
-								title="Hide"
+								aria-label={t('Hide {name}', { name })}
+								title={t('Hide')}
 								data-testid="hide-{name}"
 								onclick={() => onhide(name)}
 								class="absolute end-1 top-1/2 hidden size-5 -translate-y-1/2 items-center justify-center rounded text-sidebar-foreground/70 outline-hidden group-focus-within/item:flex group-hover/item:flex hover:bg-sidebar-border focus-visible:ring-2 focus-visible:ring-sidebar-ring"
@@ -146,7 +149,7 @@
 
 				{#if filtered.length === 0 && query !== ''}
 					<Sidebar.MenuSubItem>
-						<span class="px-2 text-xs text-muted-foreground">No match</span>
+						<span class="px-2 text-xs text-muted-foreground">{t('No match')}</span>
 					</Sidebar.MenuSubItem>
 				{/if}
 
@@ -157,7 +160,7 @@
 							class="h-7 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 							onclick={() => (limit = effectiveLimit + maxItems)}
 						>
-							Show more ({filtered.length - visible.length} left)
+							{t('Show more ({count} left)', { count: filtered.length - visible.length })}
 						</button>
 					</Sidebar.MenuSubItem>
 				{/if}

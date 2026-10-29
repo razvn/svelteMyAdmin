@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import PanelLeftIcon from '@lucide/svelte/icons/panel-left';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { cn } from '#lib/utils.ts';
 	import { useSidebar } from './context.svelte.js';
 	import type { ComponentProps } from 'svelte';
+
+	const { t } = useI18n();
 
 	let {
 		ref = $bindable(null),
@@ -32,5 +35,5 @@
 	{...restProps}
 >
 	<PanelLeftIcon class="cn-rtl-flip" />
-	<span class="sr-only">Toggle Sidebar</span>
+	<span class="sr-only">{t('Toggle Sidebar')}</span>
 </Button>

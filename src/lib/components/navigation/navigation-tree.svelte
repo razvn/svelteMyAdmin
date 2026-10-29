@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -10,6 +11,8 @@
 	import { cn } from '#lib/utils.ts';
 	import DbNode from './db-node.svelte';
 	import type { NavState } from './nav-state.svelte.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		databases: string[];
@@ -47,7 +50,7 @@
 
 <Sidebar.Group class="gap-1 px-3 py-1">
 	<Sidebar.GroupLabel class="px-3">
-		Databases
+		{t('Databases')}
 		<span
 			class="ms-auto rounded-full bg-muted px-1.5 text-[11px] leading-5 font-medium tracking-normal text-muted-foreground normal-case tabular-nums"
 			data-testid="db-count">{databases.length}</span
@@ -55,20 +58,20 @@
 	</Sidebar.GroupLabel>
 	{#if showFilter}
 		<Sidebar.Input
-			placeholder="Filter databases"
-			aria-label="Filter databases"
+			placeholder={t('Filter databases')}
+			aria-label={t('Filter databases')}
 			bind:value={query}
 			class="mb-1"
 		/>
 	{/if}
 	<Sidebar.GroupContent>
-		<Sidebar.Menu aria-label="Databases">
+		<Sidebar.Menu aria-label={t('Databases')}>
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton>
 					{#snippet child({ props })}
 						<a {...props} href={resolve(bare('/server/databases'))}>
 							<Plus />
-							<span>New database</span>
+							<span>{t('New database')}</span>
 						</a>
 					{/snippet}
 				</Sidebar.MenuButton>
@@ -128,14 +131,14 @@
 						class="h-8 w-full rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 						onclick={() => (extra += nav.maxItems)}
 					>
-						Show more ({entries.length - limit} left)
+						{t('Show more ({count} left)', { count: entries.length - limit })}
 					</button>
 				</Sidebar.MenuItem>
 			{/if}
 
 			{#if filtered.length === 0}
 				<Sidebar.MenuItem>
-					<span class="px-2 text-xs text-muted-foreground">No databases</span>
+					<span class="px-2 text-xs text-muted-foreground">{t('No databases')}</span>
 				</Sidebar.MenuItem>
 			{/if}
 		</Sidebar.Menu>

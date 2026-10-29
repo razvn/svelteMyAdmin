@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { tick } from 'svelte';
 	import Server from '@lucide/svelte/icons/server';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.ts';
+
+	const { t } = useI18n();
 
 	interface ServerEntry {
 		index: number;
@@ -42,14 +45,14 @@
 				variant="ghost"
 				size="icon"
 				class="rounded-full"
-				aria-label="Switch server"
+				aria-label={t('Switch server')}
 			>
 				<Server />
 			</Button>
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content align="end">
-		<DropdownMenu.Label>Server</DropdownMenu.Label>
+		<DropdownMenu.Label>{t('Server')}</DropdownMenu.Label>
 		<DropdownMenu.RadioGroup value={String(current)} onValueChange={(v) => choose(Number(v))}>
 			{#each servers as s (s.index)}
 				<DropdownMenu.RadioItem value={String(s.index)}>{s.label}</DropdownMenu.RadioItem>

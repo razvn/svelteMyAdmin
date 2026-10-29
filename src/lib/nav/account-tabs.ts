@@ -7,6 +7,7 @@
  * `column` has no page of its own: in phpMyAdmin column privileges are a section of the table editor, so the
  * tab opens `.../table#column-privileges`.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import { supportsRoles, type Account, type PrivServer } from '#lib/sql/privileges/index.ts';
 
 export interface AccountTab {
@@ -17,13 +18,13 @@ export interface AccountTab {
 }
 
 export const ACCOUNT_TABS: readonly AccountTab[] = [
-	{ id: 'global', label: 'Global', available: true },
-	{ id: 'database', label: 'Database', available: true },
-	{ id: 'table', label: 'Table', available: true },
-	{ id: 'column', label: 'Column', available: true },
-	{ id: 'routine', label: 'Routine', available: true },
-	{ id: 'roles', label: 'Roles', available: true },
-	{ id: 'login', label: 'Login information', available: true }
+	{ id: 'global', label: N_('Global'), available: true },
+	{ id: 'database', label: N_('Database'), available: true },
+	{ id: 'table', label: N_('Table'), available: true },
+	{ id: 'column', label: N_('Column'), available: true },
+	{ id: 'routine', label: N_('Routine'), available: true },
+	{ id: 'roles', label: N_('Roles'), available: true },
+	{ id: 'login', label: N_('Login information'), available: true }
 ];
 
 /** The tabs shown for a server (Roles only where `CREATE ROLE` exists). */

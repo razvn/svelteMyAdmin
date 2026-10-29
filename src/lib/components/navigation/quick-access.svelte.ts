@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/translator.ts';
 import { createContext } from 'svelte';
 import { hasTable, type TableRef } from '#lib/nav/recent.ts';
 
@@ -67,7 +68,7 @@ export class QuickAccess {
 			this.favorites = res.favorites;
 			if (res.message) this.message = res.message;
 		} catch {
-			this.message = 'Could not update the favorite tables.';
+			this.message = N_('Could not update the favorite tables.');
 		}
 	}
 }
