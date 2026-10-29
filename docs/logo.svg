@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+	<title id="t">svelteMyAdmin</title>
+	<defs>
+		<linearGradient id="sma-bg" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#6366F1" />
+			<stop offset="1" stop-color="#7C3AED" />
+		</linearGradient>
+		<linearGradient id="sma-ribbon" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#FFC27A" />
+			<stop offset="1" stop-color="#FF6A3D" />
+		</linearGradient>
+		<clipPath id="sma-body">
+			<path d="M18 21v22c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5V21Z" />
+		</clipPath>
+	</defs>
+	<rect width="64" height="64" rx="15" fill="url(#sma-bg)" />
+
+	<!-- ribbon, back part: runs behind the top of the stack -->
+	<path
+		d="M48 13c-6-3.4-19-3.4-24.5 1.2"
+		fill="none"
+		stroke="url(#sma-ribbon)"
+		stroke-width="5.5"
+		stroke-linecap="round"
+	/>
+
+	<!-- database stack -->
+	<path d="M18 21v22c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5V21Z" fill="#fff" fill-opacity=".24" />
+	<g clip-path="url(#sma-body)" fill="none" stroke="#fff" stroke-width="2.6" stroke-opacity=".9">
+		<path d="M18 32c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5" />
+		<path d="M18 42.5c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5" />
+	</g>
+	<ellipse cx="32" cy="21" rx="14" ry="6.5" fill="#fff" />
+
+	<!-- ribbon, front part: the S sweeping across the stack -->
+	<path
+		d="M23.5 14.2C19.4 17.6 21 21.6 27 24.4l10.6 4.9c7.4 3.4 7.8 9.6 1 13.2C33.4 45.3 24.5 47 16 51"
+		fill="none"
+		stroke="url(#sma-ribbon)"
+		stroke-width="5.5"
+		stroke-linecap="round"
+	/>
+</svg>

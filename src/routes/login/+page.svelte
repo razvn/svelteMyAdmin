@@ -39,7 +39,7 @@
 			class="absolute -bottom-32 -left-16 size-112 rounded-full bg-primary-foreground/10"
 		></div>
 		<div class="relative flex items-center gap-3">
-			<BrandMark class="bg-primary-foreground text-primary" />
+			<BrandMark class="ring-2 ring-white/40" />
 			<span class="text-xl font-semibold tracking-tight">svelteMyAdmin</span>
 		</div>
 		<div class="relative max-w-md">
