@@ -124,7 +124,8 @@ export function syncCatalogs(
 				}
 			}
 			if (opts.dryRun) continue;
-			if (writeCatalog(lang, area, next, root)) stats.changedFiles.push(`${lang}/${catalogFile(area)}`);
+			if (writeCatalog(lang, area, next, root))
+				stats.changedFiles.push(`${lang}/${catalogFile(area)}`);
 		}
 	}
 	return stats;
