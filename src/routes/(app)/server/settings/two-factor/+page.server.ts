@@ -19,7 +19,8 @@ function flowCtx(event: RequestEvent): FlowCtx {
 		cookies: event.cookies,
 		url: event.url,
 		user: event.locals.session?.user ?? '',
-		serverIndex: event.locals.serverIndex
+		serverIndex: event.locals.serverIndex,
+		i18n: event.locals.i18n
 	};
 }
 
@@ -45,15 +46,15 @@ export const actions: Actions = {
 		const ctx = flowCtx(event);
 		const fd = await event.request.formData();
 		const parsed = backendSchema.safeParse(fd.get('2fa_configure'));
-		if (!parsed.success) return fail(400, { error: 'Invalid request.' });
+		if (!parsed.success) return fail(400, { error: event.locals.i18n.t('Invalid request.') });
 		const backend = parsed.data;
 		const stored = await loadTwoFactor(ctx.server, ctx.own, ctx.user);
-		if (!stored) return fail(400, { error: 'Two-factor authentication is not available.' });
+		if (!stored) return fail(400, { error: event.locals.i18n.t('Two-factor authentication is not available.') });
 		if (stored.config.backend !== '') {
-			return fail(400, { error: 'Disable the current two-factor authentication first.' });
+			return fail(400, { error: event.locals.i18n.t('Disable the current two-factor authentication first.') });
 		}
 		if (backend === '' || !availableBackends(ctx.config.DBG).includes(backend)) {
-			return fail(400, { error: 'Choose an authentication method.' });
+			return fail(400, { error: event.locals.i18n.t('Choose an authentication method.') });
 		}
 		if (fd.get('2fa_step') === 'confirm') {
 			const result = await configure(ctx, backend, fd);
@@ -72,7 +73,7 @@ export const actions: Actions = {
 		const ctx = flowCtx(event);
 		const fd = await event.request.formData();
 		const stored = await loadTwoFactor(ctx.server, ctx.own, ctx.user);
-		if (!stored) return fail(400, { error: 'Two-factor authentication is not available.' });
+		if (!stored) return fail(400, { error: event.locals.i18n.t('Two-factor authentication is not available.') });
 		const cfg = stored.config;
 		if (cfg.backend === '') redirect(303, '/server/settings/two-factor');
 		if (fd.get('2fa_step') === 'confirm') {

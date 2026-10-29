@@ -11,7 +11,7 @@ const body = z.object({
 /** "Analyse query": EXPLAIN (+ profiling for SELECT), Monitor::getJsonForQueryAnalyzer. */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const parsed = body.safeParse(await request.json().catch(() => null));
-	if (!parsed.success) error(400, 'Invalid request');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid request'));
 	const result = await analyzeQuery(await locals.db, parsed.data.database, parsed.data.query);
 	return Response.json(result, { headers: { 'cache-control': 'no-store' } });
 };

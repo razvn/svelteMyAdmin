@@ -10,6 +10,7 @@ import {
 } from './expression.ts';
 import { buildFunctions, vsprintf } from './functions.ts';
 import { BEFORE_MYSQL_80003_RULES, GENERIC_RULES } from './rules.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import type { AdvisorRule, AdvisorRunResult, RuleResult, UsedVariable } from './types.ts';
 
 export interface AdvisorInput {
@@ -22,6 +23,8 @@ export interface AdvisorInput {
 	isMariaDB: boolean;
 	/** MemTotal in KiB of the host running the server, 0 when unknown. */
 	systemMemory: number;
+	/** Translator for rule texts and errors (English when omitted). */
+	i18n?: Translator;
 	/** Override of the rule set (tests). */
 	rules?: AdvisorRule[];
 }
@@ -54,6 +57,7 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 		IS_MARIADB: input.isMariaDB
 	};
 	const rules = input.rules ?? rulesFor(input.isMariaDB, input.versionInt);
+	const { t } = input.i18n ?? SOURCE_TRANSLATOR;
 	const result: AdvisorRunResult = { fired: [], notfired: [], unchecked: [], errors: [] };
 
 	// Defaults for InnoDB variables when InnoDB is disabled.
@@ -70,7 +74,10 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 	const ev = (src: string) => evaluateNode(parseCached(src), { variables: vars, functions });
 	const err = (what: string, e: unknown) =>
 		result.errors.push(
-			`${what} Error when evaluating: ${e instanceof Error ? e.message : String(e)}`
+			t('{what} Error when evaluating: {error}', {
+				what,
+				error: e instanceof Error ? e.message : String(e)
+			})
 		);
 
 	const usedOf = (rule: AdvisorRule): UsedVariable[] => {
@@ -89,7 +96,7 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 		names.delete('value');
 		return [...names].map((name) => ({
 			name,
-			value: name in vars ? toStr(vars[name]) : '(not available)'
+			value: name in vars ? toStr(vars[name]) : t('(not available)')
 		}));
 	};
 
@@ -100,11 +107,11 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 			try {
 				ok = ev(rule.precondition);
 			} catch (e) {
-				err(`Failed evaluating precondition for rule '${rule.name}'.`, e);
+				err(t("Failed evaluating precondition for rule '{name}'.", { name: t(rule.name) }), e);
 				continue;
 			}
 			if (!toBool(ok)) {
-				result.unchecked.push(toResult(rule, rule.justification, usedOf(rule)));
+				result.unchecked.push(toResult(rule, t(rule.justification), usedOf(rule), t));
 				continue;
 			}
 		}
@@ -112,7 +119,7 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 		try {
 			value = ev(rule.formula);
 		} catch (e) {
-			err(`Failed calculating value for rule '${rule.name}'.`, e);
+			err(t("Failed calculating value for rule '{name}'.", { name: t(rule.name) }), e);
 			continue;
 		}
 		vars.value = value;
@@ -120,32 +127,37 @@ export function runAdvisor(input: AdvisorInput): AdvisorRunResult {
 		try {
 			isFired = toBool(ev(rule.test));
 		} catch (e) {
-			err(`Failed running test for rule '${rule.name}'.`, e);
+			err(t("Failed running test for rule '{name}'.", { name: t(rule.name) }), e);
 			continue;
 		}
 		let justification: string;
 		if (rule.justification_formula !== undefined) {
 			try {
 				const params = ev(`[${rule.justification_formula}]`) as Value[];
-				justification = vsprintf(rule.justification, params);
+				justification = vsprintf(t(rule.justification), params);
 			} catch (e) {
-				err(`Failed formatting string for rule '${rule.name}'.`, e);
+				err(t("Failed formatting string for rule '{name}'.", { name: t(rule.name) }), e);
 				continue;
 			}
 		} else {
-			justification = rule.justification;
+			justification = t(rule.justification);
 		}
-		(isFired ? result.fired : result.notfired).push(toResult(rule, justification, usedOf(rule)));
+		(isFired ? result.fired : result.notfired).push(toResult(rule, justification, usedOf(rule), t));
 	}
 	return result;
 }
 
-function toResult(rule: AdvisorRule, justification: string, used: UsedVariable[]): RuleResult {
+function toResult(
+	rule: AdvisorRule,
+	justification: string,
+	used: UsedVariable[],
+	t: Translator['t']
+): RuleResult {
 	return {
 		id: rule.id,
-		name: rule.name,
-		issue: rule.issue,
-		recommendation: rule.recommendation,
+		name: t(rule.name),
+		issue: t(rule.issue),
+		recommendation: t(rule.recommendation),
 		justification,
 		formula: rule.formula,
 		test: rule.test,

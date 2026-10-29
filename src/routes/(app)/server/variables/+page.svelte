@@ -14,8 +14,10 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import * as Tooltip from '#lib/components/ui/tooltip/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 
 	let filter = $state(page.url.searchParams.get('filter') ?? '');
@@ -37,7 +39,7 @@
 </script>
 
 <svelte:head>
-	<title>Server variables - svelteMyAdmin</title>
+	<title>{t('Server variables and settings')} - svelteMyAdmin</title>
 </svelte:head>
 
 {#snippet valueText(name: string, text: string)}
@@ -52,7 +54,7 @@
 				aria-expanded={expanded[name] ?? false}
 				onclick={() => (expanded[name] = !expanded[name])}
 			>
-				{expanded[name] ? 'Show less' : 'Show more'}
+				{expanded[name] ? t('Show less') : t('Show more')}
 			</Button>
 		</div>
 	{:else}
@@ -63,8 +65,8 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={SlidersHorizontal}
-		title="Server variables and settings"
-		description="Global server variables. Click the pencil to change a value at runtime."
+		title={t('Server variables and settings')}
+		description={t('Global server variables. Click the pencil to change a value at runtime.')}
 	/>
 
 	<Card.Root class="gap-0 py-0">
@@ -74,14 +76,17 @@
 				<Input
 					type="search"
 					class="ps-8"
-					placeholder="Filter by variable name"
-					aria-label="Filter variables"
+					placeholder={t('Filter by variable name')}
+					aria-label={t('Filter variables')}
 					data-testid="variables-filter"
 					bind:value={filter}
 				/>
 			</div>
 			<p class="ms-auto text-sm text-muted-foreground" data-testid="variables-count">
-				{visible.length} of {data.variables.length} variables shown
+				{t('{shown} of {total} variables shown', {
+					shown: visible.length,
+					total: data.variables.length
+				})}
 			</p>
 		</div>
 
@@ -98,11 +103,11 @@
 						saving = false;
 						if (result.type === 'success') {
 							const saved = result.data?.saved as { value: string } | undefined;
-							toast.success(`${name} is now ${saved?.value ?? ''}`);
+							toast.success(t('{name} is now {value}', { name, value: saved?.value ?? '' }));
 							editing = null;
 						} else if (result.type === 'failure') {
 							const message = result.data?.error;
-							toast.error(typeof message === 'string' ? message : 'Setting the variable failed.');
+							toast.error(typeof message === 'string' ? message : t('Setting the variable failed.'));
 						}
 						await update({ reset: false });
 					};
@@ -116,9 +121,9 @@
 					<Table.Root class="table-fixed" data-testid="variables-table">
 						<Table.Header>
 							<Table.Row>
-								<Table.Head class="w-24">Action</Table.Head>
-								<Table.Head class="w-56">Variable</Table.Head>
-								<Table.Head class="text-end">Value</Table.Head>
+								<Table.Head class="w-24">{t('Action')}</Table.Head>
+								<Table.Head class="w-56">{t('Variable')}</Table.Head>
+								<Table.Head class="text-end">{t('Value')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -131,7 +136,7 @@
 													type="submit"
 													form="variable-edit"
 													size="icon-sm"
-													aria-label="Save {v.name}"
+													aria-label={t('Save {name}', { name: v.name })}
 													disabled={saving}
 												>
 													<Check />
@@ -140,7 +145,7 @@
 													type="button"
 													variant="ghost"
 													size="icon-sm"
-													aria-label="Cancel editing {v.name}"
+													aria-label={t('Cancel editing {name}', { name: v.name })}
 													onclick={() => (editing = null)}
 												>
 													<X />
@@ -151,7 +156,7 @@
 												type="button"
 												variant="ghost"
 												size="icon-sm"
-												aria-label="Edit {v.name}"
+												aria-label={t('Edit {name}', { name: v.name })}
 												onclick={() => startEdit(v.name, v.value)}
 											>
 												<Pencil />
@@ -165,8 +170,8 @@
 												form="variable-edit"
 												name="value"
 												class="ms-auto w-72 font-mono"
-												aria-label="New value for {v.name}"
-												placeholder={v.title !== undefined ? 'e.g. 128 MB or bytes' : ''}
+												aria-label={t('New value for {name}', { name: v.name })}
+												placeholder={v.title !== undefined ? t('e.g. 128 MB or bytes') : ''}
 												bind:value={draft}
 												data-testid="variable-input"
 											/>
@@ -189,7 +194,7 @@
 									<Table.Row class="text-muted-foreground italic" data-testid="session-row">
 										<Table.Cell></Table.Cell>
 										<Table.Cell class="break-all whitespace-normal">
-											{v.name} (Session value)
+											{t('{name} (Session value)', { name: v.name })}
 										</Table.Cell>
 										<Table.Cell class="text-end font-mono text-[13px] whitespace-normal">
 											{@render valueText(`${v.name} (session)`, v.sessionDisplay)}
@@ -199,7 +204,7 @@
 							{:else}
 								<Table.Row>
 									<Table.Cell colspan={3} class="text-center text-muted-foreground">
-										No variables match the filter.
+										{t('No variables match the filter.')}
 									</Table.Cell>
 								</Table.Row>
 							{/each}

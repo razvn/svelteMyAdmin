@@ -7,6 +7,7 @@
 	import AccountTabs from '#lib/components/privileges/account-tabs.svelte';
 	import StatementList from '#lib/components/privileges/statement-list.svelte';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { accountTabHref, type AccountTab } from '#lib/nav/account-tabs.ts';
 	import type { Account, PrivServer } from '#lib/sql/privileges/index.ts';
@@ -29,27 +30,28 @@
 	}
 
 	let { account, server, active, state, error = '', form, children }: Props = $props();
+	const { t } = useI18n();
 	const title = $derived(`'${account.user}'@'${account.noHost ? '' : account.host}'`);
 </script>
 
 <div class="flex flex-col gap-6">
-	<PageHeader icon={UserCog} title="Edit privileges: User account {title}">
+	<PageHeader icon={UserCog} title={t('Edit privileges: User account {account}', { account: title })}>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> User accounts</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
 		{/snippet}
 	</PageHeader>
 
 	{#if state === 'denied'}
 		<Alert variant="destructive" role="alert">
-			<AlertDescription>You do not have the privileges to administrate the users!</AlertDescription>
+			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
 		</Alert>
 	{:else}
 		{#if state === 'missing'}
 			<Alert variant={form?.saved ? 'info' : 'destructive'} role="alert">
 				<AlertDescription>
 					{form?.saved
-						? 'This account no longer exists under its old name.'
-						: `The selected user was not found in the privilege table. ${error}`}
+						? t('This account no longer exists under its old name.')
+						: `${t('The selected user was not found in the privilege table.')} ${error}`}
 				</AlertDescription>
 			</Alert>
 		{:else}
@@ -71,7 +73,7 @@
 						class="font-medium text-primary hover:underline"
 						href={accountTabHref('login', form.newAccount)}
 					>
-						Open '{form.newAccount.user}'@'{form.newAccount.host}'
+						{t("Open '{user}'@'{host}'", { user: form.newAccount.user, host: form.newAccount.host })}
 					</a>
 				</AlertDescription>
 			</Alert>

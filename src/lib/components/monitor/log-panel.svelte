@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import { groupQueries, type GeneralLogRow, type SlowLogRow } from '#lib/monitor/log.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Badge } from '#lib/components/ui/badge/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
@@ -19,6 +20,7 @@
 		selection: { start: number; end: number } | null;
 	}
 
+	const { t } = useI18n();
 	let { vars: initial, selection }: Props = $props();
 
 	let updated = $state<Vars | null>(null);
@@ -50,12 +52,12 @@
 			});
 			const json = await res.json().catch(() => ({}));
 			if (!res.ok) {
-				error = json.error ?? json.message ?? `Request failed (${res.status})`;
+				error = json.error ?? json.message ?? t('Request failed ({status})', { status: res.status });
 				return null;
 			}
 			return json as T;
 		} catch {
-			error = 'Request failed';
+			error = t('Request failed');
 			return null;
 		} finally {
 			busy = false;
@@ -123,10 +125,11 @@
 
 <Card.Root data-testid="log-panel">
 	<Card.Header>
-		<Card.Title>Log analysis</Card.Title>
+		<Card.Title>{t('Log analysis')}</Card.Title>
 		<Card.Description>
-			Switch on the slow or general log (written to the mysql log tables), select a time range on a
-			chart by dragging and load the entries of that range.
+			{t(
+				'Switch on the slow or general log (written to the mysql log tables), select a time range on a chart by dragging and load the entries of that range.'
+			)}
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="flex flex-col gap-4">
@@ -138,7 +141,7 @@
 					disabled={busy}
 					onCheckedChange={(v) => toggle('slow_query_log', v)}
 				/>
-				<Label for="slow-log">Slow query log</Label>
+				<Label for="slow-log">{t('Slow query log')}</Label>
 			</div>
 			<div class="flex items-center gap-2">
 				<Switch
@@ -147,7 +150,7 @@
 					disabled={busy}
 					onCheckedChange={(v) => toggle('general_log', v)}
 				/>
-				<Label for="general-log">General log</Label>
+				<Label for="general-log">{t('General log')}</Label>
 			</div>
 			<Badge variant={toTable ? 'success' : 'warning'} data-testid="log-output">
 				log_output = {vars.log_output || '?'}
@@ -158,37 +161,39 @@
 		<div class="flex flex-wrap items-center gap-3" data-testid="selection">
 			{#if selection}
 				<span class="text-sm">
-					Selected range: <strong>{clock(selection.start)}</strong> to
-					<strong>{clock(selection.end)}</strong>
+					{t('Selected range: {start} to {end}', {
+						start: clock(selection.start),
+						end: clock(selection.end)
+					})}
 				</span>
 			{:else}
-				<span class="text-sm text-muted-foreground">No range selected.</span>
+				<span class="text-sm text-muted-foreground">{t('No range selected.')}</span>
 			{/if}
 			<Button
 				variant="outline"
 				size="sm"
 				disabled={!selection || busy}
 				onclick={() => load('slow')}
-				data-testid="load-slow">Load slow log</Button
+				data-testid="load-slow">{t('Load slow log')}</Button
 			>
 			<Button
 				variant="outline"
 				size="sm"
 				disabled={!selection || busy}
 				onclick={() => load('general')}
-				data-testid="load-general">Load general log</Button
+				data-testid="load-general">{t('Load general log')}</Button
 			>
 			<div class="flex items-center gap-2">
 				<Checkbox id="group-similar" bind:checked={groupSimilar} />
-				<Label for="group-similar">Group queries (ignore literal values)</Label>
+				<Label for="group-similar">{t('Group queries (ignore literal values)')}</Label>
 			</div>
 			<div class="flex items-center gap-2">
 				<Checkbox id="limit-types" bind:checked={limitTypes} />
-				<Label for="limit-types">Only SELECT, INSERT, UPDATE, DELETE (general log)</Label>
+				<Label for="limit-types">{t('Only SELECT, INSERT, UPDATE, DELETE (general log)')}</Label>
 			</div>
 			<div class="flex items-center gap-2">
 				<Checkbox id="group-inserts" bind:checked={groupInserts} />
-				<Label for="group-inserts">Group INSERTs per table (general log)</Label>
+				<Label for="group-inserts">{t('Group INSERTs per table (general log)')}</Label>
 			</div>
 		</div>
 
@@ -203,17 +208,17 @@
 				{/each}
 			</div>
 			{#if result.numRows === 0}
-				<p class="text-sm text-muted-foreground">No entries in the selected range.</p>
+				<p class="text-sm text-muted-foreground">{t('No entries in the selected range.')}</p>
 			{:else if groupSimilar}
 				<Table.Root data-testid="log-grouped">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="w-20">Count</Table.Head>
+							<Table.Head class="w-20">{t('Count')}</Table.Head>
 							{#if result.type === 'slow'}
-								<Table.Head class="w-28">Total time (s)</Table.Head>
-								<Table.Head class="w-28">Max time (s)</Table.Head>
+								<Table.Head class="w-28">{t('Total time (s)')}</Table.Head>
+								<Table.Head class="w-28">{t('Max time (s)')}</Table.Head>
 							{/if}
-							<Table.Head>Query</Table.Head>
+							<Table.Head>{t('Query')}</Table.Head>
 							<Table.Head class="w-24"></Table.Head>
 						</Table.Row>
 					</Table.Header>
@@ -228,7 +233,7 @@
 								<Table.Cell class="font-mono text-xs whitespace-pre-wrap">{g.query}</Table.Cell>
 								<Table.Cell>
 									<Button variant="outline" size="xs" onclick={() => analyze(g.query)}
-										>Analyse query</Button
+										>{t('Analyse query')}</Button
 									>
 								</Table.Cell>
 							</Table.Row>
@@ -239,14 +244,14 @@
 				<Table.Root data-testid="log-rows">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="w-24">Time</Table.Head>
-							<Table.Head class="w-20">Count</Table.Head>
+							<Table.Head class="w-24">{t('Time')}</Table.Head>
+							<Table.Head class="w-20">{t('Count')}</Table.Head>
 							{#if result.type === 'slow'}
-								<Table.Head class="w-28">Query time</Table.Head>
-								<Table.Head class="w-28">Lock time</Table.Head>
-								<Table.Head>Rows sent / examined</Table.Head>
+								<Table.Head class="w-28">{t('Query time')}</Table.Head>
+								<Table.Head class="w-28">{t('Lock time')}</Table.Head>
+								<Table.Head>{t('Rows sent / examined')}</Table.Head>
 							{/if}
-							<Table.Head>Query</Table.Head>
+							<Table.Head>{t('Query')}</Table.Head>
 							<Table.Head class="w-24"></Table.Head>
 						</Table.Row>
 					</Table.Header>
@@ -267,7 +272,7 @@
 										variant="outline"
 										size="xs"
 										onclick={() => analyze(sql, result?.type === 'slow' ? r.db : '')}
-										>Analyse query</Button
+										>{t('Analyse query')}</Button
 									>
 								</Table.Cell>
 							</Table.Row>
@@ -282,15 +287,15 @@
 <Dialog.Root bind:open={analyzeOpen}>
 	<Dialog.Content class="sm:max-w-3xl" data-testid="analyze-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Analyse query</Dialog.Title>
+			<Dialog.Title>{t('Analyse query')}</Dialog.Title>
 			<Dialog.Description
-				>EXPLAIN output and, for SELECT statements, the profiling.</Dialog.Description
+				>{t('EXPLAIN output and, for SELECT statements, the profiling.')}</Dialog.Description
 			>
 		</Dialog.Header>
 		<pre
 			class="max-h-32 overflow-auto rounded-lg bg-muted p-3 text-xs whitespace-pre-wrap">{analyzeQuery}</pre>
 		{#if !analysis}
-			<p class="text-sm text-muted-foreground">Analysing…</p>
+			<p class="text-sm text-muted-foreground">{t('Analysing…')}</p>
 		{:else}
 			{#if analysis.error}
 				<p class="text-sm text-destructive" role="alert">{analysis.error}</p>
@@ -321,8 +326,8 @@
 				<Table.Root data-testid="profiling">
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>State</Table.Head>
-							<Table.Head>Duration (s)</Table.Head>
+							<Table.Head>{t('State')}</Table.Head>
+							<Table.Head>{t('Duration (s)')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -335,7 +340,7 @@
 					</Table.Body>
 				</Table.Root>
 			{:else if analysis.executed}
-				<p class="text-xs text-muted-foreground">Profiling is not available on this server.</p>
+				<p class="text-xs text-muted-foreground">{t('Profiling is not available on this server.')}</p>
 			{/if}
 		{/if}
 	</Dialog.Content>

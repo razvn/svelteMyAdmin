@@ -6,6 +6,7 @@
 	import PrivilegeGrid from './privilege-grid.svelte';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import type { PrivServer, Scope } from '#lib/sql/privileges/index.ts';
 
@@ -33,6 +34,7 @@
 		idPrefix = 'priv'
 	}: Props = $props();
 
+	const { t } = useI18n();
 	// The parent re-creates this component (keyed) when the saved state changes.
 	// svelte-ignore state_referenced_locally
 	let privileges = $state([...initial.privileges]);
@@ -76,7 +78,7 @@
 	{#if canEdit}
 		<div class="flex justify-end">
 			<Button type="submit" disabled={!hydration.ready || submitting} data-testid="save-privileges">
-				Go
+				{t('Go')}
 			</Button>
 		</div>
 	{/if}

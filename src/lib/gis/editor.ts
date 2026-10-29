@@ -2,6 +2,8 @@
  * Model of the (simplified) GIS data editor of Insert/Edit, see phpMyAdmin's gis_data_editor:
  * pick a geometry type, edit the coordinate lists, get WKT for ST_GeomFromText.
  */
+import { N_ } from '#lib/i18n/index.ts';
+import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import { parseWkt, toWkt, WktError, type Geometry, type Position } from './wkt.ts';
 
 /** Types edited as coordinate lists; the others are entered as WKT text. */
@@ -15,13 +17,13 @@ export type EditorType =
 	| 'GeometryCollection';
 
 export const EDITOR_TYPES: { value: EditorType; label: string }[] = [
-	{ value: 'Point', label: 'Point' },
-	{ value: 'LineString', label: 'LineString' },
-	{ value: 'Polygon', label: 'Polygon' },
-	{ value: 'MultiPoint', label: 'MultiPoint' },
-	{ value: 'MultiLineString', label: 'MultiLineString' },
-	{ value: 'MultiPolygon', label: 'MultiPolygon (WKT)' },
-	{ value: 'GeometryCollection', label: 'GeometryCollection (WKT)' }
+	{ value: 'Point', label: N_('Point') },
+	{ value: 'LineString', label: N_('LineString') },
+	{ value: 'Polygon', label: N_('Polygon') },
+	{ value: 'MultiPoint', label: N_('MultiPoint') },
+	{ value: 'MultiLineString', label: N_('MultiLineString') },
+	{ value: 'MultiPolygon', label: N_('MultiPolygon (WKT)') },
+	{ value: 'GeometryCollection', label: N_('GeometryCollection (WKT)') }
 ];
 
 export interface Coordinate {
@@ -75,34 +77,43 @@ export function fromWkt(wkt: string): { type: EditorType; parts: Part[]; text: s
 	}
 }
 
+/** The translation functions the builder needs (a `Translator` or `useI18n()`). */
+export type Tr = Pick<Translator, 't' | 'tn'>;
+
 export type BuildResult = { ok: true; wkt: string } | { ok: false; error: string };
 
 const num = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
 
-function positions(part: Part): Position[] | string {
+function positions(part: Part, { t }: Tr): Position[] | string {
 	const out: Position[] = [];
 	for (const c of part) {
 		if (c.x.trim() === '' && c.y.trim() === '') continue;
-		if (!num.test(c.x.trim()) || !num.test(c.y.trim())) return 'Coordinates must be numbers.';
+		if (!num.test(c.x.trim()) || !num.test(c.y.trim())) return t('Coordinates must be numbers.');
 		out.push([Number(c.x), Number(c.y)]);
 	}
 	return out;
 }
 
 /** WKT for the editor state, or the first problem found. */
-export function buildWkt(type: EditorType, parts: Part[], text = ''): BuildResult {
+export function buildWkt(
+	type: EditorType,
+	parts: Part[],
+	text = '',
+	tr: Tr = SOURCE_TRANSLATOR
+): BuildResult {
+	const { t, tn } = tr;
 	if (isTextType(type)) {
 		try {
 			const g = parseWkt(text);
-			if (g.type !== type) return { ok: false, error: `Expected a ${type.toUpperCase()} value.` };
+			if (g.type !== type) return { ok: false, error: t('Expected a {type} value.', { type: type.toUpperCase() }) };
 			return { ok: true, wkt: toWkt(g) };
 		} catch (e) {
-			return { ok: false, error: e instanceof WktError ? e.message : 'Invalid WKT.' };
+			return { ok: false, error: e instanceof WktError ? e.message : t('Invalid WKT.') };
 		}
 	}
 	const lists: Position[][] = [];
 	for (const part of parts) {
-		const ps = positions(part);
+		const ps = positions(part, tr);
 		if (typeof ps === 'string') return { ok: false, error: ps };
 		lists.push(ps);
 	}
@@ -110,7 +121,7 @@ export function buildWkt(type: EditorType, parts: Part[], text = ''): BuildResul
 	let g: Geometry;
 	switch (type) {
 		case 'Point':
-			if (lists[0]?.length !== 1) return { ok: false, error: 'A point needs X and Y.' };
+			if (lists[0]?.length !== 1) return { ok: false, error: t('A point needs X and Y.') };
 			g = { type, coordinates: lists[0][0] };
 			break;
 		case 'LineString':
@@ -118,7 +129,7 @@ export function buildWkt(type: EditorType, parts: Part[], text = ''): BuildResul
 			if (!lists[0] || lists[0].length < min) {
 				return {
 					ok: false,
-					error: `At least ${min} ${min === 1 ? 'point is' : 'points are'} needed.`
+					error: tn('At least {n} point is needed.', 'At least {n} points are needed.', min)
 				};
 			}
 			g = { type, coordinates: lists[0] };
@@ -129,7 +140,10 @@ export function buildWkt(type: EditorType, parts: Part[], text = ''): BuildResul
 			if (used.length === 0 || used.some((l) => l.length < min)) {
 				return {
 					ok: false,
-					error: `Every ${type === 'Polygon' ? 'ring' : 'line'} needs at least ${min} points.`
+					error:
+						type === 'Polygon'
+							? t('Every ring needs at least {min} points.', { min })
+							: t('Every line needs at least {min} points.', { min })
 				};
 			}
 			if (type === 'Polygon') {
@@ -138,13 +152,13 @@ export function buildWkt(type: EditorType, parts: Part[], text = ''): BuildResul
 					const b = l[l.length - 1];
 					return a[0] !== b[0] || a[1] !== b[1];
 				});
-				if (open) return { ok: false, error: 'A ring must end at its first point.' };
+				if (open) return { ok: false, error: t('A ring must end at its first point.') };
 				g = { type, coordinates: used };
 			} else g = { type, coordinates: used };
 			break;
 		}
 		default:
-			return { ok: false, error: 'Unsupported type.' };
+			return { ok: false, error: t('Unsupported type.') };
 	}
 	return { ok: true, wkt: toWkt(g) };
 }

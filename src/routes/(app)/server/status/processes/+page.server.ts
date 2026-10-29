@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	kill: async ({ locals, request }) => {
 		const form = await request.formData();
-		const result = await killProcess(await locals.db, form.get('id'));
+		const result = await killProcess(await locals.db, form.get('id'), locals.i18n);
 		if (!result.ok) return fail(400, { killError: result.message });
 		return { killed: Number(form.get('id')) };
 	}

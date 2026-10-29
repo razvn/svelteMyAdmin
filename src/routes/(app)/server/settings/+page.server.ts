@@ -28,14 +28,14 @@ export const actions: Actions = {
 		const merge = fd.get('import_merge') === '1';
 		let text = '';
 		if (file instanceof File && file.size > 0) {
-			if (file.size > MAX_IMPORT_BYTES) return fail(400, { error: 'The file is too large.' });
+			if (file.size > MAX_IMPORT_BYTES) return fail(400, { error: locals.i18n.t('The file is too large.') });
 			text = await file.text();
 		} else if (typeof fd.get('json') === 'string') {
 			text = fd.get('json') as string;
 		}
-		if (text.trim() === '') return fail(400, { error: 'Could not import configuration' });
+		if (text.trim() === '') return fail(400, { error: locals.i18n.t('Could not import configuration') });
 		const res = await importPrefs(locals, cookies, text, merge, url.protocol === 'https:');
-		if (!res.ok) return fail(400, { error: res.error ?? 'Could not import configuration' });
+		if (!res.ok) return fail(400, { error: res.error ?? locals.i18n.t('Could not import configuration') });
 		const dropped = res.dropped?.length
 			? `&dropped=${encodeURIComponent(res.dropped.join(', '))}`
 			: '';

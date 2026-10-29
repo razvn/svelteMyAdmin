@@ -14,8 +14,10 @@
 	import { downloadPng, downloadSvg, svgToPngBlob } from '#lib/chart/export.ts';
 	import GisMap, { type MapRow } from '#lib/gis/gis-map.svelte';
 	import { parseWkt } from '#lib/gis/wkt.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn } = useI18n();
 	let { data }: PageProps = $props();
 
 	const gis = $derived(data.gis);
@@ -46,7 +48,7 @@
 				`${page.url.pathname.replace(/\/$/, '')}/pdf?width=${vb.width}&height=${vb.height}`,
 				{ method: 'POST', headers: { 'content-type': 'image/png' }, body: png }
 			);
-			if (!res.ok) throw new Error('The PDF could not be created.');
+			if (!res.ok) throw new Error(t('The PDF could not be created.'));
 			const url = URL.createObjectURL(await res.blob());
 			const a = document.createElement('a');
 			a.href = url;
@@ -54,7 +56,7 @@
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Export failed.');
+			toast.error(e instanceof Error ? e.message : t('Export failed.'));
 		}
 	}
 	async function savePng() {
@@ -62,18 +64,18 @@
 		try {
 			await downloadPng(svg, `${filename}.png`);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Export failed.');
+			toast.error(e instanceof Error ? e.message : t('Export failed.'));
 		}
 	}
 </script>
 
-<svelte:head><title>GIS visualization - {data.table} - svelteMyAdmin</title></svelte:head>
+<svelte:head><title>{t('GIS visualization')} - {data.table} - svelteMyAdmin</title></svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={MapIcon}
-		title="GIS visualization"
-		description="{data.db}.{data.table} · {gis.total} {gis.total === 1 ? 'geometry' : 'geometries'}"
+		title={t('GIS visualization')}
+		description="{data.db}.{data.table} · {tn('{n} geometry', '{n} geometries', gis.total)}"
 	/>
 
 	{#if data.loadError}
@@ -82,7 +84,7 @@
 		</Alert>
 	{:else if gis.spatialColumns.length === 0}
 		<Alert data-testid="gis-no-spatial">
-			<AlertDescription>This result has no spatial column to visualize.</AlertDescription>
+			<AlertDescription>{t('This result has no spatial column to visualize.')}</AlertDescription>
 		</Alert>
 	{:else}
 		<Card.Root>
@@ -90,29 +92,29 @@
 				<form method="GET" class="flex flex-wrap items-end gap-4" data-testid="gis-form">
 					{#if data.sql}<input type="hidden" name="sql" value={data.sql} />{/if}
 					<div class="flex flex-col gap-1.5">
-						<Label for="gis-col">Spatial column</Label>
+						<Label for="gis-col">{t('Spatial column')}</Label>
 						<NativeSelect id="gis-col" name="col" value={gis.geometryColumn}>
 							{#each gis.spatialColumns as c (c)}<option value={c}>{c}</option>{/each}
 						</NativeSelect>
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<Label for="gis-label">Label column</Label>
+						<Label for="gis-label">{t('Label column')}</Label>
 						<NativeSelect id="gis-label" name="label" value={gis.labelColumn}>
-							<option value="">(none)</option>
+							<option value="">{t('(none)')}</option>
 							{#each gis.columns.filter((c) => !gis.spatialColumns.includes(c)) as c (c)}
 								<option value={c}>{c}</option>
 							{/each}
 						</NativeSelect>
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<Label for="gis-limit">Rows</Label>
+						<Label for="gis-limit">{t('Rows')}</Label>
 						<Input id="gis-limit" name="limit" type="number" class="w-24" value={gis.limit} />
 					</div>
 					<div class="flex flex-col gap-1.5">
-						<Label for="gis-offset">Start row</Label>
+						<Label for="gis-offset">{t('Start row')}</Label>
 						<Input id="gis-offset" name="offset" type="number" class="w-24" value={gis.offset} />
 					</div>
-					<Button type="submit">Go</Button>
+					<Button type="submit">{t('Go')}</Button>
 				</form>
 			</Card.Content>
 		</Card.Root>
@@ -122,16 +124,18 @@
 				<div>
 					<Card.Title>{gis.geometryColumn}</Card.Title>
 					<Card.Description>
-						{parsed.rows.length} shown{gis.total > gis.rows.length
-							? ` of ${gis.total}`
-							: ''}{parsed.invalid ? `, ${parsed.invalid} unreadable` : ''} · SRID {srid}
+						{gis.total > gis.rows.length
+							? t('{shown} shown of {total}', { shown: parsed.rows.length, total: gis.total })
+							: t('{shown} shown', { shown: parsed.rows.length })}{parsed.invalid
+							? `, ${t('{n} unreadable', { n: parsed.invalid })}`
+							: ''} · SRID {srid}
 					</Card.Description>
 				</div>
 				<div class="flex flex-wrap items-center gap-2">
 					{#if srid === 4326}
 						<div class="flex items-center gap-2">
 							<Checkbox id="gis-tiles" bind:checked={tiles} />
-							<Label for="gis-tiles" class="font-normal">OpenStreetMap background</Label>
+							<Label for="gis-tiles" class="font-normal">{t('OpenStreetMap background')}</Label>
 						</div>
 					{/if}
 					<Button
@@ -152,7 +156,7 @@
 			</Card.Header>
 			<Card.Content>
 				{#if parsed.rows.length === 0}
-					<p class="text-sm text-muted-foreground">No geometry to display.</p>
+					<p class="text-sm text-muted-foreground">{t('No geometry to display.')}</p>
 				{:else}
 					<GisMap rows={parsed.rows} {srid} {tiles} bind:svg />
 				{/if}

@@ -19,19 +19,22 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
-	import { formatByteDown, formatNumber } from '#lib/format.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import type { StatColumn } from '#lib/server/admin/databases.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn, fmt } = useI18n();
+	const formatNumber = fmt.number;
+	const formatByteDown = fmt.byteDown;
 	let { data, form }: PageProps = $props();
 
 	const STAT_HEADERS: { key: StatColumn; title: string; bytes: boolean }[] = [
-		{ key: 'SCHEMA_TABLES', title: 'Tables', bytes: false },
-		{ key: 'SCHEMA_TABLE_ROWS', title: 'Rows', bytes: false },
-		{ key: 'SCHEMA_DATA_LENGTH', title: 'Data', bytes: true },
-		{ key: 'SCHEMA_INDEX_LENGTH', title: 'Indexes', bytes: true },
-		{ key: 'SCHEMA_LENGTH', title: 'Total', bytes: true },
-		{ key: 'SCHEMA_DATA_FREE', title: 'Overhead', bytes: true }
+		{ key: 'SCHEMA_TABLES', title: N_('Tables'), bytes: false },
+		{ key: 'SCHEMA_TABLE_ROWS', title: N_('Rows'), bytes: false },
+		{ key: 'SCHEMA_DATA_LENGTH', title: N_('Data'), bytes: true },
+		{ key: 'SCHEMA_INDEX_LENGTH', title: N_('Indexes'), bytes: true },
+		{ key: 'SCHEMA_LENGTH', title: N_('Total'), bytes: true },
+		{ key: 'SCHEMA_DATA_FREE', title: N_('Overhead'), bytes: true }
 	];
 
 	let collation = $derived(data.defaultCollation);
@@ -96,16 +99,16 @@
 {#snippet sortMark(col: string)}
 	{#if data.sortBy === col}
 		{#if data.sortOrder === 'asc'}
-			<ArrowUp class="size-3.5" aria-label="Ascending" />
+			<ArrowUp class="size-3.5" aria-label={t('Ascending')} />
 		{:else}
-			<ArrowDown class="size-3.5" aria-label="Descending" />
+			<ArrowDown class="size-3.5" aria-label={t('Descending')} />
 		{/if}
 	{/if}
 {/snippet}
 
 {#snippet sortHeader(col: string, title: string)}
 	<a href={sortHref(col)} class="inline-flex items-center gap-1 hover:underline">
-		{title}
+		{t(title)}
 		{@render sortMark(col)}
 	</a>
 {/snippet}
@@ -113,14 +116,14 @@
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Database}
-		title={data.statistics ? 'Databases statistics' : 'Databases'}
-		description="{data.total} {data.total === 1 ? 'database' : 'databases'} on this server."
+		title={data.statistics ? t('Databases statistics') : t('Databases')}
+		description={tn('{n} database on this server.', '{n} databases on this server.', data.total)}
 	>
 		{#snippet actions()}
 			{#if data.statistics}
-				<Button variant="outline" href={href({ statistics: null })}>Hide statistics</Button>
+				<Button variant="outline" href={href({ statistics: null })}>{t('Hide statistics')}</Button>
 			{:else if data.total > 0}
-				<Button variant="outline" href={href({ statistics: 1 })}>Show statistics</Button>
+				<Button variant="outline" href={href({ statistics: 1 })}>{t('Show statistics')}</Button>
 			{/if}
 		{/snippet}
 	</PageHeader>
@@ -128,7 +131,7 @@
 	{#if data.showCreate}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Create database</Card.Title>
+				<Card.Title>{t('Create database')}</Card.Title>
 			</Card.Header>
 			<Card.Content>
 				{#if data.canCreate}
@@ -140,7 +143,9 @@
 							creating = true;
 							return async ({ result, update }) => {
 								if (result.type === 'success') {
-									toast.success(`Database ${result.data?.created} has been created.`);
+									toast.success(
+										t('Database {db} has been created.', { db: String(result.data?.created) })
+									);
 								}
 								await update();
 								creating = false;
@@ -152,13 +157,13 @@
 							maxlength={64}
 							required
 							autocomplete="off"
-							placeholder="Database name"
-							aria-label="Database name"
+							placeholder={t('Database name')}
+							aria-label={t('Database name')}
 							class="w-64"
 						/>
 						<Select.Root type="single" name="db_collation" bind:value={collation}>
-							<Select.Trigger class="w-64" aria-label="Collation" data-testid="create-collation">
-								{collation || 'Collation'}
+							<Select.Trigger class="w-64" aria-label={t('Collation')} data-testid="create-collation">
+								{collation || t('Collation')}
 							</Select.Trigger>
 							<Select.Content class="max-h-72">
 								{#each byCharset as group (group.charset)}
@@ -171,13 +176,13 @@
 								{/each}
 							</Select.Content>
 						</Select.Root>
-						<Button type="submit" disabled={creating}>Create</Button>
+						<Button type="submit" disabled={creating}>{t('Create')}</Button>
 					</form>
 					{#if form?.createError}
 						<p class="mt-2 text-sm text-destructive" role="alert">{form.createError}</p>
 					{/if}
 				{:else}
-					<p class="text-sm text-destructive">No privileges to create databases</p>
+					<p class="text-sm text-destructive">{t('No privileges to create databases')}</p>
 				{/if}
 			</Card.Content>
 		</Card.Root>
@@ -191,7 +196,7 @@
 	{#if form?.skipped?.length}
 		<Alert role="status">
 			<AlertDescription>
-				System databases cannot be dropped: {form.skipped.join(', ')}
+				{t('System databases cannot be dropped: {names}', { names: form.skipped.join(', ') })}
 			</AlertDescription>
 		</Alert>
 	{/if}
@@ -205,9 +210,9 @@
 							id="check-all"
 							checked={allChecked}
 							onCheckedChange={(v) => toggleAll(v === true)}
-							aria-label="Check all"
+							aria-label={t('Check all')}
 						/>
-						<label for="check-all" class="text-sm">Check all</label>
+						<label for="check-all" class="text-sm">{t('Check all')}</label>
 						<Button
 							variant="outline"
 							size="sm"
@@ -215,23 +220,24 @@
 							onclick={() => (confirmOpen = true)}
 							data-testid="bulk-drop"
 						>
-							<Trash2 /> Drop
+							<Trash2 />
+							{t('Drop')}
 						</Button>
 					</div>
 				{/if}
 				<Input
 					bind:value={filter}
 					type="search"
-					placeholder="Search"
-					aria-label="Search"
+					placeholder={t('Search')}
+					aria-label={t('Search')}
 					class="ml-auto w-56"
 				/>
 			</div>
 
 			{#if data.total > data.maxDbList}
-				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label="Pagination">
+				<nav class="flex items-center gap-2 border-b px-5 py-3 text-sm" aria-label={t('Pagination')}>
 					<Button variant="outline" size="sm" href={href({ pos: 0 })} disabled={data.pos === 0}>
-						Start
+						{t('Start')}
 					</Button>
 					<Button
 						variant="outline"
@@ -239,10 +245,14 @@
 						href={href({ pos: prevPos || null })}
 						disabled={data.pos === 0}
 					>
-						Previous
+						{t('Previous')}
 					</Button>
 					<span class="text-muted-foreground">
-						Showing {data.pos + 1} - {Math.min(data.total, data.pos + data.maxDbList)} of {data.total}
+						{t('Showing {from} - {to} of {total}', {
+							from: data.pos + 1,
+							to: Math.min(data.total, data.pos + data.maxDbList),
+							total: data.total
+						})}
 					</span>
 					<Button
 						variant="outline"
@@ -250,7 +260,7 @@
 						href={href({ pos: nextPos })}
 						disabled={nextPos > lastPos}
 					>
-						Next
+						{t('Next')}
 					</Button>
 				</nav>
 			{/if}
@@ -266,13 +276,15 @@
 						if (result.type === 'success') {
 							const n = (result.data?.dropped as string[] | undefined)?.length ?? 0;
 							toast.success(
-								n === 1
-									? '1 database has been dropped successfully.'
-									: `${n} databases have been dropped successfully.`
+								tn(
+									'{n} database has been dropped successfully.',
+									'{n} databases have been dropped successfully.',
+									n
+								)
 							);
 							selected = [];
 						} else if (result.type === 'failure') {
-							toast.error(String(result.data?.dropError ?? 'Could not drop the databases.'));
+							toast.error(String(result.data?.dropError ?? t('Could not drop the databases.')));
 						}
 						await update({ reset: false });
 						dropping = false;
@@ -287,8 +299,8 @@
 					<Table.Header>
 						<Table.Row>
 							{#if data.dropAllowed}<Table.Head class="w-8"></Table.Head>{/if}
-							<Table.Head>{@render sortHeader('SCHEMA_NAME', 'Database')}</Table.Head>
-							<Table.Head>{@render sortHeader('DEFAULT_COLLATION_NAME', 'Collation')}</Table.Head>
+							<Table.Head>{@render sortHeader('SCHEMA_NAME', N_('Database'))}</Table.Head>
+							<Table.Head>{@render sortHeader('DEFAULT_COLLATION_NAME', N_('Collation'))}</Table.Head>
 							{#if data.statistics}
 								{#each STAT_HEADERS as h (h.key)}
 									<Table.Head colspan={h.bytes ? 2 : 1} class={h.bytes ? 'text-center' : 'text-end'}
@@ -296,7 +308,7 @@
 									>
 								{/each}
 							{/if}
-							<Table.Head class="text-end">Action</Table.Head>
+							<Table.Head class="text-end">{t('Action')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -308,7 +320,7 @@
 											checked={selected.includes(db.name)}
 											onCheckedChange={(v) => toggle(db.name, v === true)}
 											disabled={db.isSystemSchema || db.isPmadb}
-											aria-label="Select {db.name}"
+											aria-label={t('Select {name}', { name: db.name })}
 										/>
 									</Table.Cell>
 								{/if}
@@ -316,7 +328,7 @@
 									<a
 										href="/db/{encodeURIComponent(db.name)}/structure"
 										class="font-medium text-foreground hover:text-primary hover:underline"
-										title="Jump to database '{db.name}'"
+										title={t("Jump to database '{db}'", { db: db.name })}
 									>
 										{db.name}
 									</a>
@@ -346,9 +358,10 @@
 											db.name
 										)}&checkprivsdb={encodeURIComponent(db.name)}"
 										class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-										title="Check privileges for database &quot;{db.name}&quot;."
+										title={t('Check privileges for database "{db}".', { db: db.name })}
 									>
-										<ShieldCheck class="size-4" /> Check privileges
+										<ShieldCheck class="size-4" />
+									{t('Check privileges')}
 									</a>
 								</Table.Cell>
 							</Table.Row>
@@ -357,7 +370,7 @@
 					<Table.Footer>
 						<Table.Row>
 							<Table.Cell colspan={data.dropAllowed ? 3 : 2} class="font-semibold">
-								Total: <span data-testid="db-total">{data.total}</span>
+								{t('Total:')} <span data-testid="db-total">{data.total}</span>
 							</Table.Cell>
 							{#if data.statistics && data.totals}
 								{#each STAT_HEADERS as h (h.key)}
@@ -384,23 +397,26 @@
 		{#if !data.statistics}
 			<Alert>
 				<AlertDescription>
-					Note: Enabling the database statistics here might cause heavy traffic between the web
-					server and the MySQL server.
-					<a href={href({ statistics: 1 })} class="font-medium underline">Enable statistics</a>
+					{t(
+						'Note: Enabling the database statistics here might cause heavy traffic between the web server and the MySQL server.'
+					)}
+					<a href={href({ statistics: 1 })} class="font-medium underline"
+						>{t('Enable statistics')}</a
+					>
 				</AlertDescription>
 			</Alert>
 		{/if}
 	{:else}
-		<Alert><AlertDescription>No databases</AlertDescription></Alert>
+		<Alert><AlertDescription>{t('No databases')}</AlertDescription></Alert>
 	{/if}
 </div>
 
 <AlertDialog.Root bind:open={confirmOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Confirm</AlertDialog.Title>
+			<AlertDialog.Title>{t('Confirm')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				You are about to DESTROY a complete database! This cannot be undone. Databases to drop:
+				{t('You are about to DESTROY a complete database! This cannot be undone. Databases to drop:')}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<ul class="max-h-48 list-disc overflow-auto pl-6 text-sm" data-testid="drop-list">
@@ -409,7 +425,7 @@
 			{/each}
 		</ul>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={dropping}
@@ -418,7 +434,7 @@
 					dropForm?.requestSubmit();
 				}}
 			>
-				Drop
+				{t('Drop')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

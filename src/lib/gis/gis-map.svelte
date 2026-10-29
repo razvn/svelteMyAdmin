@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
@@ -32,6 +33,7 @@
 		svg?: SVGSVGElement | null;
 	}
 
+	const { t } = useI18n();
 	let { rows, srid, tiles = false, svg = $bindable(null) }: Props = $props();
 
 	const W = 800;
@@ -112,7 +114,7 @@
 		viewBox="0 0 {W} {H}"
 		class="w-full touch-none rounded-lg border bg-card"
 		role="img"
-		aria-label="Geometry visualization"
+		aria-label={t('Geometry visualization')}
 		{onwheel}
 		{onpointerdown}
 		{onpointermove}
@@ -192,7 +194,7 @@
 			type="button"
 			size="icon-sm"
 			variant="outline"
-			aria-label="Zoom in"
+			aria-label={t('Zoom in')}
 			onclick={() => zoomAt(1.5)}
 		>
 			<Plus />
@@ -201,12 +203,12 @@
 			type="button"
 			size="icon-sm"
 			variant="outline"
-			aria-label="Zoom out"
+			aria-label={t('Zoom out')}
 			onclick={() => zoomAt(1 / 1.5)}
 		>
 			<Minus />
 		</Button>
-		<Button type="button" size="icon-sm" variant="outline" aria-label="Reset zoom" onclick={reset}>
+		<Button type="button" size="icon-sm" variant="outline" aria-label={t('Reset zoom')} onclick={reset}>
 			<RotateCcw />
 		</Button>
 	</div>
@@ -234,7 +236,7 @@
 				class="underline"
 				href="https://www.openstreetmap.org/copyright"
 				target="_blank"
-				rel="noreferrer">OpenStreetMap contributors</a
+				rel="noreferrer">{t('OpenStreetMap contributors')}</a
 			>
 		</p>
 	{/if}

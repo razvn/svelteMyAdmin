@@ -4,16 +4,17 @@
  * scopes they can be granted at, their group in the grid, their descriptions and the server versions that
  * have them. `name` is the keyword used by GRANT/REVOKE and reported by SHOW GRANTS.
  */
+import { N_ } from '#lib/i18n/index.ts';
 import type { PrivServer, Scope } from './types.ts';
 
 /** Grid groups. `dynamic` = MySQL 8 dynamic privileges (global only). */
 export type PrivGroup = 'data' | 'structure' | 'administration' | 'dynamic';
 
 export const GROUP_LABELS: Record<PrivGroup, string> = {
-	data: 'Data',
-	structure: 'Structure',
-	administration: 'Administration',
-	dynamic: 'Dynamic privileges'
+	data: N_('Data'),
+	structure: N_('Structure'),
+	administration: N_('Administration'),
+	dynamic: N_('Dynamic privileges')
 };
 
 export interface PrivilegeDef {
@@ -57,64 +58,64 @@ const REPL_MONITOR = 100502;
 
 const STATIC: PrivilegeDef[] = [
 	// Data
-	def('SELECT', 'data', [G, D, T, C], 'Allows reading data.', { column: 'Select_priv' }),
-	def('INSERT', 'data', [G, D, T, C], 'Allows inserting and replacing data.', {
+	def('SELECT', 'data', [G, D, T, C], N_('Allows reading data.'), { column: 'Select_priv' }),
+	def('INSERT', 'data', [G, D, T, C], N_('Allows inserting and replacing data.'), {
 		column: 'Insert_priv'
 	}),
-	def('UPDATE', 'data', [G, D, T, C], 'Allows changing data.', { column: 'Update_priv' }),
-	def('DELETE', 'data', [G, D, T], 'Allows deleting data.', { column: 'Delete_priv' }),
-	def('FILE', 'data', [G], 'Allows importing data from and exporting data into files.', {
+	def('UPDATE', 'data', [G, D, T, C], N_('Allows changing data.'), { column: 'Update_priv' }),
+	def('DELETE', 'data', [G, D, T], N_('Allows deleting data.'), { column: 'Delete_priv' }),
+	def('FILE', 'data', [G], N_('Allows importing data from and exporting data into files.'), {
 		column: 'File_priv'
 	}),
-	def('DELETE HISTORY', 'data', [G, D, T], 'Allows deleting historical rows.', {
+	def('DELETE HISTORY', 'data', [G, D, T], N_('Allows deleting historical rows.'), {
 		column: 'Delete_history_priv',
 		engine: 'mariadb',
 		since: 100304
 	}),
 	// Structure
-	def('CREATE', 'structure', [G, D, T], 'Allows creating new tables.', {
+	def('CREATE', 'structure', [G, D, T], N_('Allows creating new tables.'), {
 		column: 'Create_priv',
-		scopeDescriptions: { global: 'Allows creating new databases and tables.' }
+		scopeDescriptions: { global: N_('Allows creating new databases and tables.') }
 	}),
-	def('ALTER', 'structure', [G, D, T], 'Allows altering the structure of existing tables.', {
+	def('ALTER', 'structure', [G, D, T], N_('Allows altering the structure of existing tables.'), {
 		column: 'Alter_priv'
 	}),
-	def('INDEX', 'structure', [G, D, T], 'Allows creating and dropping indexes.', {
+	def('INDEX', 'structure', [G, D, T], N_('Allows creating and dropping indexes.'), {
 		column: 'Index_priv'
 	}),
-	def('DROP', 'structure', [G, D, T], 'Allows dropping tables.', {
+	def('DROP', 'structure', [G, D, T], N_('Allows dropping tables.'), {
 		column: 'Drop_priv',
-		scopeDescriptions: { global: 'Allows dropping databases and tables.' }
+		scopeDescriptions: { global: N_('Allows dropping databases and tables.') }
 	}),
-	def('CREATE TEMPORARY TABLES', 'structure', [G, D], 'Allows creating temporary tables.', {
+	def('CREATE TEMPORARY TABLES', 'structure', [G, D], N_('Allows creating temporary tables.'), {
 		column: 'Create_tmp_table_priv'
 	}),
-	def('SHOW VIEW', 'structure', [G, D, T], 'Allows performing SHOW CREATE VIEW queries.', {
+	def('SHOW VIEW', 'structure', [G, D, T], N_('Allows performing SHOW CREATE VIEW queries.'), {
 		column: 'Show_view_priv'
 	}),
-	def('CREATE ROUTINE', 'structure', [G, D], 'Allows creating stored routines.', {
+	def('CREATE ROUTINE', 'structure', [G, D], N_('Allows creating stored routines.'), {
 		column: 'Create_routine_priv'
 	}),
-	def('ALTER ROUTINE', 'structure', [G, D, R], 'Allows altering and dropping stored routines.', {
+	def('ALTER ROUTINE', 'structure', [G, D, R], N_('Allows altering and dropping stored routines.'), {
 		column: 'Alter_routine_priv'
 	}),
-	def('EXECUTE', 'structure', [G, D, R], 'Allows executing stored routines.', {
+	def('EXECUTE', 'structure', [G, D, R], N_('Allows executing stored routines.'), {
 		column: 'Execute_priv'
 	}),
-	def('CREATE VIEW', 'structure', [G, D, T], 'Allows creating new views.', {
+	def('CREATE VIEW', 'structure', [G, D, T], N_('Allows creating new views.'), {
 		column: 'Create_view_priv'
 	}),
-	def('EVENT', 'structure', [G, D], 'Allows to set up events for the event scheduler.', {
+	def('EVENT', 'structure', [G, D], N_('Allows to set up events for the event scheduler.'), {
 		column: 'Event_priv'
 	}),
-	def('TRIGGER', 'structure', [G, D, T], 'Allows creating and dropping triggers.', {
+	def('TRIGGER', 'structure', [G, D, T], N_('Allows creating and dropping triggers.'), {
 		column: 'Trigger_priv'
 	}),
 	def(
 		'SHOW CREATE ROUTINE',
 		'structure',
 		[G, D, R],
-		'Allows performing SHOW CREATE PROCEDURE / FUNCTION queries.',
+		N_('Allows performing SHOW CREATE PROCEDURE / FUNCTION queries.'),
 		{ engine: 'mariadb', since: 110300 }
 	),
 	// Administration
@@ -122,29 +123,29 @@ const STATIC: PrivilegeDef[] = [
 		'SUPER',
 		'administration',
 		[G],
-		'Allows connecting, even if maximum number of connections is reached; required for most administrative operations like setting global variables or killing threads of other users.',
+		N_('Allows connecting, even if maximum number of connections is reached; required for most administrative operations like setting global variables or killing threads of other users.'),
 		{ column: 'Super_priv' }
 	),
-	def('PROCESS', 'administration', [G], 'Allows viewing processes of all users.', {
+	def('PROCESS', 'administration', [G], N_('Allows viewing processes of all users.'), {
 		column: 'Process_priv'
 	}),
 	def(
 		'RELOAD',
 		'administration',
 		[G],
-		"Allows reloading server settings and flushing the server's caches.",
+		N_("Allows reloading server settings and flushing the server's caches."),
 		{ column: 'Reload_priv' }
 	),
-	def('SHUTDOWN', 'administration', [G], 'Allows shutting down the server.', {
+	def('SHUTDOWN', 'administration', [G], N_('Allows shutting down the server.'), {
 		column: 'Shutdown_priv'
 	}),
-	def('SHOW DATABASES', 'administration', [G], 'Gives access to the complete list of databases.', {
+	def('SHOW DATABASES', 'administration', [G], N_('Gives access to the complete list of databases.'), {
 		column: 'Show_db_priv'
 	}),
-	def('LOCK TABLES', 'administration', [G, D], 'Allows locking tables for the current thread.', {
+	def('LOCK TABLES', 'administration', [G, D], N_('Allows locking tables for the current thread.'), {
 		column: 'Lock_tables_priv'
 	}),
-	def('REFERENCES', 'administration', [G, D, T, C], 'Allows creating foreign key relations.', {
+	def('REFERENCES', 'administration', [G, D, T, C], N_('Allows creating foreign key relations.'), {
 		column: 'References_priv',
 		scopeDescriptions: {}
 	}),
@@ -152,17 +153,17 @@ const STATIC: PrivilegeDef[] = [
 		'REPLICATION CLIENT',
 		'administration',
 		[G],
-		'Allows the user to ask where the replicas / primaries are.',
+		N_('Allows the user to ask where the replicas / primaries are.'),
 		{ column: 'Repl_client_priv' }
 	),
-	def('REPLICATION SLAVE', 'administration', [G], 'Needed for the replication replicas.', {
+	def('REPLICATION SLAVE', 'administration', [G], N_('Needed for the replication replicas.'), {
 		column: 'Repl_slave_priv'
 	}),
 	def(
 		'CREATE USER',
 		'administration',
 		[G],
-		'Allows creating, dropping and renaming user accounts.',
+		N_('Allows creating, dropping and renaming user accounts.'),
 		{
 			column: 'Create_user_priv'
 		}
@@ -171,29 +172,29 @@ const STATIC: PrivilegeDef[] = [
 		'CREATE TABLESPACE',
 		'administration',
 		[G],
-		'Allows creating, altering and dropping tablespaces.',
+		N_('Allows creating, altering and dropping tablespaces.'),
 		{
 			column: 'Create_tablespace_priv'
 		}
 	),
-	def('CREATE ROLE', 'administration', [G], 'Allows creating roles.', {
+	def('CREATE ROLE', 'administration', [G], N_('Allows creating roles.'), {
 		engine: 'mysql',
 		since: 80000
 	}),
-	def('DROP ROLE', 'administration', [G], 'Allows dropping roles.', {
+	def('DROP ROLE', 'administration', [G], N_('Allows dropping roles.'), {
 		engine: 'mysql',
 		since: 80000
 	}),
 	// MariaDB 10.5.2+ administrative privileges (REPLICATION CLIENT became BINLOG MONITOR)
-	def('BINLOG ADMIN', 'administration', [G], 'Allows purging binary logs (PURGE BINARY LOGS).', {
+	def('BINLOG ADMIN', 'administration', [G], N_('Allows purging binary logs (PURGE BINARY LOGS).'), {
 		engine: 'mariadb',
 		since: REPL_MONITOR
 	}),
-	def('BINLOG MONITOR', 'administration', [G], 'Allows SHOW BINLOG STATUS and SHOW BINARY LOGS.', {
+	def('BINLOG MONITOR', 'administration', [G], N_('Allows SHOW BINLOG STATUS and SHOW BINARY LOGS.'), {
 		engine: 'mariadb',
 		since: REPL_MONITOR
 	}),
-	def('BINLOG REPLAY', 'administration', [G], 'Allows executing BINLOG statements.', {
+	def('BINLOG REPLAY', 'administration', [G], N_('Allows executing BINLOG statements.'), {
 		engine: 'mariadb',
 		since: REPL_MONITOR
 	}),
@@ -201,42 +202,42 @@ const STATIC: PrivilegeDef[] = [
 		'CONNECTION ADMIN',
 		'administration',
 		[G],
-		"Allows bypassing connection limits and killing other users' connections.",
+		N_("Allows bypassing connection limits and killing other users' connections."),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	),
 	def(
 		'FEDERATED ADMIN',
 		'administration',
 		[G],
-		'Allows CREATE SERVER, ALTER SERVER and DROP SERVER.',
+		N_('Allows CREATE SERVER, ALTER SERVER and DROP SERVER.'),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	),
 	def(
 		'READ_ONLY ADMIN',
 		'administration',
 		[G],
-		'Allows write operations even if @@read_only is ON.',
+		N_('Allows write operations even if @@read_only is ON.'),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	),
 	def(
 		'REPLICATION MASTER ADMIN',
 		'administration',
 		[G],
-		'Allows monitoring connected replicas (SHOW SLAVE HOSTS).',
+		N_('Allows monitoring connected replicas (SHOW SLAVE HOSTS).'),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	),
 	def(
 		'REPLICATION SLAVE ADMIN',
 		'administration',
 		[G],
-		'Allows starting and stopping replication and applying binary log events.',
+		N_('Allows starting and stopping replication and applying binary log events.'),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	),
 	def(
 		'SET USER',
 		'administration',
 		[G],
-		'Allows creating views and stored routines with a different definer.',
+		N_('Allows creating views and stored routines with a different definer.'),
 		{
 			engine: 'mariadb',
 			since: REPL_MONITOR
@@ -246,7 +247,7 @@ const STATIC: PrivilegeDef[] = [
 		'SLAVE MONITOR',
 		'administration',
 		[G],
-		'Allows SHOW SLAVE STATUS and SHOW RELAYLOG EVENTS.',
+		N_('Allows SHOW SLAVE STATUS and SHOW RELAYLOG EVENTS.'),
 		{ engine: 'mariadb', since: REPL_MONITOR }
 	)
 ];
@@ -267,63 +268,63 @@ const DYNAMIC: PrivilegeDef[] = [
 	dyn(
 		'ALLOW_NONEXISTENT_DEFINER',
 		80200,
-		'Allows creating objects with a definer that does not exist.'
+		N_('Allows creating objects with a definer that does not exist.')
 	),
-	dyn('APPLICATION_PASSWORD_ADMIN', 80014, 'Allows managing dual passwords.'),
-	dyn('AUDIT_ABORT_EXEMPT', 80028, 'Exempts queries from being blocked by the audit log filter.'),
-	dyn('AUDIT_ADMIN', 80001, 'Allows managing the audit log.'),
-	dyn('AUTHENTICATION_POLICY_ADMIN', 80027, 'Allows managing authentication policies.'),
+	dyn('APPLICATION_PASSWORD_ADMIN', 80014, N_('Allows managing dual passwords.')),
+	dyn('AUDIT_ABORT_EXEMPT', 80028, N_('Exempts queries from being blocked by the audit log filter.')),
+	dyn('AUDIT_ADMIN', 80001, N_('Allows managing the audit log.')),
+	dyn('AUTHENTICATION_POLICY_ADMIN', 80027, N_('Allows managing authentication policies.')),
 	dyn(
 		'BACKUP_ADMIN',
 		80001,
-		'Allows running backup related statements (LOCK INSTANCE FOR BACKUP).'
+		N_('Allows running backup related statements (LOCK INSTANCE FOR BACKUP).')
 	),
-	dyn('BINLOG_ADMIN', 80001, 'Allows managing the binary log (PURGE BINARY LOGS, BINLOG).'),
-	dyn('BINLOG_ENCRYPTION_ADMIN', 80001, 'Allows enabling or disabling binary log encryption.'),
-	dyn('CLONE_ADMIN', 80001, 'Allows using the clone plugin.'),
+	dyn('BINLOG_ADMIN', 80001, N_('Allows managing the binary log (PURGE BINARY LOGS, BINLOG).')),
+	dyn('BINLOG_ENCRYPTION_ADMIN', 80001, N_('Allows enabling or disabling binary log encryption.')),
+	dyn('CLONE_ADMIN', 80001, N_('Allows using the clone plugin.')),
 	dyn(
 		'CONNECTION_ADMIN',
 		80001,
-		'Allows bypassing connection limits and killing other connections.'
+		N_('Allows bypassing connection limits and killing other connections.')
 	),
-	dyn('ENCRYPTION_KEY_ADMIN', 80001, 'Allows rotating InnoDB encryption keys.'),
-	dyn('FIREWALL_EXEMPT', 80027, 'Exempts the user from firewall restrictions.'),
-	dyn('FLUSH_OPTIMIZER_COSTS', 80023, 'Allows FLUSH OPTIMIZER_COSTS.'),
-	dyn('FLUSH_PRIVILEGES', 80400, 'Allows FLUSH PRIVILEGES.'),
-	dyn('FLUSH_STATUS', 80023, 'Allows FLUSH STATUS.'),
-	dyn('FLUSH_TABLES', 80023, 'Allows FLUSH TABLES.'),
-	dyn('FLUSH_USER_RESOURCES', 80023, 'Allows FLUSH USER_RESOURCES.'),
-	dyn('GROUP_REPLICATION_ADMIN', 80001, 'Allows managing Group Replication.'),
-	dyn('GROUP_REPLICATION_STREAM', 80000, 'Allows Group Replication recovery channel connections.'),
-	dyn('INNODB_REDO_LOG_ARCHIVE', 80017, 'Allows managing InnoDB redo log archiving.'),
-	dyn('INNODB_REDO_LOG_ENABLE', 80021, 'Allows enabling or disabling the InnoDB redo log.'),
-	dyn('OPTIMIZE_LOCAL_TABLE', 80400, 'Allows OPTIMIZE LOCAL TABLE.'),
+	dyn('ENCRYPTION_KEY_ADMIN', 80001, N_('Allows rotating InnoDB encryption keys.')),
+	dyn('FIREWALL_EXEMPT', 80027, N_('Exempts the user from firewall restrictions.')),
+	dyn('FLUSH_OPTIMIZER_COSTS', 80023, N_('Allows FLUSH OPTIMIZER_COSTS.')),
+	dyn('FLUSH_PRIVILEGES', 80400, N_('Allows FLUSH PRIVILEGES.')),
+	dyn('FLUSH_STATUS', 80023, N_('Allows FLUSH STATUS.')),
+	dyn('FLUSH_TABLES', 80023, N_('Allows FLUSH TABLES.')),
+	dyn('FLUSH_USER_RESOURCES', 80023, N_('Allows FLUSH USER_RESOURCES.')),
+	dyn('GROUP_REPLICATION_ADMIN', 80001, N_('Allows managing Group Replication.')),
+	dyn('GROUP_REPLICATION_STREAM', 80000, N_('Allows Group Replication recovery channel connections.')),
+	dyn('INNODB_REDO_LOG_ARCHIVE', 80017, N_('Allows managing InnoDB redo log archiving.')),
+	dyn('INNODB_REDO_LOG_ENABLE', 80021, N_('Allows enabling or disabling the InnoDB redo log.')),
+	dyn('OPTIMIZE_LOCAL_TABLE', 80400, N_('Allows OPTIMIZE LOCAL TABLE.')),
 	dyn(
 		'PASSWORDLESS_USER_ADMIN',
 		80000,
-		'Allows managing accounts that use passwordless authentication.'
+		N_('Allows managing accounts that use passwordless authentication.')
 	),
-	dyn('PERSIST_RO_VARIABLES_ADMIN', 80014, 'Allows persisting read-only system variables.'),
-	dyn('REPLICATION_APPLIER', 80018, 'Allows acting as the applier of a replication channel.'),
-	dyn('REPLICATION_SLAVE_ADMIN', 80001, 'Allows starting and stopping replication.'),
-	dyn('RESOURCE_GROUP_ADMIN', 80001, 'Allows managing resource groups.'),
-	dyn('RESOURCE_GROUP_USER', 80001, 'Allows assigning threads and statements to resource groups.'),
-	dyn('ROLE_ADMIN', 80001, 'Allows granting and revoking roles, and using WITH ADMIN OPTION.'),
-	dyn('SENSITIVE_VARIABLES_OBSERVER', 80029, 'Allows viewing sensitive system variable values.'),
+	dyn('PERSIST_RO_VARIABLES_ADMIN', 80014, N_('Allows persisting read-only system variables.')),
+	dyn('REPLICATION_APPLIER', 80018, N_('Allows acting as the applier of a replication channel.')),
+	dyn('REPLICATION_SLAVE_ADMIN', 80001, N_('Allows starting and stopping replication.')),
+	dyn('RESOURCE_GROUP_ADMIN', 80001, N_('Allows managing resource groups.')),
+	dyn('RESOURCE_GROUP_USER', 80001, N_('Allows assigning threads and statements to resource groups.')),
+	dyn('ROLE_ADMIN', 80001, N_('Allows granting and revoking roles, and using WITH ADMIN OPTION.')),
+	dyn('SENSITIVE_VARIABLES_OBSERVER', 80029, N_('Allows viewing sensitive system variable values.')),
 	dyn(
 		'SERVICE_CONNECTION_ADMIN',
 		80014,
-		'Allows connecting using the administrative network interface.'
+		N_('Allows connecting using the administrative network interface.')
 	),
-	dyn('SESSION_VARIABLES_ADMIN', 80014, 'Allows setting restricted session system variables.'),
-	dyn('SET_ANY_DEFINER', 80200, 'Allows specifying any definer when creating stored objects.'),
-	dyn('SHOW_ROUTINE', 80020, 'Allows viewing the definition of any stored routine.'),
-	dyn('SYSTEM_USER', 80016, 'Designates an account as a system user.'),
-	dyn('SYSTEM_VARIABLES_ADMIN', 80001, 'Allows setting global system variables.'),
-	dyn('TABLE_ENCRYPTION_ADMIN', 80016, 'Allows overriding default encryption settings.'),
-	dyn('TELEMETRY_LOG_ADMIN', 80000, 'Allows managing the telemetry log.'),
-	dyn('TRANSACTION_GTID_TAG', 80400, 'Allows setting GTID tags.'),
-	dyn('XA_RECOVER_ADMIN', 80000, 'Allows XA RECOVER.')
+	dyn('SESSION_VARIABLES_ADMIN', 80014, N_('Allows setting restricted session system variables.')),
+	dyn('SET_ANY_DEFINER', 80200, N_('Allows specifying any definer when creating stored objects.')),
+	dyn('SHOW_ROUTINE', 80020, N_('Allows viewing the definition of any stored routine.')),
+	dyn('SYSTEM_USER', 80016, N_('Designates an account as a system user.')),
+	dyn('SYSTEM_VARIABLES_ADMIN', 80001, N_('Allows setting global system variables.')),
+	dyn('TABLE_ENCRYPTION_ADMIN', 80016, N_('Allows overriding default encryption settings.')),
+	dyn('TELEMETRY_LOG_ADMIN', 80000, N_('Allows managing the telemetry log.')),
+	dyn('TRANSACTION_GTID_TAG', 80400, N_('Allows setting GTID tags.')),
+	dyn('XA_RECOVER_ADMIN', 80000, N_('Allows XA RECOVER.'))
 ];
 
 export const PRIVILEGES: readonly PrivilegeDef[] = [...STATIC, ...DYNAMIC];
@@ -333,7 +334,7 @@ export const GRANT_OPTION = {
 	name: 'GRANT OPTION',
 	column: 'Grant_priv',
 	description:
-		'Allows user to give to other users or remove from other users the privileges that user possess yourself.',
+		N_('Allows user to give to other users or remove from other users the privileges that user possess yourself.'),
 	group: 'administration' as const,
 	scopes: ['global', 'database', 'table', 'routine'] as const
 };
@@ -384,7 +385,7 @@ export function groupedPrivileges(scope: Scope, server: PrivServer): PrivilegeGr
 /** The description shown for a privilege at a scope (REFERENCES depends on the server). */
 export function describePrivilege(p: PrivilegeDef, scope: Scope, server: PrivServer): string {
 	if (p.name === 'REFERENCES') {
-		return server.isMariaDB ? 'Not used on MariaDB.' : 'Allows creating foreign key relations.';
+		return server.isMariaDB ? N_('Not used on MariaDB.') : N_('Allows creating foreign key relations.');
 	}
 	return p.scopeDescriptions?.[scope] ?? p.description;
 }

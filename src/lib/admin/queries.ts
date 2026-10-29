@@ -1,3 +1,5 @@
+import { N_ } from '#lib/i18n/index.ts';
+
 /** Query statistics (Controllers/Server/Status/QueriesController.php). Pure. */
 
 export interface QueryRow {
@@ -52,7 +54,7 @@ export function queryStats(used: Record<string, number>, uptime: number): QueryS
 			percentage: total ? (value * 100) / total : 0
 		});
 	}
-	if (other > 0) chart.push({ name: 'Other', value: other });
+	if (other > 0) chart.push({ name: N_('Other'), value: other });
 	return {
 		total,
 		perHour: total * hourFactor,

@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { updateSessionPassword } from '#lib/server/auth/index.ts';
 import {
+	errorText,
 	changePassword,
 	getAccountPlugin,
 	getCurrentAccount,
@@ -29,11 +30,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals, cookies, url }) => {
 		if (!allowed(locals))
-			return fail(403, { error: "You don't have sufficient privileges to be here right now!" });
+			return fail(403, { error: locals.i18n.t("You don't have sufficient privileges to be here right now!") });
 		const fd = await request.formData();
 		const none = fd.get('nopass') === '1';
 		const pw = parsePasswordFields(fd, none ? 'none' : 'userdefined');
-		if (!pw.ok) return fail(400, { error: pw.error });
+		if (!pw.ok) return fail(400, { error: errorText(pw, locals.i18n) });
 		const dbi = await locals.dbi;
 		const server = await getPrivServer(dbi);
 		const account = await getCurrentAccount(dbi);
@@ -45,7 +46,7 @@ export const actions: Actions = {
 		});
 		if (!res.ok)
 			return fail(400, {
-				error: res.error ?? 'Could not change the password.',
+				error: errorText(res, locals.i18n) ?? locals.i18n.t('Could not change the password.'),
 				results: res.results
 			});
 		// Keep the user logged in: re-seal the session cookie with the new password.

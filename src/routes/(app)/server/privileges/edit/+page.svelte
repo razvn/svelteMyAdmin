@@ -7,31 +7,33 @@
 	import StatementList from '#lib/components/privileges/statement-list.svelte';
 	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 	const title = $derived(`'${data.account.user}'@'${data.account.host}'`);
 </script>
 
 <svelte:head>
-	<title>Edit privileges - svelteMyAdmin</title>
+	<title>{t('Edit privileges')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader icon={UserCog} title="Edit privileges: User account {title}">
+	<PageHeader icon={UserCog} title={t('Edit privileges: User account {account}', { account: title })}>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> User accounts</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
 		{/snippet}
 	</PageHeader>
 
 	{#if data.state === 'denied'}
 		<Alert variant="destructive" role="alert">
-			<AlertDescription>You do not have the privileges to administrate the users!</AlertDescription>
+			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
 		</Alert>
 	{:else if data.state === 'missing'}
 		<Alert variant="destructive" role="alert">
 			<AlertDescription>
-				The selected user was not found in the privilege table. {data.error}
+				{t('The selected user was not found in the privilege table.')} {data.error}
 			</AlertDescription>
 		</Alert>
 	{:else}
@@ -39,14 +41,17 @@
 		{#if data.isSelf}
 			<Alert role="status">
 				<AlertDescription>
-					Note: You are attempting to edit privileges of the user with which you are currently
-					logged in.
+					{t(
+						'Note: You are attempting to edit privileges of the user with which you are currently logged in.'
+					)}
 				</AlertDescription>
 			</Alert>
 		{/if}
 		{#if form && 'saved' in form && form.saved}
 			<Alert variant="success" role="status" data-testid="privileges-saved">
-				<AlertDescription>You have updated the privileges for {title}.</AlertDescription>
+				<AlertDescription
+					>{t('You have updated the privileges for {account}.', { account: title })}</AlertDescription
+				>
 			</Alert>
 		{:else if form && 'error' in form && form.error}
 			<Alert variant="destructive" role="alert"

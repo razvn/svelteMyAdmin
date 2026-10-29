@@ -29,8 +29,10 @@
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	let filter = $state('');
@@ -84,34 +86,40 @@
 		if (exportText === null) return;
 		try {
 			await navigator.clipboard.writeText(exportText);
-			toast.success('Copied to the clipboard.');
+			toast.success(t('Copied to the clipboard.'));
 		} catch {
-			toast.error('Could not copy to the clipboard.');
+			toast.error(t('Could not copy to the clipboard.'));
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>User accounts - svelteMyAdmin</title>
+	<title>{t('User accounts')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={Users}
-		title="User accounts"
+		title={t('User accounts')}
 		description={data.state === 'ok'
-			? `${data.total} user ${data.total === 1 ? 'account' : 'accounts'} on this server.`
-			: 'Users and privileges.'}
+			? tn(
+					'{n} user account on this server.',
+					'{n} user accounts on this server.',
+					data.total
+				)
+			: t('Users and privileges.')}
 	>
 		{#snippet actions()}
 			{#if data.state === 'ok' && data.userGroups && data.caps.isSuperUser}
 				<Button variant="outline" href="/server/user-groups" data-testid="user-groups-link">
-					<UsersRound /> User groups
+					<UsersRound />
+					{t('User groups')}
 				</Button>
 			{/if}
 			{#if data.caps.isCreateUser}
 				<Button href="/server/privileges/add" data-testid="add-user">
-					<UserPlus /> Add user account
+					<UserPlus />
+					{t('Add user account')}
 				</Button>
 			{/if}
 		{/snippet}
@@ -119,35 +127,35 @@
 
 	{#if data.state === 'no-privileges'}
 		<Alert variant="destructive" role="alert">
-			<AlertTitle>No Privileges</AlertTitle>
+			<AlertTitle>{t('No Privileges')}</AlertTitle>
 			<AlertDescription
-				>You do not have the privileges to view or administrate user accounts.</AlertDescription
+				>{t('You do not have the privileges to view or administrate user accounts.')}</AlertDescription
 			>
 		</Alert>
 	{:else}
 		{#if !data.caps.isGrantUser && !data.caps.isCreateUser}
 			<Alert role="status">
 				<AlertDescription
-					>You do not have the privileges to administrate the users!</AlertDescription
+					>{t('You do not have the privileges to administrate the users!')}</AlertDescription
 				>
 			</Alert>
 		{/if}
 
 		{#if data.state === 'cannot-view'}
 			<Alert variant="destructive" role="alert">
-				<AlertTitle>Not enough privilege to view users.</AlertTitle>
+				<AlertTitle>{t('Not enough privilege to view users.')}</AlertTitle>
 				<AlertDescription>
-					Your account cannot read the privilege tables.
-					{#if data.caps.isCreateUser}You can still add a user account.{/if}
+					{t('Your account cannot read the privilege tables.')}
+					{#if data.caps.isCreateUser}{t('You can still add a user account.')}{/if}
 				</AlertDescription>
 			</Alert>
 		{:else}
 			{#if data.anonymousLocalhost}
 				<Alert variant="warning" role="status" data-testid="anonymous-warning">
 					<AlertDescription>
-						A user account allowing any user from localhost to connect is present. This will prevent
-						other users from connecting if the host part of their account allows a connection from
-						any (%) host.
+						{t(
+							'A user account allowing any user from localhost to connect is present. This will prevent other users from connecting if the host part of their account allows a connection from any (%) host.'
+						)}
 					</AlertDescription>
 				</Alert>
 			{/if}
@@ -158,7 +166,7 @@
 						><AlertDescription>{form.drop.error}</AlertDescription></Alert
 					>
 				{/if}
-				<StatementList results={form.drop.results} title="Removed user accounts" />
+				<StatementList results={form.drop.results} title={t('Removed user accounts')} />
 			{/if}
 			{#if form && 'groupError' in form && form.groupError}
 				<Alert variant="destructive" role="alert"
@@ -177,12 +185,12 @@
 			{/if}
 			{#if form && 'flushed' in form && form.flushed}
 				<Alert variant="success" role="status">
-					<AlertDescription>The privileges were reloaded successfully.</AlertDescription>
+					<AlertDescription>{t('The privileges were reloaded successfully.')}</AlertDescription>
 				</Alert>
 			{/if}
 
 			{#if data.initials.length > 0}
-				<nav aria-label="Pagination of user accounts" class="flex flex-wrap items-center gap-1">
+				<nav aria-label={t('Pagination of user accounts')} class="flex flex-wrap items-center gap-1">
 					{#each data.initials as initial (initial)}
 						<Button
 							variant={data.initial === initial ? 'default' : 'outline'}
@@ -191,11 +199,11 @@
 							aria-current={data.initial === initial ? 'page' : undefined}
 							class="min-w-8"
 						>
-							{#if initial === ''}<span class="text-destructive">Any</span>{:else}{initial}{/if}
+							{#if initial === ''}<span class="text-destructive">{t('Any')}</span>{:else}{initial}{/if}
 						</Button>
 					{/each}
 					<Button variant={data.showAll ? 'default' : 'outline'} size="sm" href={initialHref(null)}>
-						Show all
+						{t('Show all')}
 					</Button>
 				</nav>
 			{/if}
@@ -203,7 +211,9 @@
 			{#if data.tooMany}
 				<Alert role="status">
 					<AlertDescription>
-						There are {data.total} user accounts. Choose an initial letter or "Show all" to list them.
+						{t('There are {n} user accounts. Choose an initial letter or "Show all" to list them.', {
+							n: data.total
+						})}
 					</AlertDescription>
 				</Alert>
 			{:else}
@@ -217,7 +227,7 @@
 							dropping = true;
 							return async ({ result, update }) => {
 								if (result.type === 'success') {
-									toast.success('The selected users have been deleted successfully.');
+									toast.success(t('The selected users have been deleted successfully.'));
 									selected = [];
 								}
 								await update({ reset: false });
@@ -237,9 +247,9 @@
 									id="check-all"
 									checked={allChecked}
 									onCheckedChange={(v) => toggleAll(v === true)}
-									aria-label="Check all"
+									aria-label={t('Check all')}
 								/>
-								<label for="check-all" class="text-sm">Check all</label>
+								<label for="check-all" class="text-sm">{t('Check all')}</label>
 							</div>
 							<Button
 								variant="outline"
@@ -249,7 +259,8 @@
 								disabled={selected.length === 0}
 								data-testid="export-selected"
 							>
-								<Download /> Export
+								<Download />
+								{t('Export')}
 							</Button>
 							<div class="relative ms-auto w-56">
 								<Search
@@ -258,8 +269,8 @@
 								<Input
 									bind:value={filter}
 									type="search"
-									placeholder="Search"
-									aria-label="Search"
+									placeholder={t('Search')}
+									aria-label={t('Search')}
 									class="ps-8"
 								/>
 							</div>
@@ -269,15 +280,15 @@
 							<Table.Header>
 								<Table.Row>
 									<Table.Head class="w-8"></Table.Head>
-									<Table.Head>User name</Table.Head>
-									<Table.Head>Host name</Table.Head>
-									<Table.Head>Password</Table.Head>
-									<Table.Head title="Note: MySQL privilege names are expressed in English.">
-										Global privileges
+									<Table.Head>{t('User name')}</Table.Head>
+									<Table.Head>{t('Host name')}</Table.Head>
+									<Table.Head>{t('Password')}</Table.Head>
+									<Table.Head title={t('Note: MySQL privilege names are expressed in English.')}>
+										{t('Global privileges')}
 									</Table.Head>
-									<Table.Head>User group</Table.Head>
-									<Table.Head>Grant</Table.Head>
-									<Table.Head class="text-end">Action</Table.Head>
+									<Table.Head>{t('User group')}</Table.Head>
+									<Table.Head>{t('Grant')}</Table.Head>
+									<Table.Head class="text-end">{t('Action')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>
@@ -287,12 +298,12 @@
 											<Checkbox
 												checked={selected.includes(a.value)}
 												onCheckedChange={(v) => toggle(a.value, v === true)}
-												aria-label="Select {a.user || 'Any'}@{a.host}"
+												aria-label={t('Select {account}', { account: `${a.user || t('Any')}@${a.host}` })}
 											/>
 										</Table.Cell>
 										<Table.Cell class="font-medium">
 											{#if a.user === ''}
-												<span class="text-destructive">Any</span>
+												<span class="text-destructive">{t('Any')}</span>
 											{:else if data.caps.isGrantUser}
 												<a
 													href={editHref(a)}
@@ -304,21 +315,23 @@
 												{a.user}
 											{/if}
 											{#if a.locked}
-												<Badge variant="warning" class="ms-2"><Lock /> Locked</Badge>
+												<Badge variant="warning" class="ms-2"><Lock />
+													{t('Locked')}</Badge
+												>
 											{/if}
 										</Table.Cell>
 										<Table.Cell class="font-mono text-[13px]">{a.host}</Table.Cell>
 										<Table.Cell>
 											{#if a.hasPassword}
-												<Badge variant="success">Yes</Badge>
+												<Badge variant="success">{t('Yes')}</Badge>
 											{:else}
-												<Badge variant="destructive">No</Badge>
+												<Badge variant="destructive">{t('No')}</Badge>
 											{/if}
 											{#if !a.inUserTable}
 												<span
 													class="ms-1 text-xs text-muted-foreground"
-													title="The selected user was not found in the privilege table."
-													>(not in user table)</span
+													title={t('The selected user was not found in the privilege table.')}
+													>{t('(not in user table)')}</span
 												>
 											{/if}
 										</Table.Cell>
@@ -328,7 +341,7 @@
 											>
 											{#if a.summary.dynamic.length > 0}
 												<Badge variant="muted" class="ms-1" title={a.summary.dynamic.join(', ')}
-													>{a.summary.kind === 'all' ? '+ ' : ''}{a.summary.dynamic.length} dynamic</Badge
+													>{a.summary.kind === 'all' ? '+ ' : ''}{t('{n} dynamic', { n: a.summary.dynamic.length })}</Badge
 												>
 											{/if}
 										</Table.Cell>
@@ -341,8 +354,8 @@
 													<Button
 														variant="ghost"
 														size="icon-sm"
-														aria-label="Edit user group of {a.user}"
-														title="Edit user group"
+														aria-label={t('Edit user group of {name}', { name: a.user })}
+														title={t('Edit user group')}
 														onclick={() => openGroupDialog(a.user, a.userGroup)}
 													>
 														<UsersRound />
@@ -352,7 +365,7 @@
 												<span class="text-muted-foreground">-</span>
 											{/if}
 										</Table.Cell>
-										<Table.Cell>{a.hasGrant ? 'Yes' : 'No'}</Table.Cell>
+										<Table.Cell>{a.hasGrant ? t('Yes') : t('No')}</Table.Cell>
 										<Table.Cell class="text-end">
 											<div class="flex justify-end gap-1">
 												{#if data.caps.isGrantUser}
@@ -360,8 +373,8 @@
 														variant="ghost"
 														size="icon-sm"
 														href={editHref(a)}
-														aria-label="Edit privileges of {a.user || 'Any'}@{a.host}"
-														title="Edit privileges"
+														aria-label={t('Edit privileges of {account}', { account: `${a.user || t('Any')}@${a.host}` })}
+														title={t('Edit privileges')}
 													>
 														<Pencil />
 													</Button>
@@ -373,8 +386,8 @@
 													formaction="?/export"
 													name="only"
 													value={a.value}
-													aria-label="Export {a.user || 'Any'}@{a.host}"
-													title="Export"
+													aria-label={t('Export {account}', { account: `${a.user || t('Any')}@${a.host}` })}
+													title={t('Export')}
 												>
 													<Download />
 												</Button>
@@ -384,7 +397,7 @@
 								{:else}
 									<Table.Row>
 										<Table.Cell colspan={8} class="py-8 text-center text-muted-foreground">
-											No user accounts found.
+											{t('No user accounts found.')}
 										</Table.Cell>
 									</Table.Row>
 								{/each}
@@ -397,10 +410,11 @@
 					<Card.Root>
 						<Card.Header>
 							<Card.Title class="flex items-center gap-2">
-								<Trash2 class="size-4 text-destructive" /> Remove selected user accounts
+								<Trash2 class="size-4 text-destructive" />
+								{t('Remove selected user accounts')}
 							</Card.Title>
 							<Card.Description>
-								Revoke all active privileges from the users and delete them afterwards.
+								{t('Revoke all active privileges from the users and delete them afterwards.')}
 							</Card.Description>
 						</Card.Header>
 						<Card.Content class="flex flex-wrap items-center gap-4">
@@ -408,10 +422,10 @@
 								<Checkbox
 									id="drop-users-db"
 									bind:checked={dropDatabases}
-									aria-label="Drop the databases that have the same names as the users"
+									aria-label={t('Drop the databases that have the same names as the users.')}
 								/>
 								<label for="drop-users-db" class="text-sm">
-									Drop the databases that have the same names as the users.
+									{t('Drop the databases that have the same names as the users.')}
 								</label>
 							</div>
 							<Button
@@ -420,7 +434,7 @@
 								onclick={() => (confirmOpen = true)}
 								data-testid="remove-selected"
 							>
-								Go
+								{t('Go')}
 							</Button>
 						</Card.Content>
 					</Card.Root>
@@ -437,19 +451,21 @@
 
 			<Alert>
 				<AlertDescription class="flex flex-wrap items-center gap-2">
-					Note: svelteMyAdmin gets the users' privileges directly from MySQL's privilege tables. The
-					content of these tables may differ from the privileges the server uses, if they have been
-					changed manually.
+					{t(
+						"Note: svelteMyAdmin gets the users' privileges directly from MySQL's privilege tables. The content of these tables may differ from the privileges the server uses, if they have been changed manually."
+					)}
 					{#if data.caps.canReload}
-						In this case, you should reload the privileges before you continue.
+						{t('In this case, you should reload the privileges before you continue.')}
 						<form method="POST" action="?/flush" use:enhance class="contents">
 							<Button type="submit" variant="outline" size="sm" data-testid="flush-privileges">
-								<RefreshCw /> Reload privileges
+								<RefreshCw />
+								{t('Reload privileges')}
 							</Button>
 						</form>
 					{:else}
-						In this case, the privileges have to be reloaded but currently, you don't have the
-						RELOAD privilege.
+						{t(
+							"In this case, the privileges have to be reloaded but currently, you don't have the RELOAD privilege."
+						)}
 					{/if}
 				</AlertDescription>
 			</Alert>
@@ -465,21 +481,21 @@
 >
 	<Dialog.Content class="sm:max-w-3xl" data-testid="export-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Privileges</Dialog.Title>
-			<Dialog.Description>SHOW GRANTS of the selected user accounts.</Dialog.Description>
+			<Dialog.Title>{t('Privileges')}</Dialog.Title>
+			<Dialog.Description>{t('SHOW GRANTS of the selected user accounts.')}</Dialog.Description>
 		</Dialog.Header>
 		<textarea
 			readonly
 			rows="14"
-			aria-label="Exported privileges"
+			aria-label={t('Exported privileges')}
 			data-testid="export-text"
 			class="w-full rounded-lg border bg-muted/40 p-3 font-mono text-xs"
 			value={exportText ?? ''}></textarea>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={copyExport}><Copy /> Copy</Button>
+			<Button variant="outline" onclick={copyExport}><Copy /> {t('Copy')}</Button>
 			<Dialog.Close>
 				{#snippet child({ props })}
-					<Button {...props}>Close</Button>
+					<Button {...props}>{t('Close')}</Button>
 				{/snippet}
 			</Dialog.Close>
 		</Dialog.Footer>
@@ -489,10 +505,10 @@
 <AlertDialog.Root bind:open={confirmOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Remove selected user accounts</AlertDialog.Title>
+			<AlertDialog.Title>{t('Remove selected user accounts')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				The privileges of these accounts are revoked and the accounts are deleted.
-				{#if dropDatabases}The databases with the same names as the users are dropped too.{/if}
+				{t('The privileges of these accounts are revoked and the accounts are deleted.')}
+				{#if dropDatabases}{t('The databases with the same names as the users are dropped too.')}{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<ul class="max-h-48 list-disc overflow-auto ps-6 text-sm" data-testid="drop-list">
@@ -501,7 +517,7 @@
 			{/each}
 		</ul>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={dropping}
@@ -510,7 +526,7 @@
 					dropForm?.requestSubmit();
 				}}
 			>
-				Drop
+				{t('Drop')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
@@ -524,9 +540,11 @@
 >
 	<Dialog.Content data-testid="group-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Edit user group</Dialog.Title>
+			<Dialog.Title>{t('Edit user group')}</Dialog.Title>
 			<Dialog.Description>
-				User group of '{groupDialog?.username}'. Its menu restrictions apply to this user.
+				{t("User group of '{name}'. Its menu restrictions apply to this user.", {
+					name: groupDialog?.username ?? ''
+				})}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
@@ -539,21 +557,21 @@
 					await update();
 					savingGroup = false;
 					if (result.type === 'success') {
-						toast.success('The user group was updated.');
+						toast.success(t('The user group was updated.'));
 						groupDialog = null;
 					}
 				};
 			}}
 		>
 			<input type="hidden" name="username" value={groupDialog?.username ?? ''} />
-			<NativeSelect name="usergroup" value={groupDialog?.group ?? ''} aria-label="User group">
-				<NativeSelectOption value="">(no group)</NativeSelectOption>
+			<NativeSelect name="usergroup" value={groupDialog?.group ?? ''} aria-label={t('User group')}>
+				<NativeSelectOption value="">{t('(no group)')}</NativeSelectOption>
 				{#each data.state === 'ok' && data.userGroups ? data.userGroups.groups : [] as g (g)}
 					<NativeSelectOption value={g}>{g}</NativeSelectOption>
 				{/each}
 			</NativeSelect>
 			<Dialog.Footer>
-				<Button type="submit" disabled={savingGroup} data-testid="group-dialog-go">Go</Button>
+				<Button type="submit" disabled={savingGroup} data-testid="group-dialog-go">{t('Go')}</Button>
 			</Dialog.Footer>
 		</form>
 	</Dialog.Content>

@@ -37,8 +37,10 @@
 		MonitorSettings,
 		RawSample
 	} from '#lib/monitor/types.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data }: PageProps = $props();
 
 	let settings = $state<MonitorSettings>(structuredClone(DEFAULT_SETTINGS));
@@ -81,7 +83,7 @@
 			prev = { raw, at: json.x };
 			error = '';
 		} catch {
-			error = 'Could not fetch monitor data.';
+			error = t('Could not fetch monitor data.');
 		}
 	}
 
@@ -139,14 +141,15 @@
 </script>
 
 <svelte:head>
-	<title>Monitor - svelteMyAdmin</title>
+	<title>{t('Monitor')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6" data-testid="monitor">
 	<Card.Root class="py-4">
 		<Card.Content class="flex flex-wrap items-end gap-x-4 gap-y-3">
 			<Button onclick={() => (addOpen = true)} data-testid="add-chart">
-				<Plus /> Add chart
+				<Plus />
+				{t('Add chart')}
 			</Button>
 			<Button
 				variant="outline"
@@ -154,10 +157,10 @@
 				aria-pressed={paused}
 				data-testid="pause"
 			>
-				{#if paused}<Play /> Resume{:else}<Pause /> Pause{/if}
+				{#if paused}<Play /> {t('Resume')}{:else}<Pause /> {t('Pause')}{/if}
 			</Button>
 			<div class="flex flex-col gap-1">
-				<Label for="refresh-rate" class="text-xs text-muted-foreground">Refresh rate</Label>
+				<Label for="refresh-rate" class="text-xs text-muted-foreground">{t('Refresh rate')}</Label>
 				<NativeSelect
 					id="refresh-rate"
 					bind:value={refreshValue.v}
@@ -165,12 +168,12 @@
 					data-testid="refresh-rate"
 				>
 					{#each REFRESH_RATES as r (r)}
-						<NativeSelectOption value={String(r)}>{refreshLabel(r)}</NativeSelectOption>
+						<NativeSelectOption value={String(r)}>{refreshLabel(r, t)}</NativeSelectOption>
 					{/each}
 				</NativeSelect>
 			</div>
 			<div class="flex flex-col gap-1">
-				<Label for="chart-columns" class="text-xs text-muted-foreground">Columns</Label>
+				<Label for="chart-columns" class="text-xs text-muted-foreground">{t('Columns')}</Label>
 				<NativeSelect
 					id="chart-columns"
 					bind:value={columnsValue.v}
@@ -183,10 +186,11 @@
 				</NativeSelect>
 			</div>
 			<Button variant="ghost" onclick={reset} data-testid="reset-charts">
-				<RotateCcw /> Reset to defaults
+				<RotateCcw />
+				{t('Reset to defaults')}
 			</Button>
 			{#if paused}
-				<span class="text-sm text-muted-foreground" data-testid="paused-note">Paused</span>
+				<span class="text-sm text-muted-foreground" data-testid="paused-note">{t('Paused')}</span>
 			{/if}
 		</Card.Content>
 	</Card.Root>
@@ -206,8 +210,9 @@
 	/>
 
 	<p class="text-xs text-muted-foreground">
-		System charts (CPU, memory, swap) are not offered: phpMyAdmin only shows them when the database
-		server runs on the same host as the web application, which cannot be assumed here.
+		{t(
+			'System charts (CPU, memory, swap) are not offered: phpMyAdmin only shows them when the database server runs on the same host as the web application, which cannot be assumed here.'
+		)}
 	</p>
 
 	{#if data.logging}

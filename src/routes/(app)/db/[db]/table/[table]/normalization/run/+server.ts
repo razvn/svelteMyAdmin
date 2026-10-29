@@ -16,13 +16,13 @@ const body = z.discriminatedUnion('kind', [
 /** JSON API of the wizard: table info, data based partial dependencies, and the executing steps. */
 export const POST: RequestHandler = async ({ request, locals, params }) => {
 	const parsed = body.safeParse(await request.json().catch(() => null));
-	if (!parsed.success) error(400, 'Invalid request');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid request'));
 	const dbi = await locals.dbi;
 	const { db, table } = params;
 	const b = parsed.data;
 	if (b.kind === 'info') {
 		const info = await loadTableInfo(dbi, db, b.table);
-		if (!info) error(404, 'Table not found');
+		if (!info) error(404, locals.i18n.t('Table not found'));
 		return Response.json({ info });
 	}
 	if (b.kind === 'pd') {

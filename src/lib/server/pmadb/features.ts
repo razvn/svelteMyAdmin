@@ -6,6 +6,7 @@
 import type { Connection } from 'mysql2/promise';
 import createTablesSql from '../../../../docker/initdb/create_tables.sql?raw';
 import { escapeId, escapeQualified } from '#lib/server/db/escape.ts';
+import { N_ } from '#lib/i18n/index.ts';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
 import { withControl, type StorageKey } from './index.ts';
 
@@ -20,49 +21,49 @@ export interface FeatureDef {
 
 /** In the order of check_relations.twig. */
 export const PMA_FEATURES: readonly FeatureDef[] = [
-	{ key: 'relation', table: 'pma__relation', enables: 'General relation features' },
-	{ key: 'table_info', table: 'pma__table_info', enables: 'Display features' },
-	{ key: 'table_coords', table: 'pma__table_coords', enables: 'Designer and creation of PDFs' },
-	{ key: 'pdf_pages', table: 'pma__pdf_pages', enables: 'Designer and creation of PDFs' },
+	{ key: 'relation', table: 'pma__relation', enables: N_('General relation features') },
+	{ key: 'table_info', table: 'pma__table_info', enables: N_('Display features') },
+	{ key: 'table_coords', table: 'pma__table_coords', enables: N_('Designer and creation of PDFs') },
+	{ key: 'pdf_pages', table: 'pma__pdf_pages', enables: N_('Designer and creation of PDFs') },
 	{
 		key: 'column_info',
 		table: 'pma__column_info',
-		enables: 'Displaying column comments, browser transformation'
+		enables: N_('Displaying column comments, browser transformation')
 	},
-	{ key: 'bookmarktable', table: 'pma__bookmark', enables: 'Bookmarked SQL query' },
-	{ key: 'history', table: 'pma__history', enables: 'SQL history' },
-	{ key: 'recent', table: 'pma__recent', enables: 'Persistent recently used tables' },
-	{ key: 'favorite', table: 'pma__favorite', enables: 'Persistent favorite tables' },
+	{ key: 'bookmarktable', table: 'pma__bookmark', enables: N_('Bookmarked SQL query') },
+	{ key: 'history', table: 'pma__history', enables: N_('SQL history') },
+	{ key: 'recent', table: 'pma__recent', enables: N_('Persistent recently used tables') },
+	{ key: 'favorite', table: 'pma__favorite', enables: N_('Persistent favorite tables') },
 	{
 		key: 'table_uiprefs',
 		table: 'pma__table_uiprefs',
-		enables: "Persistent tables' UI preferences"
+		enables: N_("Persistent tables' UI preferences")
 	},
-	{ key: 'tracking', table: 'pma__tracking', enables: 'Tracking' },
-	{ key: 'userconfig', table: 'pma__userconfig', enables: 'User preferences' },
-	{ key: 'users', table: 'pma__users', enables: 'Configurable menus' },
-	{ key: 'usergroups', table: 'pma__usergroups', enables: 'Configurable menus' },
+	{ key: 'tracking', table: 'pma__tracking', enables: N_('Tracking') },
+	{ key: 'userconfig', table: 'pma__userconfig', enables: N_('User preferences') },
+	{ key: 'users', table: 'pma__users', enables: N_('Configurable menus') },
+	{ key: 'usergroups', table: 'pma__usergroups', enables: N_('Configurable menus') },
 	{
 		key: 'navigationhiding',
 		table: 'pma__navigationhiding',
-		enables: 'Hide/show navigation items'
+		enables: N_('Hide/show navigation items')
 	},
 	{
 		key: 'savedsearches',
 		table: 'pma__savedsearches',
-		enables: 'Saving Query-By-Example searches'
+		enables: N_('Saving Query-By-Example searches')
 	},
 	{
 		key: 'central_columns',
 		table: 'pma__central_columns',
-		enables: 'Managing central list of columns'
+		enables: N_('Managing central list of columns')
 	},
 	{
 		key: 'designer_settings',
 		table: 'pma__designer_settings',
-		enables: 'Remembering designer settings'
+		enables: N_('Remembering designer settings')
 	},
-	{ key: 'export_templates', table: 'pma__export_templates', enables: 'Saving export templates' }
+	{ key: 'export_templates', table: 'pma__export_templates', enables: N_('Saving export templates') }
 ];
 
 type StorageServer = Partial<Pick<ServerConfig, StorageKey | 'pmadb'>>;

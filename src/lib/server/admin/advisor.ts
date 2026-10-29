@@ -3,6 +3,7 @@ import os from 'node:os';
 import type { Connection } from 'mysql2/promise';
 import { runAdvisor } from '#lib/advisor/engine.ts';
 import type { AdvisorRunResult } from '#lib/advisor/types.ts';
+import type { Translator } from '#lib/i18n/translator.ts';
 import { detectServerType, versionToInt } from '#lib/server/db/dbi.ts';
 
 type Row = Record<string, unknown>;
@@ -28,7 +29,11 @@ export function localSystemMemoryKiB(host: string | undefined): number {
 	return LOCAL.has((host ?? '').toLowerCase()) ? Math.round(os.totalmem() / 1024) : 0;
 }
 
-export async function getAdvisorResult(conn: Connection, host?: string): Promise<AdvisorRunResult> {
+export async function getAdvisorResult(
+	conn: Connection,
+	host?: string,
+	i18n?: Translator
+): Promise<AdvisorRunResult> {
 	const [status, variables] = await Promise.all([
 		keyValue(conn, 'SHOW GLOBAL STATUS'),
 		keyValue(conn, 'SHOW GLOBAL VARIABLES')
@@ -42,6 +47,7 @@ export async function getAdvisorResult(conn: Connection, host?: string): Promise
 		variables,
 		versionInt: versionToInt(version),
 		isMariaDB,
-		systemMemory: localSystemMemoryKiB(host)
+		systemMemory: localSystemMemoryKiB(host),
+		i18n
 	});
 }

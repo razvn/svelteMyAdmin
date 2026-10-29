@@ -3,6 +3,7 @@
  * System charts (CPU / memory / swap) are intentionally absent: phpMyAdmin reads them from the web host
  * and only offers them when the database runs on the same machine, which this app cannot assume.
  */
+import { N_ } from '#lib/i18n/index.ts';
 import {
 	REFRESH_RATES,
 	SettingsSchema,
@@ -35,19 +36,19 @@ export interface Preset {
 export const PRESETS: Preset[] = [
 	{
 		key: 'questions',
-		label: 'Questions',
-		chart: { title: 'Questions', unit: '/s', series: [diff('Questions', 'Questions')] }
+		label: N_('Questions'),
+		chart: { title: N_('Questions'), unit: '/s', series: [diff(N_('Questions'), 'Questions')] }
 	},
 	{
 		key: 'connections',
-		label: 'Connections / Processes',
+		label: N_('Connections / Processes'),
 		chart: {
-			title: 'Connections / Processes',
+			title: N_('Connections / Processes'),
 			unit: '',
 			series: [
-				diff('Connections /s', 'Connections'),
+				diff(N_('Connections /s'), 'Connections'),
 				{
-					label: 'Processes',
+					label: N_('Processes'),
 					points: [{ type: 'proc', name: 'processes' }],
 					display: 'absolute',
 					divisor: 1
@@ -57,86 +58,86 @@ export const PRESETS: Preset[] = [
 	},
 	{
 		key: 'traffic',
-		label: 'Traffic',
+		label: N_('Traffic'),
 		chart: {
-			title: 'Traffic',
+			title: N_('Traffic'),
 			unit: 'KiB/s',
 			series: [
-				diff('Bytes sent', 'Bytes_sent', 1024),
-				diff('Bytes received', 'Bytes_received', 1024)
+				diff(N_('Bytes sent'), 'Bytes_sent', 1024),
+				diff(N_('Bytes received'), 'Bytes_received', 1024)
 			]
 		}
 	},
 	{
 		key: 'threads',
-		label: 'Threads',
+		label: N_('Threads'),
 		chart: {
-			title: 'Threads',
+			title: N_('Threads'),
 			unit: '',
-			series: [abs('Connected', 'Threads_connected'), abs('Running', 'Threads_running')]
+			series: [abs(N_('Connected'), 'Threads_connected'), abs(N_('Running'), 'Threads_running')]
 		}
 	},
 	{
 		key: 'innodb_buffer_pool',
-		label: 'InnoDB buffer pool',
+		label: N_('InnoDB buffer pool'),
 		chart: {
-			title: 'InnoDB buffer pool',
+			title: N_('InnoDB buffer pool'),
 			unit: '/s',
 			series: [
-				diff('Read requests', 'Innodb_buffer_pool_read_requests'),
-				diff('Disk reads', 'Innodb_buffer_pool_reads')
+				diff(N_('Read requests'), 'Innodb_buffer_pool_read_requests'),
+				diff(N_('Disk reads'), 'Innodb_buffer_pool_reads')
 			]
 		}
 	},
 	{
 		key: 'innodb_pages',
-		label: 'InnoDB buffer pool pages',
+		label: N_('InnoDB buffer pool pages'),
 		chart: {
-			title: 'InnoDB buffer pool pages',
+			title: N_('InnoDB buffer pool pages'),
 			unit: 'pages',
 			series: [
-				abs('Data pages', 'Innodb_buffer_pool_pages_data'),
-				abs('Free pages', 'Innodb_buffer_pool_pages_free')
+				abs(N_('Data pages'), 'Innodb_buffer_pool_pages_data'),
+				abs(N_('Free pages'), 'Innodb_buffer_pool_pages_free')
 			]
 		}
 	},
 	{
 		key: 'table_locks',
-		label: 'Table locks',
+		label: N_('Table locks'),
 		chart: {
-			title: 'Table locks',
+			title: N_('Table locks'),
 			unit: '/s',
-			series: [diff('Immediate', 'Table_locks_immediate'), diff('Waited', 'Table_locks_waited')]
+			series: [diff(N_('Immediate'), 'Table_locks_immediate'), diff(N_('Waited'), 'Table_locks_waited')]
 		}
 	},
 	{
 		key: 'handler_read',
-		label: 'Handler read',
+		label: N_('Handler read'),
 		chart: {
-			title: 'Handler read',
+			title: N_('Handler read'),
 			unit: '/s',
 			series: [
-				diff('Handler_read_key', 'Handler_read_key'),
-				diff('Handler_read_next', 'Handler_read_next'),
-				diff('Handler_read_rnd', 'Handler_read_rnd'),
-				diff('Handler_read_rnd_next', 'Handler_read_rnd_next')
+				diff(N_('Handler_read_key'), 'Handler_read_key'),
+				diff(N_('Handler_read_next'), 'Handler_read_next'),
+				diff(N_('Handler_read_rnd'), 'Handler_read_rnd'),
+				diff(N_('Handler_read_rnd_next'), 'Handler_read_rnd_next')
 			]
 		}
 	},
 	{
 		key: 'slow_queries',
-		label: 'Slow queries',
-		chart: { title: 'Slow queries', unit: '/s', series: [diff('Slow queries', 'Slow_queries')] }
+		label: N_('Slow queries'),
+		chart: { title: N_('Slow queries'), unit: '/s', series: [diff(N_('Slow queries'), 'Slow_queries')] }
 	},
 	{
 		key: 'qce',
-		label: 'Query cache efficiency (MariaDB / MySQL < 8)',
+		label: N_('Query cache efficiency (MariaDB / MySQL < 8)'),
 		chart: {
-			title: 'Query cache efficiency',
+			title: N_('Query cache efficiency'),
 			unit: '%',
 			series: [
 				{
-					label: 'Query cache efficiency',
+					label: N_('Query cache efficiency'),
 					points: [status('Qcache_hits'), status('Com_select')],
 					display: 'differential',
 					divisor: 1,
@@ -147,13 +148,13 @@ export const PRESETS: Preset[] = [
 	},
 	{
 		key: 'qcu',
-		label: 'Query cache usage (MariaDB / MySQL < 8)',
+		label: N_('Query cache usage (MariaDB / MySQL < 8)'),
 		chart: {
-			title: 'Query cache usage',
+			title: N_('Query cache usage'),
 			unit: '%',
 			series: [
 				{
-					label: 'Query cache used',
+					label: N_('Query cache used'),
 					points: [status('Qcache_free_memory'), { type: 'servervar', name: 'query_cache_size' }],
 					display: 'absolute',
 					divisor: 1,
@@ -222,8 +223,11 @@ export function saveSettings(
 	}
 }
 
-export function refreshLabel(seconds: number): string {
-	return seconds >= 60 ? `${seconds / 60} min` : `${seconds} s`;
+export function refreshLabel(
+	seconds: number,
+	t: (msgid: string, params?: Record<string, number>) => string
+): string {
+	return seconds >= 60 ? t('{n} min', { n: seconds / 60 }) : t('{n} s', { n: seconds });
 }
 
 export { REFRESH_RATES };

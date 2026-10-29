@@ -8,8 +8,10 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const status = $derived(data.status);
@@ -31,19 +33,21 @@
 </script>
 
 <svelte:head>
-	<title>Configuration storage - svelteMyAdmin</title>
+	<title>{t('Configuration storage')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={DatabaseZap}
-		title="Configuration storage"
-		description="phpMyAdmin configuration storage (pmadb): the tables behind bookmarks, relations, history, favorites and more."
+		title={t('Configuration storage')}
+		description={t(
+			'phpMyAdmin configuration storage (pmadb): the tables behind bookmarks, relations, history, favorites and more.'
+		)}
 	/>
 
 	{#if error}
 		<Alert variant="destructive" role="alert" data-testid="storage-error">
-			<AlertTitle>Could not create the configuration storage</AlertTitle>
+			<AlertTitle>{t('Could not create the configuration storage')}</AlertTitle>
 			<AlertDescription>{error}</AlertDescription>
 		</Alert>
 	{/if}
@@ -51,15 +55,18 @@
 		<Alert variant="success" role="status" data-testid="storage-created">
 			<AlertTitle>
 				{created.created.length === 0
-					? 'Nothing to create'
-					: `Created ${created.created.length} table${created.created.length === 1 ? '' : 's'} in ${created.db}`}
+					? t('Nothing to create')
+					: tn('Created {n} table in {db}', 'Created {n} tables in {db}', created.created.length, {
+							db: created.db
+						})}
 			</AlertTitle>
 			<AlertDescription>
 				{created.created.join(', ')}
 				{#if configSnippet}
 					<p class="mt-1">
-						Set <code>{configSnippet}</code> (and the table names) in the server configuration to use
-						it.
+						{t('Set {setting} (and the table names) in the server configuration to use it.', {
+							setting: configSnippet
+						})}
 					</p>
 				{/if}
 			</AlertDescription>
@@ -68,17 +75,19 @@
 
 	{#if !status.configured}
 		<Alert variant="warning" data-testid="storage-unconfigured">
-			<AlertTitle>Configuration of pmadb... not OK</AlertTitle>
+			<AlertTitle>{t('Configuration of pmadb... not OK')}</AlertTitle>
 			<AlertDescription>
-				General relation features are disabled. Set <code>pmadb</code> and the table names in the
-				server configuration, or create the database <code>{status.pmadb}</code> and its tables now.
+				{t(
+					'General relation features are disabled. Set pmadb and the table names in the server configuration, or create the database {db} and its tables now.',
+					{ db: status.pmadb }
+				)}
 			</AlertDescription>
 		</Alert>
 	{:else if !status.reachable}
 		<Alert variant="warning" data-testid="storage-unreachable">
-			<AlertTitle>The database <code>{status.pmadb}</code> is not reachable</AlertTitle>
+			<AlertTitle>{t('The database {db} is not reachable', { db: status.pmadb })}</AlertTitle>
 			<AlertDescription>
-				It does not exist or the control user cannot read it. You can create it below.
+				{t('It does not exist or the control user cannot read it. You can create it below.')}
 			</AlertDescription>
 		</Alert>
 	{/if}
@@ -86,9 +95,9 @@
 	{#if !status.allWorks}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Create the storage</Card.Title>
+				<Card.Title>{t('Create the storage')}</Card.Title>
 				<Card.Description>
-					Runs phpMyAdmin's <code>create_tables.sql</code> with your account.
+					{t("Runs phpMyAdmin's create_tables.sql with your account.")}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
@@ -106,8 +115,8 @@
 				>
 					<Button type="submit" disabled={busy} data-testid="create-storage">
 						{status.reachable
-							? 'Create missing configuration storage tables'
-							: `Create database ${status.pmadb} and its tables`}
+							? t('Create missing configuration storage tables')
+							: t('Create database {db} and its tables', { db: status.pmadb })}
 					</Button>
 				</form>
 
@@ -123,15 +132,15 @@
 						};
 					}}
 				>
-					<label class="text-sm" for="fix-db">Create the tables in another database</label>
-					<NativeSelect id="fix-db" name="db" value={data.currentDb} aria-label="Database">
-						<NativeSelectOption value="">Choose...</NativeSelectOption>
+					<label class="text-sm" for="fix-db">{t('Create the tables in another database')}</label>
+					<NativeSelect id="fix-db" name="db" value={data.currentDb} aria-label={t('Database')}>
+						<NativeSelectOption value="">{t('Choose...')}</NativeSelectOption>
 						{#each data.databases as db (db)}
 							<NativeSelectOption value={db}>{db}</NativeSelectOption>
 						{/each}
 					</NativeSelect>
 					<Button type="submit" variant="outline" disabled={busy} data-testid="create-in-db">
-						Create
+						{t('Create')}
 					</Button>
 				</form>
 			</Card.Content>
@@ -147,7 +156,7 @@
 					variant={status.allWorks ? 'success' : status.configured ? 'warning' : 'destructive'}
 					data-testid="storage-summary"
 				>
-					{status.allWorks ? 'All features work' : `${status.missing} not OK`}
+					{status.allWorks ? t('All features work') : t('{n} not OK', { n: status.missing })}
 				</Badge>
 			</Card.Title>
 		</Card.Header>
@@ -155,10 +164,10 @@
 			<Table.Root data-testid="storage-table">
 				<Table.Header>
 					<Table.Row>
-						<Table.Head>Setting</Table.Head>
-						<Table.Head>Table</Table.Head>
-						<Table.Head>Enables</Table.Head>
-						<Table.Head class="text-end">Status</Table.Head>
+						<Table.Head>{t('Setting')}</Table.Head>
+						<Table.Head>{t('Table')}</Table.Head>
+						<Table.Head>{t('Enables')}</Table.Head>
+						<Table.Head class="text-end">{t('Status')}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -166,12 +175,12 @@
 						<Table.Row data-testid="feature-{f.key}">
 							<Table.Cell class="font-mono">{f.key}</Table.Cell>
 							<Table.Cell class="font-mono">{f.name || '-'}</Table.Cell>
-							<Table.Cell class="whitespace-normal">{f.enables}</Table.Cell>
+							<Table.Cell class="whitespace-normal">{t(f.enables)}</Table.Cell>
 							<Table.Cell class="text-end">
 								{#if f.ok}
-									<Badge variant="success">OK</Badge>
+									<Badge variant="success">{t('OK')}</Badge>
 								{:else}
-									<Badge variant="destructive">not OK</Badge>
+									<Badge variant="destructive">{t('not OK')}</Badge>
 								{/if}
 							</Table.Cell>
 						</Table.Row>

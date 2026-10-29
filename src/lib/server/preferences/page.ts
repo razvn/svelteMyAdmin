@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Glue of the `/server/settings` pages: serializable form views built from the descriptor list and the
  * save/import/reset operations on the stored preferences.
@@ -65,9 +66,9 @@ function effectiveForm(form: PrefForm, developerTab: boolean): PrefForm {
 			...form.sections,
 			{
 				id: 'Developer',
-				title: 'Developer',
+				title: N_('Developer'),
 				keys: DEVELOPER_KEYS,
-				description: 'Settings for phpMyAdmin developers.'
+				description: N_('Settings for phpMyAdmin developers.')
 			}
 		]
 	};
@@ -130,7 +131,7 @@ export async function saveForm(
 	secure: boolean
 ): Promise<SaveResult> {
 	const form = formById(formId);
-	if (!form) return { ok: false, errors: {}, values: {}, message: 'Unknown form' };
+	if (!form) return { ok: false, errors: {}, values: {}, message: locals.i18n.t('Unknown form') };
 	const prefs = await loadPrefs(locals, cookies);
 	const view = buildFormView(form, prefs.data, locals.serverIndex);
 	const b = base();
@@ -146,7 +147,7 @@ export async function saveForm(
 			values[f.path] = posted ?? f.value;
 			const c = coerceFormValue(def, posted);
 			if (!c.ok) {
-				errors[f.path] = c.error;
+				errors[f.path] = locals.i18n.t(c.error, { min: def.min ?? 0 });
 				continue;
 			}
 			// MaxDbList & co: users cannot set a higher value than the server
@@ -156,7 +157,7 @@ export async function saveForm(
 				typeof c.value === 'number' &&
 				c.value > Number(f.serverDefault)
 			) {
-				errors[f.path] = 'Users cannot set a higher value';
+				errors[f.path] = locals.i18n.t('Users cannot set a higher value');
 				continue;
 			}
 			if (valuesEqual(c.value, serverDefault(def, b, locals.serverIndex))) delete next[f.path];
@@ -191,7 +192,7 @@ export async function importPrefs(
 		serverIndex: locals.serverIndex
 	};
 	const parsed = parseImport(text, opts);
-	if (!parsed.ok) return { ok: false, error: parsed.error };
+	if (!parsed.ok) return { ok: false, error: locals.i18n.t(parsed.error) };
 	const existing = (await loadPrefs(locals, cookies)).data;
 	// the two-factor setting is only changed on its own page (an imported file must not disable it)
 	const imported = { ...parsed.data };

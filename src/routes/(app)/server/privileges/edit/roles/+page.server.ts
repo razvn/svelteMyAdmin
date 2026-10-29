@@ -1,3 +1,4 @@
+import { errorText } from '#lib/server/privileges/index.ts';
 import { error, fail } from '@sveltejs/kit';
 import {
 	editContext,
@@ -24,7 +25,7 @@ function parseRoleValue(
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = await editContext(locals, url);
-	if (!supportsRoles(ctx.server)) error(404, 'Roles are not supported by this server.');
+	if (!supportsRoles(ctx.server)) error(404, locals.i18n.t('Roles are not supported by this server.'));
 	const base = await loadEditBase(ctx);
 	const common = { account: ctx.account, server: ctx.server, isGrantUser: ctx.caps.isGrantUser };
 	if (base.state !== 'ok') return { ...common, ...base };
@@ -47,28 +48,28 @@ export const actions: Actions = {
 		const ctx = await editContext(locals, url);
 		const fd = await request.formData();
 		const role = parseRoleValue(fd.get('role'));
-		if (!role) return fail(400, { error: 'No role selected.', results: [] });
+		if (!role) return fail(400, { error: locals.i18n.t('No role selected.'), results: [] });
 		const res = await grantRoleTo(ctx.dbi, ctx.server, ctx.caps, {
 			role: role.role,
 			roleHost: role.host ?? undefined,
 			to: ctx.account,
 			adminOption: fd.get('admin_option') !== null
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
-		return { saved: `The role ${role.role} was granted.`, results: res.results };
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
+		return { saved: locals.i18n.t('The role {name} was granted.', { name: role.role }), results: res.results };
 	},
 
 	revoke: async ({ request, locals, url }) => {
 		const ctx = await editContext(locals, url);
 		const role = parseRoleValue((await request.formData()).get('role'));
-		if (!role) return fail(400, { error: 'No role selected.', results: [] });
+		if (!role) return fail(400, { error: locals.i18n.t('No role selected.'), results: [] });
 		const res = await revokeRoleFrom(ctx.dbi, ctx.server, ctx.caps, {
 			role: role.role,
 			roleHost: role.host ?? undefined,
 			from: ctx.account
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
-		return { saved: `The role ${role.role} was revoked.`, results: res.results };
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
+		return { saved: locals.i18n.t('The role {name} was revoked.', { name: role.role }), results: res.results };
 	},
 
 	defaults: async ({ request, locals, url }) => {
@@ -82,7 +83,7 @@ export const actions: Actions = {
 			account: ctx.account,
 			roles
 		});
-		if (!res.ok) return fail(400, { error: res.error ?? null, results: res.results });
-		return { saved: 'The default roles were updated.', results: res.results };
+		if (!res.ok) return fail(400, { error: errorText(res, locals.i18n), results: res.results });
+		return { saved: locals.i18n.t('The default roles were updated.'), results: res.results };
 	}
 };

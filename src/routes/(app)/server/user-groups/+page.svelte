@@ -11,14 +11,16 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const LEVEL_TITLES: Record<string, string> = {
-		server: 'Server-level tabs',
-		db: 'Database-level tabs',
-		table: 'Table-level tabs'
+		server: N_('Server-level tabs'),
+		db: N_('Database-level tabs'),
+		table: N_('Table-level tabs')
 	};
 
 	let deleteTarget = $state<string | null>(null);
@@ -32,41 +34,42 @@
 </script>
 
 <svelte:head>
-	<title>User groups - svelteMyAdmin</title>
+	<title>{t('User groups')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={UsersRound}
-		title="User groups"
-		description="Restrict the menu tabs available to the members of a group."
+		title={t('User groups')}
+		description={t('Restrict the menu tabs available to the members of a group.')}
 	>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges">Back to user accounts</Button>
+			<Button variant="outline" href="/server/privileges">{t('Back to user accounts')}</Button>
 			{#if data.state === 'ok'}
-				<Button href="/server/user-groups?add" data-testid="add-group">Add user group</Button>
+				<Button href="/server/user-groups?add" data-testid="add-group">{t('Add user group')}</Button>
 			{/if}
 		{/snippet}
 	</PageHeader>
 
 	{#if data.state === 'disabled'}
 		<Alert role="status" data-testid="groups-disabled">
-			<AlertTitle>User groups are not available</AlertTitle>
+			<AlertTitle>{t('User groups are not available')}</AlertTitle>
 			<AlertDescription>
-				The <code>users</code> and <code>usergroups</code> tables of the configuration storage are
-				not configured or not reachable.
+				{t(
+					'The users and usergroups tables of the configuration storage are not configured or not reachable.'
+				)}
 				<a
 					class="text-primary underline"
 					href="https://docs.phpmyadmin.net/en/latest/config.html#cfg_Servers_usergroups"
 					target="_blank"
-					rel="noreferrer">See the documentation</a
+					rel="noreferrer">{t('See the documentation')}</a
 				>.
 			</AlertDescription>
 		</Alert>
 	{:else if data.state === 'no-privileges'}
 		<Alert variant="destructive" role="alert">
-			<AlertTitle>No Privileges</AlertTitle>
-			<AlertDescription>You do not have the privileges to manage user groups.</AlertDescription>
+			<AlertTitle>{t('No Privileges')}</AlertTitle>
+			<AlertDescription>{t('You do not have the privileges to manage user groups.')}</AlertDescription>
 		</Alert>
 	{:else}
 		{#if err}
@@ -74,12 +77,12 @@
 		{/if}
 		{#if form && 'saved' in form && form.saved}
 			<Alert variant="success" role="status" data-testid="group-saved">
-				<AlertDescription>The user group "{form.saved}" was saved.</AlertDescription>
+				<AlertDescription>{t('The user group "{name}" was saved.', { name: form.saved })}</AlertDescription>
 			</Alert>
 		{/if}
 		{#if form && 'deleted' in form && form.deleted}
 			<Alert variant="success" role="status" data-testid="group-deleted">
-				<AlertDescription>The user group "{form.deleted}" was deleted.</AlertDescription>
+				<AlertDescription>{t('The user group "{name}" was deleted.', { name: form.deleted })}</AlertDescription>
 			</Alert>
 		{/if}
 
@@ -87,9 +90,9 @@
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>
-						{#if editing}Edit user group: '{editing.name}'{:else}Add user group{/if}
+						{#if editing}{t("Edit user group: '{name}'", { name: editing.name })}{:else}{t('Add user group')}{/if}
 					</Card.Title>
-					<Card.Description>User group menu assignments</Card.Description>
+					<Card.Description>{t('User group menu assignments')}</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<form method="POST" action="?/save" use:enhance class="flex flex-col gap-5">
@@ -98,21 +101,21 @@
 							<input type="hidden" name="userGroup" value={editing.name} />
 						{:else}
 							<label class="flex max-w-md flex-col gap-1.5 text-sm font-medium">
-								Group name
+								{t('Group name')}
 								<Input
 									name="userGroup"
 									maxlength={64}
 									required
 									autocomplete="off"
-									placeholder="Group name"
-									aria-label="Group name"
+									placeholder={t('Group name')}
+									aria-label={t('Group name')}
 								/>
 							</label>
 						{/if}
 						<div class="grid gap-4 md:grid-cols-3">
 							{#each data.levelTabs as l (l.level)}
 								<fieldset class="rounded-lg border p-4" data-testid="tabs-{l.level}">
-									<legend class="px-1 text-sm font-medium">{LEVEL_TITLES[l.level]}</legend>
+									<legend class="px-1 text-sm font-medium">{t(LEVEL_TITLES[l.level])}</legend>
 									<div class="flex flex-col gap-2">
 										{#each l.tabs as tab (tab.key)}
 											<label class="flex items-center gap-2 text-sm">
@@ -123,7 +126,7 @@
 													checked={editing ? editing.checked.includes(tab.key) : false}
 													class="size-4 accent-primary"
 												/>
-												{tab.label}
+												{t(tab.label)}
 											</label>
 										{/each}
 									</div>
@@ -131,8 +134,8 @@
 							{/each}
 						</div>
 						<div class="flex gap-2">
-							<Button type="submit" data-testid="save-group">Go</Button>
-							<Button variant="outline" href="/server/user-groups">Cancel</Button>
+							<Button type="submit" data-testid="save-group">{t('Go')}</Button>
+							<Button variant="outline" href="/server/user-groups">{t('Cancel')}</Button>
 						</div>
 					</form>
 				</Card.Content>
@@ -142,12 +145,12 @@
 		{#if data.members}
 			<Card.Root data-testid="group-members">
 				<Card.Header>
-					<Card.Title>Users of '{data.members.group}' user group</Card.Title>
+					<Card.Title>{t("Users of '{group}' user group", { group: data.members.group })}</Card.Title>
 				</Card.Header>
 				<Card.Content>
 					{#if data.members.users.length === 0}
 						<p class="text-sm text-muted-foreground">
-							No users were found belonging to this user group.
+							{t('No users were found belonging to this user group.')}
 						</p>
 					{:else}
 						<ol class="list-decimal ps-6 text-sm">
@@ -162,11 +165,11 @@
 			<Table.Root data-testid="groups-table">
 				<Table.Header>
 					<Table.Row>
-						<Table.Head>User groups</Table.Head>
-						<Table.Head>Server level tabs</Table.Head>
-						<Table.Head>Database level tabs</Table.Head>
-						<Table.Head>Table level tabs</Table.Head>
-						<Table.Head class="text-end">Action</Table.Head>
+						<Table.Head>{t('User groups')}</Table.Head>
+						<Table.Head>{t('Server level tabs')}</Table.Head>
+						<Table.Head>{t('Database level tabs')}</Table.Head>
+						<Table.Head>{t('Table level tabs')}</Table.Head>
+						<Table.Head class="text-end">{t('Action')}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -184,8 +187,8 @@
 										variant="ghost"
 										size="icon-sm"
 										href="/server/user-groups?users={encodeURIComponent(g.name)}"
-										aria-label="View users of {g.name}"
-										title="View users"
+										aria-label={t('View users of {name}', { name: g.name })}
+										title={t('View users')}
 									>
 										<UserCheck />
 									</Button>
@@ -193,16 +196,16 @@
 										variant="ghost"
 										size="icon-sm"
 										href="/server/user-groups?edit={encodeURIComponent(g.name)}"
-										aria-label="Edit {g.name}"
-										title="Edit"
+										aria-label={t('Edit {name}', { name: g.name })}
+										title={t('Edit')}
 									>
 										<Pencil />
 									</Button>
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										aria-label="Delete {g.name}"
-										title="Delete"
+										aria-label={t('Delete {name}', { name: g.name })}
+										title={t('Delete')}
 										onclick={() => (deleteTarget = g.name)}
 									>
 										<Trash2 />
@@ -213,7 +216,7 @@
 					{:else}
 						<Table.Row>
 							<Table.Cell colspan={5} class="py-8 text-center text-muted-foreground">
-								No user groups found.
+								{t('No user groups found.')}
 							</Table.Cell>
 						</Table.Row>
 					{/each}
@@ -231,10 +234,12 @@
 >
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete user group</AlertDialog.Title>
+			<AlertDialog.Title>{t('Delete user group')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				Delete the user group "{deleteTarget}"? Its members lose the group and all menu tabs become
-				available to them again.
+				{t(
+					'Delete the user group "{name}"? Its members lose the group and all menu tabs become available to them again.',
+					{ name: deleteTarget ?? '' }
+				)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<form
@@ -253,7 +258,7 @@
 			<input type="hidden" name="userGroup" value={deleteTarget ?? ''} />
 		</form>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				disabled={deleting}
@@ -262,7 +267,7 @@
 					deleteForm?.requestSubmit();
 				}}
 			>
-				Delete
+				{t('Delete')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

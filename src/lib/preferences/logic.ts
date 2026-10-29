@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Pure user preference logic shared by the server (merge into the effective config, pmadb JSON) and
  * the settings UI: allow/disallow rules, value coercion, defaults diffing and JSON import/export.
@@ -74,43 +75,43 @@ const fail = (error: string): Coerced => ({ ok: false, error });
 export function coerceStored(def: FieldDef, raw: unknown): Coerced {
 	switch (def.type) {
 		case 'bool':
-			return typeof raw === 'boolean' ? { ok: true, value: raw } : fail('Not a boolean');
+			return typeof raw === 'boolean' ? { ok: true, value: raw } : fail(N_('Not a boolean'));
 		case 'number': {
 			const n = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : raw;
-			if (typeof n !== 'number' || !Number.isInteger(n)) return fail('Not an integer');
-			if (def.min !== undefined && n < def.min) return fail(`Must be at least ${def.min}`);
+			if (typeof n !== 'number' || !Number.isInteger(n)) return fail(N_('Not an integer'));
+			if (def.min !== undefined && n < def.min) return fail(N_('Must be at least {min}'));
 			return { ok: true, value: n };
 		}
 		case 'text':
-			return typeof raw === 'string' ? { ok: true, value: raw } : fail('Not a string');
+			return typeof raw === 'string' ? { ok: true, value: raw } : fail(N_('Not a string'));
 		case 'select': {
 			const hit = def.options?.find(
 				(o) => o.value === raw || (typeof raw !== 'object' && String(o.value) === String(raw))
 			);
-			return hit ? { ok: true, value: hit.value as FieldValue } : fail('Not an allowed value');
+			return hit ? { ok: true, value: hit.value as FieldValue } : fail(N_('Not an allowed value'));
 		}
 		case 'list':
 			return Array.isArray(raw) && raw.every((x) => typeof x === 'string')
 				? { ok: true, value: raw as string[] }
-				: fail('Not a list');
+				: fail(N_('Not a list'));
 	}
 }
 
 /** Parse the string a HTML form posts for a field. */
 export function coerceFormValue(def: FieldDef, raw: string | null): Coerced {
-	if (raw === null) return fail('Missing value');
+	if (raw === null) return fail(N_('Missing value'));
 	switch (def.type) {
 		case 'bool':
-			return raw === '1' || raw === '0' ? { ok: true, value: raw === '1' } : fail('Not a boolean');
+			return raw === '1' || raw === '0' ? { ok: true, value: raw === '1' } : fail(N_('Not a boolean'));
 		case 'number': {
-			if (raw.trim() === '' || !/^-?\d+$/.test(raw.trim())) return fail('Must be an integer');
+			if (raw.trim() === '' || !/^-?\d+$/.test(raw.trim())) return fail(N_('Must be an integer'));
 			return coerceStored(def, Number(raw.trim()));
 		}
 		case 'text':
 			return { ok: true, value: raw };
 		case 'select': {
 			const hit = def.options?.find((o) => String(o.value) === raw);
-			return hit ? { ok: true, value: hit.value as FieldValue } : fail('Not an allowed value');
+			return hit ? { ok: true, value: hit.value as FieldValue } : fail(N_('Not an allowed value'));
 		}
 		case 'list':
 			return {
@@ -220,11 +221,11 @@ export function parseImport(
 	try {
 		parsed = JSON.parse(text);
 	} catch {
-		return { ok: false, error: 'Could not import configuration' };
+		return { ok: false, error: N_('Could not import configuration') };
 	}
 	// PHP encodes an empty array as `[]`
 	if (Array.isArray(parsed) && parsed.length === 0) parsed = {};
-	if (!isPlainObject(parsed)) return { ok: false, error: 'Could not import configuration' };
+	if (!isPlainObject(parsed)) return { ok: false, error: N_('Could not import configuration') };
 
 	const flat: PrefData = {};
 	const allKnown = new Set<string>([

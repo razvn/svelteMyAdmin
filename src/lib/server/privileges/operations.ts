@@ -1,3 +1,5 @@
+import type { Translator } from '#lib/i18n/translator.ts';
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * Account operations: add, update global privileges, drop, export and change the own password.
  * They build the statements with `#lib/sql/privileges`, run them one by one and report every statement with its
@@ -37,9 +39,19 @@ export interface StatementResult {
 
 export interface OperationResult {
 	ok: boolean;
-	/** Top level error (validation, "user exists", ...), when nothing was run. */
+	/** Top level error (validation, "user exists", ...), when nothing was run. English msgid or a MySQL message. */
 	error?: string;
+	/** `{params}` of `error`. */
+	errorParams?: Record<string, string | number>;
 	results: StatementResult[];
+}
+
+/** Translated top-level error of an operation/validation result (MySQL messages pass through unchanged). */
+export function errorText(
+	res: { error?: string | null; errorParams?: Record<string, string | number> },
+	i18n: Translator
+): string | null {
+	return res.error ? i18n.t(res.error, res.errorParams) : null;
 }
 
 const sqlError = (e: unknown): string => {
@@ -106,7 +118,7 @@ export async function createAccount(
 	if (!caps.isCreateUser) {
 		return {
 			ok: false,
-			error: 'You do not have the privileges to administrate the users!',
+			error: N_('You do not have the privileges to administrate the users!'),
 			results: []
 		};
 	}
@@ -216,7 +228,7 @@ export async function updateGlobalPrivileges(
 	if (!caps.isGrantUser) {
 		return {
 			ok: false,
-			error: 'You do not have the privileges to administrate the users!',
+			error: N_('You do not have the privileges to administrate the users!'),
 			results: []
 		};
 	}
@@ -247,19 +259,19 @@ export async function dropAccounts(
 	if (!caps.isCreateUser) {
 		return {
 			ok: false,
-			error: 'You do not have the privileges to administrate the users!',
+			error: N_('You do not have the privileges to administrate the users!'),
 			results: []
 		};
 	}
 	if (input.accounts.length === 0)
-		return { ok: false, error: 'No users selected for deleting!', results: [] };
+		return { ok: false, error: N_('No users selected for deleting!'), results: [] };
 	const results: StatementResult[] = [];
 	for (const a of input.accounts) {
 		if (a.user === caps.currentUser.user && a.host === caps.currentUser.host) {
 			results.push({
 				statement: `DROP USER ${quoteAccount(a)}`,
 				ok: false,
-				error: 'You cannot delete the account you are logged in with.'
+				error: N_('You cannot delete the account you are logged in with.')
 			});
 			continue;
 		}

@@ -12,8 +12,10 @@
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import type { ProcessRow } from '#lib/server/admin/processes.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { ActionData, PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps & { form?: ActionData } = $props();
 
 	const INTERVALS = ['2', '5', '10', '30'];
@@ -39,36 +41,36 @@
 </script>
 
 <svelte:head>
-	<title>Processes - svelteMyAdmin</title>
+	<title>{t('Processes')} - svelteMyAdmin</title>
 </svelte:head>
 
 <Card.Root class="gap-0 py-0">
 	<div class="flex flex-wrap items-center gap-x-6 gap-y-3 border-b p-5">
 		<div class="flex items-center gap-2">
 			<Checkbox id="only-active" bind:checked={onlyActive} />
-			<Label for="only-active">Show only active</Label>
+			<Label for="only-active">{t('Show only active')}</Label>
 		</div>
 		<div class="flex items-center gap-2">
 			<Checkbox id="show-full" bind:checked={showFull} />
-			<Label for="show-full">Show full queries</Label>
+			<Label for="show-full">{t('Show full queries')}</Label>
 		</div>
 		<div class="flex items-center gap-2">
 			<Checkbox id="auto-refresh" bind:checked={autoRefresh} />
-			<Label for="auto-refresh">Auto refresh every</Label>
+			<Label for="auto-refresh">{t('Auto refresh every')}</Label>
 			<Select.Root type="single" bind:value={interval}>
-				<Select.Trigger class="w-24" aria-label="Refresh interval" data-testid="interval">
-					{interval} s
+				<Select.Trigger class="w-24" aria-label={t('Refresh interval')} data-testid="interval">
+					{t('{n} s', { n: interval })}
 				</Select.Trigger>
 				<Select.Content>
 					{#each INTERVALS as i (i)}
-						<Select.Item value={i} label="{i} s">{i} s</Select.Item>
+						<Select.Item value={i} label={t('{n} s', { n: i })}>{t('{n} s', { n: i })}</Select.Item>
 					{/each}
 				</Select.Content>
 			</Select.Root>
 		</div>
 		<Button variant="outline" size="sm" class="ms-auto" onclick={() => refreshAll()}>
 			<RefreshCw />
-			Refresh now
+			{t('Refresh now')}
 		</Button>
 	</div>
 
@@ -86,7 +88,7 @@
 			class="border-b bg-success-soft px-5 py-3 text-sm text-success"
 			data-testid="kill-ok"
 		>
-			Thread {form.killed} was killed.
+			{t('Thread {id} was killed.', { id: form.killed })}
 		</p>
 	{/if}
 
@@ -94,15 +96,15 @@
 		<Table.Header>
 			<Table.Row>
 				<Table.Head></Table.Head>
-				<Table.Head>ID</Table.Head>
-				<Table.Head>User</Table.Head>
-				<Table.Head>Host</Table.Head>
-				<Table.Head>Database</Table.Head>
-				<Table.Head>Command</Table.Head>
-				<Table.Head class="text-end">Time</Table.Head>
-				<Table.Head>Status</Table.Head>
-				{#if hasProgress}<Table.Head class="text-end">Progress</Table.Head>{/if}
-				<Table.Head>SQL query</Table.Head>
+				<Table.Head>{t('ID')}</Table.Head>
+				<Table.Head>{t('User')}</Table.Head>
+				<Table.Head>{t('Host')}</Table.Head>
+				<Table.Head>{t('Database')}</Table.Head>
+				<Table.Head>{t('Command')}</Table.Head>
+				<Table.Head class="text-end">{t('Time')}</Table.Head>
+				<Table.Head>{t('Status')}</Table.Head>
+				{#if hasProgress}<Table.Head class="text-end">{t('Progress')}</Table.Head>{/if}
+				<Table.Head>{t('SQL query')}</Table.Head>
 			</Table.Row>
 		</Table.Header>
 		<Table.Body>
@@ -110,7 +112,7 @@
 				<Table.Row data-process-id={p.id}>
 					<Table.Cell>
 						{#if p.id === data.ownId}
-							<Badge variant="primary">this connection</Badge>
+							<Badge variant="primary">{t('this connection')}</Badge>
 						{:else}
 							<Button
 								variant="destructive"
@@ -120,7 +122,7 @@
 									killOpen = true;
 								}}
 							>
-								Kill
+								{t('Kill')}
 							</Button>
 						{/if}
 					</Table.Cell>
@@ -145,7 +147,7 @@
 			{:else}
 				<Table.Row>
 					<Table.Cell colspan={10} class="text-center text-muted-foreground"
-						>No processes.</Table.Cell
+						>{t('No processes.')}</Table.Cell
 					>
 				</Table.Row>
 			{/each}
@@ -156,14 +158,17 @@
 <AlertDialog.Root bind:open={killOpen}>
 	<AlertDialog.Content data-testid="kill-dialog">
 		<AlertDialog.Header>
-			<AlertDialog.Title>Kill process {killTarget?.id}?</AlertDialog.Title>
+			<AlertDialog.Title>{t('Kill process {id}?', { id: killTarget?.id ?? '' })}</AlertDialog.Title>
 			<AlertDialog.Description>
-				Process {killTarget?.id} ({killTarget?.user}@{killTarget?.host}) will be terminated with
-				<code>KILL {killTarget?.id}</code>.
+				{t('Process {id} ({user}@{host}) will be terminated with KILL {id}.', {
+					id: killTarget?.id ?? '',
+					user: killTarget?.user ?? '',
+					host: killTarget?.host ?? ''
+				})}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<form
 				method="POST"
 				action="?/kill"
@@ -175,7 +180,7 @@
 				}}
 			>
 				<input type="hidden" name="id" value={killTarget?.id ?? ''} />
-				<AlertDialog.Action type="submit" data-testid="kill-confirm">Kill</AlertDialog.Action>
+				<AlertDialog.Action type="submit" data-testid="kill-confirm">{t('Kill')}</AlertDialog.Action>
 			</form>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

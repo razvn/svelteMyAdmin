@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/index.ts';
 /**
  * The `2fa` entry of the user's preferences (`pma__userconfig.config_data`), exactly the structure of
  * phpMyAdmin's TwoFactor::readConfig / save: `{"backend": "<id>", "settings": {...}}`.
@@ -45,28 +46,28 @@ export interface BackendInfo {
 }
 
 export const BACKENDS: Record<string, BackendInfo> = {
-	'': { id: '', name: 'No Two-Factor Authentication', description: 'Login using password only.' },
+	'': { id: '', name: N_('No Two-Factor Authentication'), description: N_('Login using password only.') },
 	application: {
 		id: 'application',
-		name: 'Authentication Application (2FA)',
+		name: N_('Authentication Application (2FA)'),
 		description:
-			'Provides authentication using HOTP and TOTP applications such as FreeOTP, Google Authenticator or Authy.'
+			N_('Provides authentication using HOTP and TOTP applications such as FreeOTP, Google Authenticator or Authy.')
 	},
 	WebAuthn: {
 		id: 'WebAuthn',
-		name: 'Hardware Security Key (WebAuthn/FIDO2)',
+		name: N_('Hardware Security Key (WebAuthn/FIDO2)'),
 		description:
-			'Provides authentication using hardware security tokens supporting the WebAuthn/FIDO2 protocol, such as a YubiKey.'
+			N_('Provides authentication using hardware security tokens supporting the WebAuthn/FIDO2 protocol, such as a YubiKey.')
 	},
 	simple: {
 		id: 'simple',
-		name: 'Simple two-factor authentication',
-		description: 'For testing purposes only!'
+		name: N_('Simple two-factor authentication'),
+		description: N_('For testing purposes only!')
 	},
 	invalid: {
 		id: 'invalid',
-		name: 'Invalid two-factor authentication',
-		description: 'Error fallback only!'
+		name: N_('Invalid two-factor authentication'),
+		description: N_('Error fallback only!')
 	}
 };
 

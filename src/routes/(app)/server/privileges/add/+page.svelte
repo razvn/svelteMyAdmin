@@ -18,8 +18,10 @@
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import { accountQuery } from '#lib/nav/account-tabs.ts';
 	import { NO_LIMITS, type SslRequirement } from '#lib/sql/privileges/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	let predUser = $state('userdefined');
@@ -58,39 +60,39 @@
 </script>
 
 <svelte:head>
-	<title>Add user account - svelteMyAdmin</title>
+	<title>{t('Add user account')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	<PageHeader
 		icon={UserPlus}
-		title="Add user account"
-		description="Create a new account with its login information, privileges and limits."
+		title={t('Add user account')}
+		description={t('Create a new account with its login information, privileges and limits.')}
 	>
 		{#snippet actions()}
-			<Button variant="outline" href="/server/privileges"><ArrowLeft /> User accounts</Button>
+			<Button variant="outline" href="/server/privileges"><ArrowLeft /> {t('User accounts')}</Button>
 		{/snippet}
 	</PageHeader>
 
 	{#if !data.caps.isCreateUser}
 		<Alert variant="destructive" role="alert">
-			<AlertTitle>No Privileges</AlertTitle>
-			<AlertDescription>You do not have the privileges to administrate the users!</AlertDescription>
+			<AlertTitle>{t('No Privileges')}</AlertTitle>
+			<AlertDescription>{t('You do not have the privileges to administrate the users!')}</AlertDescription>
 		</Alert>
 	{:else}
 		{#if created}
 			<Alert variant="success" role="status" data-testid="user-added">
-				<AlertTitle>You have added a new user.</AlertTitle>
+				<AlertTitle>{t('You have added a new user.')}</AlertTitle>
 				<AlertDescription class="flex flex-wrap items-center gap-3">
 					<span>
-						Account <code class="font-mono">'{created.user}'@'{created.host}'</code> was created.
+						{t("Account '{user}'@'{host}' was created.", { user: created.user, host: created.host })}
 					</span>
 					{#if data.caps.isGrantUser}
 						<a class="font-medium underline" href="/server/privileges/edit?{accountQuery(created)}"
-							>Edit privileges</a
+							>{t('Edit privileges')}</a
 						>
 					{/if}
-					<a class="font-medium underline" href="/server/privileges">Back to user accounts</a>
+					<a class="font-medium underline" href="/server/privileges">{t('Back to user accounts')}</a>
 				</AlertDescription>
 			</Alert>
 		{:else if form && 'error' in form && form.error}
@@ -116,25 +118,25 @@
 				}}
 			>
 				<Card.Root>
-					<Card.Header><Card.Title>Login information</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('Login information')}</Card.Title></Card.Header>
 					<Card.Content class="grid gap-5">
 						<div class="grid gap-1.5">
-							<label for="pred-username" class="text-sm font-medium">User name:</label>
+							<label for="pred-username" class="text-sm font-medium">{t('User name:')}</label>
 							<div class="flex flex-wrap items-center gap-2">
 								<NativeSelect
 									id="pred-username"
 									name="pred_username"
-									title="User name"
+									title={t('User name')}
 									bind:value={predUser}
 								>
-									<NativeSelectOption value="any">Any user</NativeSelectOption>
-									<NativeSelectOption value="userdefined">Use text field</NativeSelectOption>
+									<NativeSelectOption value="any">{t('Any user')}</NativeSelectOption>
+									<NativeSelectOption value="userdefined">{t('Use text field')}</NativeSelectOption>
 								</NativeSelect>
 								<Input
 									id="username"
 									name="username"
-									aria-label="User name"
-									placeholder="User name"
+									aria-label={t('User name')}
+									placeholder={t('User name')}
 									maxlength={data.lengths.user}
 									spellcheck={false}
 									disabled={predUser === 'any'}
@@ -146,27 +148,27 @@
 						</div>
 
 						<div class="grid gap-1.5">
-							<label for="pred-hostname" class="text-sm font-medium">Host name:</label>
+							<label for="pred-hostname" class="text-sm font-medium">{t('Host name:')}</label>
 							<div class="flex flex-wrap items-center gap-2">
 								<NativeSelect
 									id="pred-hostname"
 									name="pred_hostname"
-									title="Host name"
+									title={t('Host name')}
 									bind:value={predHost}
 								>
-									<NativeSelectOption value="any">Any host</NativeSelectOption>
-									<NativeSelectOption value="localhost">Local</NativeSelectOption>
+									<NativeSelectOption value="any">{t('Any host')}</NativeSelectOption>
+									<NativeSelectOption value="localhost">{t('Local')}</NativeSelectOption>
 									{#if data.thisHost}
-										<NativeSelectOption value="thishost">This host</NativeSelectOption>
+										<NativeSelectOption value="thishost">{t('This host')}</NativeSelectOption>
 									{/if}
-									<NativeSelectOption value="hosttable">Use host table</NativeSelectOption>
-									<NativeSelectOption value="userdefined">Use text field</NativeSelectOption>
+									<NativeSelectOption value="hosttable">{t('Use host table')}</NativeSelectOption>
+									<NativeSelectOption value="userdefined">{t('Use text field')}</NativeSelectOption>
 								</NativeSelect>
 								<Input
 									id="hostname"
 									name="hostname"
-									aria-label="Host name"
-									placeholder="Host name"
+									aria-label={t('Host name')}
+									placeholder={t('Host name')}
 									maxlength={data.lengths.host}
 									spellcheck={false}
 									disabled={predHost !== 'userdefined'}
@@ -177,21 +179,22 @@
 								/>
 							</div>
 							<p class="text-xs text-muted-foreground">
-								When Host table is used, this field is ignored and values stored in Host table are
-								used instead.
+								{t(
+									'When Host table is used, this field is ignored and values stored in Host table are used instead.'
+								)}
 							</p>
 						</div>
 
 						<div class="grid gap-1.5">
-							<label for="pred-password" class="text-sm font-medium">Password:</label>
+							<label for="pred-password" class="text-sm font-medium">{t('Password:')}</label>
 							<NativeSelect
 								id="pred-password"
 								name="pred_password"
-								title="Password"
+								title={t('Password')}
 								bind:value={predPassword}
 							>
-								<NativeSelectOption value="none">No password</NativeSelectOption>
-								<NativeSelectOption value="userdefined">Use text field</NativeSelectOption>
+								<NativeSelectOption value="none">{t('No password')}</NativeSelectOption>
+								<NativeSelectOption value="userdefined">{t('Use text field')}</NativeSelectOption>
 							</NativeSelect>
 						</div>
 						<PasswordFields
@@ -200,27 +203,28 @@
 							disabled={predPassword === 'none'}
 							userName={username}
 							idPrefix="add-pw"
-							label="Enter password"
+							label={t('Enter password')}
 						/>
 
 						{#if data.plugins.length > 0}
 							<div class="grid gap-1.5">
-								<label for="auth-plugin" class="text-sm font-medium">Authentication plugin</label>
+								<label for="auth-plugin" class="text-sm font-medium">{t('Authentication plugin')}</label>
 								<NativeSelect id="auth-plugin" name="authentication_plugin" bind:value={plugin}>
 									{#each data.plugins as p (p.name)}
-										<NativeSelectOption value={p.name}>{p.label} ({p.name})</NativeSelectOption>
+										<NativeSelectOption value={p.name}>{t(p.label)} ({p.name})</NativeSelectOption>
 									{/each}
 								</NativeSelect>
 								{#if selectedPlugin?.passwordless}
 									<p class="text-xs text-muted-foreground">
-										This plugin does not use a password; the password fields are ignored.
+										{t('This plugin does not use a password; the password fields are ignored.')}
 									</p>
 								{/if}
 								{#if sha256}
 									<Alert variant="info" class="mt-1">
 										<AlertDescription>
-											This method requires using an SSL connection or an unencrypted connection that
-											encrypts the password using RSA while connecting to the server.
+											{t(
+												'This method requires using an SSL connection or an unencrypted connection that encrypts the password using RSA while connecting to the server.'
+											)}
 										</AlertDescription>
 									</Alert>
 								{/if}
@@ -231,16 +235,16 @@
 
 				{#if data.caps.isGrantUser}
 					<Card.Root>
-						<Card.Header><Card.Title>Database for user account</Card.Title></Card.Header>
+						<Card.Header><Card.Title>{t('Database for user account')}</Card.Title></Card.Header>
 						<Card.Content class="grid gap-3">
 							<div class="flex items-center gap-2">
 								<Checkbox
 									id="createdb-1"
 									bind:checked={createDb1}
-									aria-label="Create database with same name and grant all privileges"
+									aria-label={t('Create database with same name and grant all privileges.')}
 								/>
 								<label for="createdb-1" class="text-sm">
-									Create database with same name and grant all privileges.
+									{t('Create database with same name and grant all privileges.')}
 								</label>
 								{#if createDb1}<input type="hidden" name="createdb-1" value="on" />{/if}
 							</div>
@@ -248,10 +252,10 @@
 								<Checkbox
 									id="createdb-2"
 									bind:checked={createDb2}
-									aria-label="Grant all privileges on wildcard name"
+									aria-label={t('Grant all privileges on wildcard name (username\\_%).')}
 								/>
 								<label for="createdb-2" class="text-sm">
-									Grant all privileges on wildcard name (username\_%).
+									{t('Grant all privileges on wildcard name (username\\_%).')}
 								</label>
 								{#if createDb2}<input type="hidden" name="createdb-2" value="on" />{/if}
 							</div>
@@ -260,10 +264,10 @@
 									<Checkbox
 										id="createdb-3"
 										bind:checked={createDb3}
-										aria-label="Grant all privileges on database {data.database}"
+										aria-label={t('Grant all privileges on database {db}.', { db: data.database })}
 									/>
 									<label for="createdb-3" class="text-sm">
-										Grant all privileges on database <code class="font-mono">{data.database}</code>.
+										{t('Grant all privileges on database {db}.', { db: data.database })}
 									</label>
 									{#if createDb3}<input type="hidden" name="createdb-3" value="on" />{/if}
 									<input type="hidden" name="dbname" value={data.database} />
@@ -273,7 +277,7 @@
 					</Card.Root>
 
 					<Card.Root>
-						<Card.Header><Card.Title>Global privileges</Card.Title></Card.Header>
+						<Card.Header><Card.Title>{t('Global privileges')}</Card.Title></Card.Header>
 						<Card.Content>
 							<PrivilegeGrid
 								scope="global"
@@ -287,19 +291,19 @@
 				{/if}
 
 				<Card.Root>
-					<Card.Header><Card.Title>Resource limits</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('Resource limits')}</Card.Title></Card.Header>
 					<Card.Content><LimitsFields bind:limits /></Card.Content>
 				</Card.Root>
 
 				<Card.Root>
-					<Card.Header><Card.Title>SSL</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('SSL')}</Card.Title></Card.Header>
 					<Card.Content><SslFields bind:ssl /></Card.Content>
 				</Card.Root>
 
 				<div class="flex justify-end gap-2">
-					<Button variant="outline" href="/server/privileges">Cancel</Button>
+					<Button variant="outline" href="/server/privileges">{t('Cancel')}</Button>
 					<Button type="submit" disabled={!hydration.ready || submitting} data-testid="add-user-go">
-						Go
+						{t('Go')}
 					</Button>
 				</div>
 			</form>

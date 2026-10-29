@@ -13,8 +13,10 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Textarea } from '#lib/components/ui/textarea/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { N_, useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const BROWSER_KEY = 'sma.userprefs';
@@ -39,9 +41,9 @@
 		try {
 			localStorage.setItem(BROWSER_KEY, data.json);
 			browserSaved = 'yes';
-			browserMsg = 'Configuration saved to the browser storage.';
+			browserMsg = t('Configuration saved to the browser storage.');
 		} catch {
-			browserMsg = 'The browser storage is not available.';
+			browserMsg = t('The browser storage is not available.');
 		}
 	}
 
@@ -56,7 +58,7 @@
 	async function loadFromBrowser() {
 		const raw = readBrowser();
 		if (!raw) {
-			browserMsg = 'Nothing is saved in the browser storage.';
+			browserMsg = t('Nothing is saved in the browser storage.');
 			return;
 		}
 		jsonText = raw;
@@ -68,24 +70,26 @@
 
 	const err = $derived(form && 'error' in form ? (form.error as string) : null);
 	const messages: Record<string, string> = {
-		import: 'Configuration has been imported.',
-		reset: 'All your settings were reset to the defaults.'
+		import: N_('Configuration has been imported.'),
+		reset: N_('All your settings were reset to the defaults.')
 	};
 </script>
 
 <svelte:head>
-	<title>Manage your settings - Settings - svelteMyAdmin</title>
+	<title>{t('Manage your settings')} - {t('Settings')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
 	{#if data.saved && messages[data.saved]}
 		<Alert variant="success" role="status" data-testid="settings-saved">
-			<AlertDescription>{messages[data.saved]}</AlertDescription>
+			<AlertDescription>{t(messages[data.saved])}</AlertDescription>
 		</Alert>
 	{/if}
 	{#if data.dropped}
 		<Alert variant="warning" role="status" data-testid="settings-dropped">
-			<AlertDescription>Ignored (not allowed or invalid): {data.dropped}</AlertDescription>
+			<AlertDescription
+				>{t('Ignored (not allowed or invalid): {names}', { names: data.dropped })}</AlertDescription
+			>
 		</Alert>
 	{/if}
 	{#if err}
@@ -95,39 +99,40 @@
 	{/if}
 	{#if data.storage.unavailable}
 		<Alert variant="warning" role="status">
-			<AlertTitle>Configuration storage unavailable</AlertTitle>
+			<AlertTitle>{t('Configuration storage unavailable')}</AlertTitle>
 			<AlertDescription>
-				The user preferences table could not be read; settings are kept in a browser cookie.
+				{t('The user preferences table could not be read; settings are kept in a browser cookie.')}
 			</AlertDescription>
 		</Alert>
 	{/if}
 
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Where your settings are stored</Card.Title>
+			<Card.Title>{t('Where your settings are stored')}</Card.Title>
 			<Card.Description>
 				{#if data.storage.type === 'db'}
-					In the phpMyAdmin configuration storage (<code>pma__userconfig</code>), shared with
-					phpMyAdmin.
+					{t('In the phpMyAdmin configuration storage (pma__userconfig), shared with phpMyAdmin.')}
 				{:else}
-					In a browser cookie, because no configuration storage is available for user preferences.
+					{t(
+						'In a browser cookie, because no configuration storage is available for user preferences.'
+					)}
 				{/if}
 			</Card.Description>
 		</Card.Header>
 		<Card.Content class="flex items-center gap-2 text-sm">
 			<Badge variant={data.count > 0 ? 'primary' : 'muted'} data-testid="settings-count">
-				{data.count} customised {data.count === 1 ? 'setting' : 'settings'}
+				{tn('{n} customised setting', '{n} customised settings', data.count)}
 			</Badge>
-			<Badge variant="muted">{data.storage.type === 'db' ? 'Database' : 'Cookie'}</Badge>
+			<Badge variant="muted">{data.storage.type === 'db' ? t('Database') : t('Cookie')}</Badge>
 		</Card.Content>
 	</Card.Root>
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Import</Card.Title>
+				<Card.Title>{t('Import')}</Card.Title>
 				<Card.Description>
-					Load settings from a JSON file exported by this application or phpMyAdmin.
+					{t('Load settings from a JSON file exported by this application or phpMyAdmin.')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
@@ -141,20 +146,21 @@
 					data-testid="import-form"
 				>
 					{#if importMode === 'browser'}
-						<Textarea name="json" bind:value={jsonText} rows={6} aria-label="Settings JSON" />
+						<Textarea name="json" bind:value={jsonText} rows={6} aria-label={t('Settings JSON')} />
 					{:else}
 						<label class="flex flex-col gap-1.5 text-sm font-medium">
-							Settings file
+							{t('Settings file')}
 							<Input type="file" name="import_file" accept=".json,application/json" required />
 						</label>
 					{/if}
 					<label class="flex items-center gap-2 text-sm">
 						<input type="checkbox" name="import_merge" value="1" data-testid="import-merge" />
-						Merge with current configuration
+						{t('Merge with current configuration')}
 					</label>
 					<div>
 						<Button type="submit" disabled={!hydration.ready} data-testid="import-submit">
-							<Upload /> Import
+							<Upload />
+							{t('Import')}
 						</Button>
 					</div>
 				</form>
@@ -163,8 +169,8 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Export</Card.Title>
-				<Card.Description>Save your settings to a JSON file.</Card.Description>
+				<Card.Title>{t('Export')}</Card.Title>
+				<Card.Description>{t('Save your settings to a JSON file.')}</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<div>
@@ -174,13 +180,14 @@
 						download
 						data-testid="export-json"
 					>
-						<Download /> Save as JSON file
+						<Download />
+						{t('Save as JSON file')}
 					</Button>
 				</div>
 				<div class="flex flex-col gap-2 border-t pt-4">
-					<p class="text-sm font-medium">Browser storage</p>
+					<p class="text-sm font-medium">{t('Browser storage')}</p>
 					<p class="text-sm text-muted-foreground">
-						Keep a copy of your settings in this browser's local storage and load it back later.
+						{t("Keep a copy of your settings in this browser's local storage and load it back later.")}
 					</p>
 					<div class="flex flex-wrap gap-2">
 						<Button
@@ -189,7 +196,8 @@
 							onclick={saveToBrowser}
 							data-testid="save-browser"
 						>
-							<HardDriveDownload /> Save to browser's storage
+							<HardDriveDownload />
+							{t("Save to browser's storage")}
 						</Button>
 						<Button
 							type="button"
@@ -198,7 +206,7 @@
 							onclick={loadFromBrowser}
 							data-testid="load-browser"
 						>
-							Load from browser's storage
+							{t("Load from browser's storage")}
 						</Button>
 					</div>
 					{#if browserMsg}
@@ -211,9 +219,9 @@
 
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Reset</Card.Title>
+			<Card.Title>{t('Reset')}</Card.Title>
 			<Card.Description>
-				Remove all your customisations and go back to the server defaults.
+				{t('Remove all your customisations and go back to the server defaults.')}
 			</Card.Description>
 		</Card.Header>
 		<Card.Content>
@@ -223,7 +231,8 @@
 				onclick={() => (resetOpen = true)}
 				data-testid="reset-all"
 			>
-				<RotateCcw /> Reset all settings
+				<RotateCcw />
+				{t('Reset all settings')}
 			</Button>
 		</Card.Content>
 	</Card.Root>
@@ -232,9 +241,9 @@
 <AlertDialog.Root bind:open={resetOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Reset all settings</AlertDialog.Title>
+			<AlertDialog.Title>{t('Reset all settings')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This clears every personal setting and restores the server defaults.
+				{t('This clears every personal setting and restores the server defaults.')}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<form
@@ -249,7 +258,7 @@
 			}}
 		></form>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel>{t('Cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action
 				variant="destructive"
 				data-testid="reset-confirm"
@@ -258,7 +267,7 @@
 					resetForm?.requestSubmit();
 				}}
 			>
-				Reset
+				{t('Reset')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

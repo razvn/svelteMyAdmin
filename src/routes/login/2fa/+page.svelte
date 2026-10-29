@@ -8,8 +8,10 @@
 	import * as Alert from '#lib/components/ui/alert/index.ts';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t } = useI18n();
 	let { data, form }: PageProps = $props();
 
 	const view = $derived(form?.view ?? data.view);
@@ -17,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>Two-factor authentication - svelteMyAdmin</title>
+	<title>{t('Two-factor authentication')} - svelteMyAdmin</title>
 </svelte:head>
 
 <main class="grid min-h-screen place-items-center bg-background p-6 text-foreground">
@@ -31,12 +33,14 @@
 			<Card.Header>
 				<Card.Title>
 					<h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-						<ShieldCheck class="size-6" /> Two-factor authentication
+						<ShieldCheck class="size-6" />
+						{t('Two-factor authentication')}
 					</h1>
 				</Card.Title>
 				<Card.Description>
-					You have enabled two factor authentication, please confirm your login as
-					<strong>{data.user}</strong>.
+					{t('You have enabled two factor authentication, please confirm your login as {user}.', {
+						user: data.user
+					})}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
@@ -60,11 +64,11 @@
 					<input type="hidden" name="redirect" value={data.redirectTo} />
 					<ChallengeFields {view} idPrefix="login-2fa" />
 					{#if view.backend !== 'WebAuthn' && view.backend !== 'invalid'}
-						<Button type="submit" disabled={submitting} class="w-full">Verify</Button>
+						<Button type="submit" disabled={submitting} class="w-full">{t('Verify')}</Button>
 					{/if}
 				</form>
 				<form method="POST" action="/logout" class="mt-4 text-center">
-					<Button type="submit" variant="link" size="sm">Cancel and log out</Button>
+					<Button type="submit" variant="link" size="sm">{t('Cancel and log out')}</Button>
 				</form>
 			</Card.Content>
 		</Card.Root>
