@@ -42,7 +42,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const parsed = z
 		.discriminatedUnion('action', [create, apply])
 		.safeParse(await request.json().catch(() => null));
-	if (!parsed.success) error(400, 'Invalid request');
+	if (!parsed.success) error(400, locals.i18n.t('Invalid request'));
 	const p = parsed.data;
 	if (p.action === 'create') {
 		const id = await createBookmark(locals, {
@@ -52,20 +52,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			shared: p.shared,
 			replace: p.replace
 		});
-		if (id === undefined) error(409, 'The bookmark storage is not available');
+		if (id === undefined) error(409, locals.i18n.t('The bookmark storage is not available'));
 		return Response.json({ ok: true, id });
 	}
 	const sql = await bookmarkQuery(locals, p.db, p.id, p.variables);
-	if (sql === undefined) error(409, 'The bookmark storage is not available');
-	if (sql === null) error(404, 'Bookmark not found');
+	if (sql === undefined) error(409, locals.i18n.t('The bookmark storage is not available'));
+	if (sql === null) error(404, locals.i18n.t('Bookmark not found'));
 	return Response.json({ sql }, { headers });
 };
 
 export const DELETE: RequestHandler = async ({ url, locals }) => {
 	const id = z.coerce.number().int().positive().safeParse(url.searchParams.get('id'));
-	if (!id.success) error(400, 'Invalid bookmark');
+	if (!id.success) error(400, locals.i18n.t('Invalid bookmark'));
 	const removed = await removeBookmark(locals, id.data);
-	if (removed === undefined) error(409, 'The bookmark storage is not available');
-	if (!removed) error(404, 'Bookmark not found');
+	if (removed === undefined) error(409, locals.i18n.t('The bookmark storage is not available'));
+	if (!removed) error(404, locals.i18n.t('Bookmark not found'));
 	return Response.json({ ok: true });
 };

@@ -7,6 +7,7 @@
  * Cells are encoded as PHP's json_encode would encode them: numbers and dates arrive as text
  * (so they are quoted, as in phpMyAdmin), NULL is `null`, binary values are `0x` + hex.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type {
 	ExportCell,
 	ExportContext,
@@ -22,10 +23,10 @@ export const JSON_OPTIONS: ExportOption[] = [
 	{
 		kind: 'bool',
 		name: 'pretty_print',
-		label: 'Output pretty-printed JSON (Use human-readable formatting)',
+		label: N_('Output pretty-printed JSON (Use human-readable formatting)'),
 		default: false
 	},
-	{ kind: 'bool', name: 'unicode', label: 'Output unicode characters unescaped', default: true }
+	{ kind: 'bool', name: 'unicode', label: N_('Output unicode characters unescaped'), default: true }
 ];
 
 interface JsonEncoder {
@@ -103,7 +104,7 @@ function cellJson(encoder: JsonEncoder, cell: ExportCell): string {
 
 const json: ExportPlugin = {
 	id: 'json',
-	label: 'JSON',
+	label: N_('JSON'),
 	extension: 'json',
 	mimeType: 'text/plain',
 	scopes: JSON_SCOPES,

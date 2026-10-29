@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import {
 		MAX_SIDEBAR_WIDTH,
 		MIN_SIDEBAR_WIDTH,
 		type SidebarWidth
 	} from './sidebar-width.svelte.ts';
+
+	const { t } = useI18n();
 
 	let { width }: { width: SidebarWidth } = $props();
 
@@ -42,7 +45,7 @@
 <div
 	role="separator"
 	aria-orientation="vertical"
-	aria-label="Resize navigation"
+	aria-label={t('Resize navigation')}
 	aria-valuenow={width.value}
 	aria-valuemin={MIN_SIDEBAR_WIDTH}
 	aria-valuemax={MAX_SIDEBAR_WIDTH}

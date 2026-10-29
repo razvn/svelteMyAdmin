@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/translator.ts';
 /** Convert a PHP-style regexp (`/^a.*$/i`) to a JS RegExp. Bare patterns are accepted too. */
 export function parsePhpRegex(source: string): RegExp {
 	const m = source.match(/^([/#~@%!|])(.*)\1([imsux]*)$/s);
@@ -30,24 +31,24 @@ export function validateArbitraryServer(
 	const host = sanitizeHost(hostInput);
 	// eslint-disable-next-line no-control-regex
 	if (host === '' || /[\u0000-\u001f\s]/.test(host) || host.length > 255) {
-		return { ok: false, error: 'Invalid server name.' };
+		return { ok: false, error: N_('Invalid server name.') };
 	}
 	if (regexp) {
 		let re: RegExp;
 		try {
 			re = parsePhpRegex(regexp);
 		} catch {
-			return { ok: false, error: 'You are not allowed to log in to this MySQL server!' };
+			return { ok: false, error: N_('You are not allowed to log in to this MySQL server!') };
 		}
 		if (!re.test(host)) {
-			return { ok: false, error: 'You are not allowed to log in to this MySQL server!' };
+			return { ok: false, error: N_('You are not allowed to log in to this MySQL server!') };
 		}
 	}
 	let port: number | undefined;
 	if (portInput !== undefined && String(portInput).trim() !== '') {
 		const n = Number(portInput);
 		if (!Number.isInteger(n) || n < 1 || n > 65535) {
-			return { ok: false, error: 'Invalid port number.' };
+			return { ok: false, error: N_('Invalid port number.') };
 		}
 		port = n;
 	}

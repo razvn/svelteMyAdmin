@@ -1,3 +1,4 @@
+import { N_ } from '#lib/i18n/translator.ts';
 import type { AuthContext, AuthPlugin } from './types';
 
 /** Realm: `auth_http_realm` or `svelteMyAdmin <verbose|host>`, printable ASCII only. */
@@ -8,7 +9,7 @@ export function httpRealm(ctx: Pick<AuthContext, 'server'>): string {
 }
 
 function challenge(ctx: AuthContext, body: string): Response {
-	return new Response(body, {
+	return new Response(ctx.t ? ctx.t(body) : body, {
 		status: 401,
 		headers: {
 			'WWW-Authenticate': `Basic realm="${httpRealm(ctx)}"`,
@@ -42,14 +43,14 @@ export const httpAuth: AuthPlugin = {
 	},
 
 	unauthenticated(ctx) {
-		return challenge(ctx, 'Authentication required.');
+		return challenge(ctx, N_('Authentication required.'));
 	},
 
 	rejected(ctx) {
-		return challenge(ctx, 'Cannot log in to the MySQL server');
+		return challenge(ctx, N_('Cannot log in to the MySQL server'));
 	},
 
 	logout(ctx) {
-		return challenge(ctx, 'Logged out.');
+		return challenge(ctx, N_('Logged out.'));
 	}
 };

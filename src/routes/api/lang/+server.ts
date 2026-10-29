@@ -15,7 +15,7 @@ const bodySchema = z.object({ lang: z.string().max(20) });
 export const POST: RequestHandler = async ({ request, cookies, locals, url }) => {
 	const parsed = bodySchema.safeParse(await request.json().catch(() => null));
 	const lang = parsed.success ? matchLanguage(parsed.data.lang, availableCodes()) : null;
-	if (!lang) error(400, 'Unknown language');
+	if (!lang) error(400, locals.i18n.t('Unknown language'));
 
 	const secure = url.protocol === 'https:';
 	cookies.set(LANG_COOKIE, lang, {

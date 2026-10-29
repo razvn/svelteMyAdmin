@@ -2,9 +2,15 @@
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import KeyRound from '@lucide/svelte/icons/key-round';
+	import Languages from '@lucide/svelte/icons/languages';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import { languageLabel, useI18n } from '#lib/i18n/index.ts';
+	import { setLanguage } from '#lib/i18n/switch.ts';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.ts';
+
+	const i18n = useI18n();
+	const { t } = i18n;
 
 	interface Props {
 		user: string;
@@ -16,6 +22,10 @@
 
 	let { user, host, serverLabel, canLogout, canChangePassword = false }: Props = $props();
 
+	async function changeLanguage(code: string) {
+		if (code !== i18n.locale) await setLanguage(code);
+	}
+
 	const initials = $derived(user.slice(0, 2).toUpperCase() || '?');
 </script>
 
@@ -25,7 +35,7 @@
 			<button
 				{...props}
 				type="button"
-				aria-label="User menu"
+				aria-label={t('User menu')}
 				class="flex h-10 items-center gap-2.5 rounded-full py-1 ps-1 pe-1 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 xl:pe-3"
 			>
 				<span
@@ -56,11 +66,25 @@
 				{#snippet child({ props })}
 					<a {...props} href={resolve(bare('/server/user-password'))}>
 						<KeyRound />
-						Change password
+						{t('Change password')}
 					</a>
 				{/snippet}
 			</DropdownMenu.Item>
 		{/if}
+		<DropdownMenu.Separator />
+		<DropdownMenu.Sub>
+			<DropdownMenu.SubTrigger data-testid="user-menu-language">
+				<Languages />
+				{t('Language')}
+			</DropdownMenu.SubTrigger>
+			<DropdownMenu.SubContent class="max-h-80 overflow-y-auto">
+				<DropdownMenu.RadioGroup value={i18n.locale} onValueChange={changeLanguage}>
+					{#each i18n.languages as l (l.code)}
+						<DropdownMenu.RadioItem value={l.code}>{languageLabel(l)}</DropdownMenu.RadioItem>
+					{/each}
+				</DropdownMenu.RadioGroup>
+			</DropdownMenu.SubContent>
+		</DropdownMenu.Sub>
 		{#if canLogout}
 			<DropdownMenu.Separator />
 			<form method="POST" action="/logout" class="contents">
@@ -68,7 +92,7 @@
 					{#snippet child({ props })}
 						<button {...props} type="submit" class="{props.class} w-full">
 							<LogOut />
-							Log out
+							{t('Log out')}
 						</button>
 					{/snippet}
 				</DropdownMenu.Item>

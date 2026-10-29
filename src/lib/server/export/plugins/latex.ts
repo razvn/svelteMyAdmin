@@ -8,6 +8,7 @@
  *   corrupts data such as `C:\dir`); it is not applied here.
  * - Caption defaults are the English messages behind PHP's `strLatex*` keys.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportOption, ExportPlugin, ExportScope } from '../types.ts';
 import {
 	emit,
@@ -29,35 +30,45 @@ import {
 const LATEX_SCOPES: ExportScope[] = ['server', 'database', 'table', 'raw'];
 
 export const LATEX_OPTIONS: ExportOption[] = [
-	{ kind: 'bool', name: 'caption', label: 'Include table caption', default: true },
+	{ kind: 'bool', name: 'caption', label: N_('Include table caption'), default: true },
 	{
 		kind: 'text',
 		name: 'structure_caption',
-		label: 'Table caption:',
+		label: N_('Table caption:'),
 		default: 'Structure of table @TABLE@'
 	},
 	{
 		kind: 'text',
 		name: 'structure_continued_caption',
-		label: 'Table caption (continued):',
+		label: N_('Table caption (continued):'),
 		default: 'Structure of table @TABLE@ (continued)'
 	},
-	{ kind: 'text', name: 'structure_label', label: 'Label key:', default: 'tab:@TABLE@-structure' },
-	{ kind: 'bool', name: 'columns', label: 'Put columns names in the first row:', default: true },
+	{
+		kind: 'text',
+		name: 'structure_label',
+		label: N_('Label key:'),
+		default: 'tab:@TABLE@-structure'
+	},
+	{
+		kind: 'bool',
+		name: 'columns',
+		label: N_('Put columns names in the first row:'),
+		default: true
+	},
 	{
 		kind: 'text',
 		name: 'data_caption',
-		label: 'Table caption:',
+		label: N_('Table caption:'),
 		default: 'Content of table @TABLE@'
 	},
 	{
 		kind: 'text',
 		name: 'data_continued_caption',
-		label: 'Table caption (continued):',
+		label: N_('Table caption (continued):'),
 		default: 'Content of table @TABLE@ (continued)'
 	},
-	{ kind: 'text', name: 'data_label', label: 'Label key:', default: 'tab:@TABLE@-data' },
-	{ kind: 'text', name: 'null', label: 'Replace NULL with:', default: '\\textit{NULL}' }
+	{ kind: 'text', name: 'data_label', label: N_('Label key:'), default: 'tab:@TABLE@-data' },
+	{ kind: 'text', name: 'null', label: N_('Replace NULL with:'), default: '\\textit{NULL}' }
 ];
 
 /**
@@ -96,7 +107,7 @@ function dataColumnHeader(names: readonly string[]): string {
 
 const latex: ExportPlugin = {
 	id: 'latex',
-	label: 'LaTeX',
+	label: N_('LaTeX'),
 	extension: 'tex',
 	mimeType: 'application/x-tex',
 	scopes: LATEX_SCOPES,

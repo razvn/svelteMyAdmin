@@ -3,6 +3,7 @@
  * stream the upload through the format driver on the user's connection, and describe the outcome.
  */
 import type { Connection } from 'mysql2/promise';
+import { N_, SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
 import {
 	FORMAT_LABELS,
 	type ImportFormat,
@@ -27,12 +28,21 @@ export interface RunImportParams {
 	timeBudgetMs?: number;
 	memoryLimit?: number;
 	onProgress?: (p: { bytes: number; queries: number; ms: number }) => void;
+	/** Translator for the messages shown to the user (default: English). */
+	i18n?: Translator;
 }
 
 const RESUMABLE: ImportFormat[] = ['sql', 'csv', 'ldi'];
 
-export const successMessage = (queries: number, fileName: string): string =>
-	`Import has been successfully finished, ${queries} queries executed. (${fileName})`;
+export const successMessage = (
+	queries: number,
+	fileName: string,
+	tr: Translator = SOURCE_TRANSLATOR
+): string =>
+	tr.t('Import has been successfully finished, {n} queries executed. ({file})', {
+		n: queries,
+		file: fileName
+	});
 
 async function* counting(src: AsyncIterable<Uint8Array>, add: (n: number) => void) {
 	for await (const c of src) {
@@ -43,6 +53,7 @@ async function* counting(src: AsyncIterable<Uint8Array>, add: (n: number) => voi
 
 export async function runImport(p: RunImportParams): Promise<ImportResult> {
 	const { conn, scope, request } = p;
+	const tr = p.i18n ?? SOURCE_TRANSLATOR;
 	let bytesRead = 0;
 	const initialDb = scope.level === 'server' ? null : scope.db;
 	const run = new ImportRun(
@@ -55,6 +66,7 @@ export async function runImport(p: RunImportParams): Promise<ImportResult> {
 		},
 		initialDb
 	);
+	run.tr = tr;
 	let format: ImportFormat = request.format === 'auto' ? 'sql' : request.format;
 	let compression: ImportResult['compression'] = 'none';
 
@@ -67,12 +79,12 @@ export async function runImport(p: RunImportParams): Promise<ImportResult> {
 		compression = src.compression;
 		if (!src.format) {
 			throw new ImportAbort(
-				'The file format could not be detected from its name. Choose a format and try again.'
+				N_('The file format could not be detected from its name. Choose a format and try again.')
 			);
 		}
 		format = src.format;
 		if (format === 'ldi' && scope.level !== 'table') {
-			throw new ImportAbort('CSV using LOAD DATA is only available for tables.');
+			throw new ImportAbort(N_('CSV using LOAD DATA is only available for tables.'));
 		}
 
 		if (scope.level !== 'server') {
@@ -90,10 +102,10 @@ export async function runImport(p: RunImportParams): Promise<ImportResult> {
 			memoryLimit: p.memoryLimit ?? DEFAULT_MEMORY_LIMIT
 		});
 	} catch (e) {
-		if (e instanceof ImportAbort) run.fail(e.message);
-		else if (e instanceof CsvFormatError) run.fail(e.message, e.line);
+		if (e instanceof ImportAbort) run.fail(tr.t(e.message, e.params));
+		else if (e instanceof CsvFormatError) run.fail(tr.t(e.msgid, { line: e.line }), e.line);
 		else if (e instanceof RangeError && /encoding|label/i.test(e.message)) {
-			run.fail(`Unsupported character set: ${request.charset}`);
+			run.fail(tr.t('Unsupported character set: {charset}', { charset: request.charset }));
 		} else {
 			const err = e as { sqlMessage?: string; message?: string; errno?: number };
 			if (err.sqlMessage) {
@@ -105,7 +117,7 @@ export async function runImport(p: RunImportParams): Promise<ImportResult> {
 				};
 			} else {
 				console.error('Import failed', e);
-				run.fail('The import failed unexpectedly.');
+				run.fail(tr.t('The import failed unexpectedly.'));
 			}
 		}
 	}
@@ -116,9 +128,14 @@ export async function runImport(p: RunImportParams): Promise<ImportResult> {
 	if (run.error) {
 		message = run.error.message;
 	} else if (run.interrupted) {
-		message = `The import was interrupted after ${run.queries} queries because it came close to the time limit. Resubmit the same file to continue from position ${run.seen} (skip ${run.seen} queries).`;
+		message = tr.tn(
+			'The import was interrupted after {n} query because it came close to the time limit. Resubmit the same file to continue from position {seen} (skip {seen} queries).',
+			'The import was interrupted after {n} queries because it came close to the time limit. Resubmit the same file to continue from position {seen} (skip {seen} queries).',
+			run.queries,
+			{ seen: run.seen }
+		);
 	} else {
-		message = successMessage(run.queries, p.fileName);
+		message = successMessage(run.queries, p.fileName, tr);
 	}
 
 	return {

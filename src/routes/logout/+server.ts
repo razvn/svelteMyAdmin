@@ -22,7 +22,8 @@ export const POST: RequestHandler = async ({ request, url, cookies, locals }) =>
 		config: locals.config,
 		serverIndex: locals.serverIndex,
 		server: locals.server,
-		clientIp: locals.clientIp
+		clientIp: locals.clientIp,
+		t: locals.i18n.t
 	};
 	const response = getAuthPlugin(locals.server.auth_type).logout(ctx);
 

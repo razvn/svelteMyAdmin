@@ -17,6 +17,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { ResultSetData } from '#lib/sql/run-types.ts';
 	import { isNumericKind } from '#lib/table/column-kind.ts';
 
@@ -27,6 +28,7 @@
 
 	let { open = $bindable(), result }: Props = $props();
 
+	const { t, tn } = useI18n();
 	const fields = $derived(result.fields);
 	const numeric = (i: number) => isNumericKind(fields[i].kind);
 
@@ -76,7 +78,7 @@
 		try {
 			await downloadPng(svg, `${title.trim() || 'chart'}.png`);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Export failed.');
+			toast.error(e instanceof Error ? e.message : t('Export failed.'));
 		}
 	}
 </script>
@@ -84,25 +86,27 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[92vh] overflow-auto sm:max-w-4xl" data-testid="chart-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Display chart</Dialog.Title>
+			<Dialog.Title>{t('Display chart')}</Dialog.Title>
 			<Dialog.Description>
-				Plot the result of this query ({result.rows.length} row{result.rows.length === 1
-					? ''
-					: 's'}).
+				{tn(
+					'Plot the result of this query ({n} row).',
+					'Plot the result of this query ({n} rows).',
+					result.rows.length
+				)}
 			</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="grid gap-3 sm:grid-cols-2">
 			<div class="flex flex-col gap-1.5">
-				<Label for="chart-type">Chart type</Label>
+				<Label for="chart-type">{t('Chart type')}</Label>
 				<NativeSelect.Root id="chart-type" class="w-full" bind:value={type}>
-					{#each CHART_TYPES as t (t.value)}
-						<NativeSelect.Option value={t.value}>{t.label}</NativeSelect.Option>
+					{#each CHART_TYPES as ct (ct.value)}
+						<NativeSelect.Option value={ct.value}>{t(ct.label)}</NativeSelect.Option>
 					{/each}
 				</NativeSelect.Root>
 			</div>
 			<div class="flex flex-col gap-1.5">
-				<Label for="chart-x">X-axis values</Label>
+				<Label for="chart-x">{t('X-axis values')}</Label>
 				<NativeSelect.Root id="chart-x" class="w-full" bind:value={xColumn}>
 					{#each fields as f, i (i)}
 						<NativeSelect.Option value={i}>{f.name}</NativeSelect.Option>
@@ -110,7 +114,7 @@
 				</NativeSelect.Root>
 			</div>
 			<div class="flex flex-col gap-1.5 sm:col-span-2">
-				<span class="text-sm leading-none font-medium">Series</span>
+				<span class="text-sm leading-none font-medium">{t('Series')}</span>
 				<div class="flex flex-wrap gap-x-5 gap-y-2" data-testid="chart-series">
 					{#each fields as f, i (i)}
 						{#if i !== xColumn}
@@ -127,17 +131,17 @@
 				</div>
 			</div>
 			<div class="flex flex-col gap-1.5">
-				<Label for="chart-title">Title</Label>
-				<Input id="chart-title" bind:value={title} placeholder="Chart title" />
+				<Label for="chart-title">{t('Title')}</Label>
+				<Input id="chart-title" bind:value={title} placeholder={t('Chart title')} />
 			</div>
 			<div class="grid grid-cols-2 gap-3">
 				<div class="flex flex-col gap-1.5">
-					<Label for="chart-xlabel">X-axis label</Label>
-					<Input id="chart-xlabel" bind:value={xLabel} placeholder="X-axis" />
+					<Label for="chart-xlabel">{t('X-axis label')}</Label>
+					<Input id="chart-xlabel" bind:value={xLabel} placeholder={t('X-axis')} />
 				</div>
 				<div class="flex flex-col gap-1.5">
-					<Label for="chart-ylabel">Y-axis label</Label>
-					<Input id="chart-ylabel" bind:value={yLabel} placeholder="Y-axis" />
+					<Label for="chart-ylabel">{t('Y-axis label')}</Label>
+					<Input id="chart-ylabel" bind:value={yLabel} placeholder={t('Y-axis')} />
 				</div>
 			</div>
 		</div>
@@ -147,9 +151,9 @@
 				class="rounded-lg border p-6 text-center text-sm text-muted-foreground"
 				data-testid="chart-empty"
 			>
-				There is nothing to plot: pick numeric series columns{type === 'pie'
-					? ' (positive values)'
-					: ''}.
+				{type === 'pie'
+					? t('There is nothing to plot: pick numeric series columns (positive values).')
+					: t('There is nothing to plot: pick numeric series columns.')}
 			</p>
 		{:else}
 			<Chart {model} bind:svg />
@@ -167,7 +171,7 @@
 			<Button type="button" variant="outline" disabled={model.empty} onclick={savePng}>
 				<Download /> PNG
 			</Button>
-			<Button type="button" onclick={() => (open = false)}>Close</Button>
+			<Button type="button" onclick={() => (open = false)}>{t('Close')}</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

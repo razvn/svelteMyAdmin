@@ -22,6 +22,7 @@
 	import { untrack } from 'svelte';
 	import { cn } from '#lib/utils.ts';
 	import { formatSql, type SqlDialect } from '#lib/sql/editor/format.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { lintSql } from '#lib/sql/editor/lint.ts';
 	import { parseSchemaResponse, toSqlNamespace, type SqlSchema } from '#lib/sql/editor/schema.ts';
 	import { editorTheme, highlightStyle } from './theme.ts';
@@ -70,6 +71,7 @@
 		class: className
 	}: Props = $props();
 
+	const { t } = useI18n();
 	let view = $state.raw<EditorView>();
 	let ready = $state(false);
 	let dark = $state(false);
@@ -108,7 +110,7 @@
 									from: i.from,
 									to: i.to,
 									severity: i.severity,
-									message: i.message
+									message: i.msgid ? t(i.msgid, i.params) /* i18n-ignore */ : i.message
 								})),
 							{ delay: 300 }
 						),

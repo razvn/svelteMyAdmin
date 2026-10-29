@@ -2,15 +2,17 @@
  * Map driver errors to phpMyAdmin-like login messages. Never includes stack traces,
  * credentials or driver internals.
  */
+import { N_ } from '#lib/i18n/translator.ts';
+
 export type RuleFailure = 'allow-denied' | 'root-denied' | 'empty-denied';
 
 export const RULE_MESSAGES: Record<RuleFailure, string> = {
-	'allow-denied': 'Access denied!',
-	'root-denied': 'Access denied!',
-	'empty-denied': 'Login without a password is forbidden by configuration (see AllowNoPassword)'
+	'allow-denied': N_('Access denied!'),
+	'root-denied': N_('Access denied!'),
+	'empty-denied': N_('Login without a password is forbidden by configuration (see AllowNoPassword)')
 };
 
-export const GENERIC_LOGIN_ERROR = 'Cannot log in to the MySQL server';
+export const GENERIC_LOGIN_ERROR = N_('Cannot log in to the MySQL server');
 
 interface DriverError {
 	code?: unknown;

@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Dialog as DialogPrimitive } from 'bits-ui';
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { cn, type WithElementRef } from '#lib/utils.ts';
 	import type { HTMLAttributes } from 'svelte/elements';
+
+	const { t } = useI18n();
 
 	let {
 		ref = $bindable(null),
@@ -25,7 +28,7 @@
 	{#if showCloseButton}
 		<DialogPrimitive.Close>
 			{#snippet child({ props })}
-				<Button variant="outline" {...props}>Close</Button>
+				<Button variant="outline" {...props}>{t('Close')}</Button>
 			{/snippet}
 		</DialogPrimitive.Close>
 	{/if}

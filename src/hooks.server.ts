@@ -24,6 +24,7 @@ import {
 } from '#lib/server/two-factor/gate.ts';
 import { readSession } from '#lib/server/auth/plugins/cookie.ts';
 import { loadPrefs } from '#lib/server/preferences/store.ts';
+import { SOURCE_TRANSLATOR } from '#lib/i18n/translator.ts';
 import { applyLocale, fillHtmlLang } from '#lib/server/i18n/locale.ts';
 
 const redirectTo = (location: string, status = 302) =>
@@ -98,7 +99,8 @@ const auth: Handle = async ({ event, resolve }) => {
 		url: event.url,
 		cookies: event.cookies,
 		config,
-		clientIp
+		clientIp,
+		t: event.locals.i18n?.t
 	});
 	const { ctx, plugin } = resolution;
 
@@ -174,10 +176,13 @@ const auth: Handle = async ({ event, resolve }) => {
 		if (resolution.status === 'forbidden') {
 			if (isPublic) return await resolve(event);
 			if (plugin.rejected && plugin.type === 'http') return plugin.rejected(ctx);
-			return new Response(RULE_MESSAGES[resolution.failure], {
-				status: 403,
-				headers: { 'content-type': 'text/plain; charset=utf-8' }
-			});
+			return new Response(
+				(event.locals.i18n ?? SOURCE_TRANSLATOR).t(RULE_MESSAGES[resolution.failure]),
+				{
+					status: 403,
+					headers: { 'content-type': 'text/plain; charset=utf-8' }
+				}
+			);
 		}
 
 		if (resolution.status === 'unauthenticated') {
@@ -236,6 +241,7 @@ const auth: Handle = async ({ event, resolve }) => {
 export const handle: Handle = sequence(legacyRedirect, localeHandle, auth);
 
 export const handleError: HandleServerError = ({ kind, error, event }) => {
+	const { t } = event.locals.i18n ?? SOURCE_TRANSLATOR;
 	if (kind === 'app' || kind === 'framework' || kind === 'validation') {
 		const { status, message } = error;
 		if (status >= 500)
@@ -243,9 +249,9 @@ export const handleError: HandleServerError = ({ kind, error, event }) => {
 		return { status, message };
 	}
 	if (isAccessDenied(error)) {
-		return { status: 401, message: 'Cannot log in to the MySQL server. Please log in again.' };
+		return { status: 401, message: t('Cannot log in to the MySQL server. Please log in again.') };
 	}
 	const err = error instanceof Error ? error : new Error(String(error));
 	console.error(`[${event.request.method} ${event.url.pathname}]`, err);
-	return { status: 500, message: 'Internal Error' };
+	return { status: 500, message: t('Internal Error') };
 };

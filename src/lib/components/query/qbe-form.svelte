@@ -11,6 +11,7 @@
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import {
 		applyEdits,
 		buildQbeQuery,
@@ -30,10 +31,11 @@
 		sqlHref: string;
 	}
 	let { db, schema, savedSearches, sqlHref }: Props = $props();
+	const { t } = useI18n();
 
 	const qbeSchema = $derived(schemaFromData(schema));
 	let grid = $state<QbeState>(emptyState());
-	let useTables = $state<string[]>(untrack(() => schema.tables.map((t) => t.name)));
+	let useTables = $state<string[]>(untrack(() => schema.tables.map((tb) => tb.name)));
 	let sql = $state('');
 
 	// Ins / Del checkboxes and the add counters, applied by "Update query"
@@ -53,7 +55,7 @@
 			.filter(([, v]) => v)
 			.map(([k]) => Number(k));
 
-	const visibleTables = $derived(schema.tables.filter((t) => useTables.includes(t.name)));
+	const visibleTables = $derived(schema.tables.filter((tb) => useTables.includes(tb.name)));
 	const sortOrders = $derived(Array.from({ length: grid.columns.length }, (_, i) => String(i + 1)));
 
 	function update() {
@@ -76,7 +78,7 @@
 
 	function onTablesChange() {
 		// fields of tables that are no longer used cannot stay selected
-		const keep = new Set(useTables.map((t) => columnRef(t, '*')));
+		const keep = new Set(useTables.map((name) => columnRef(name, '*')));
 		for (const c of grid.columns) {
 			if (c.column === '') continue;
 			const table = c.column.slice(0, c.column.lastIndexOf('.'));
@@ -110,20 +112,20 @@
 				<Table.Root>
 					<Table.Body>
 						<Table.Row>
-							<Table.Head scope="row">Field</Table.Head>
+							<Table.Head scope="row">{t('Field')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
 									<NativeSelect
 										class="w-full min-w-40 font-mono"
-										aria-label="Field {i + 1}"
+										aria-label={t('Field {n}', { n: i + 1 })}
 										bind:value={col.column}
 									>
 										<option value=""></option>
-										{#each visibleTables as t (t.name)}
-											<optgroup label={t.name}>
-												<option value={columnRef(t.name, '*')}>{t.name}.*</option>
-												{#each t.columns as c (c)}
-													<option value={columnRef(t.name, c)}>{t.name}.{c}</option>
+										{#each visibleTables as tb (tb.name)}
+											<optgroup label={tb.name}>
+												<option value={columnRef(tb.name, '*')}>{tb.name}.*</option>
+												{#each tb.columns as c (c)}
+													<option value={columnRef(tb.name, c)}>{tb.name}.{c}</option>
 												{/each}
 											</optgroup>
 										{/each}
@@ -132,50 +134,50 @@
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Alias</Table.Head>
+							<Table.Head scope="row">{t('Alias')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
-									<Input aria-label="Alias {i + 1}" bind:value={col.alias} />
+									<Input aria-label={t('Alias {n}', { n: i + 1 })} bind:value={col.alias} />
 								</Table.Cell>
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Show</Table.Head>
+							<Table.Head scope="row">{t('Show')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
 									<input
 										type="checkbox"
 										class="size-4 accent-primary"
-										aria-label="Show {i + 1}"
+										aria-label={t('Show {n}', { n: i + 1 })}
 										bind:checked={col.show}
 									/>
 								</Table.Cell>
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Sort</Table.Head>
+							<Table.Head scope="row">{t('Sort')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
 									<NativeSelect
 										class="w-full"
-										aria-label="Sort {i + 1}"
+										aria-label={t('Sort {n}', { n: i + 1 })}
 										bind:value={col.sort}
 										disabled={col.column.endsWith('.*')}
 									>
 										<option value=""></option>
-										<option value="ASC">Ascending</option>
-										<option value="DESC">Descending</option>
+										<option value="ASC">{t('Ascending')}</option>
+										<option value="DESC">{t('Descending')}</option>
 									</NativeSelect>
 								</Table.Cell>
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Sort order</Table.Head>
+							<Table.Head scope="row">{t('Sort order')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
 									<NativeSelect
 										class="w-full"
-										aria-label="Sort order {i + 1}"
+										aria-label={t('Sort order {n}', { n: i + 1 })}
 										bind:value={col.sortOrder}
 									>
 										<option value=""></option>
@@ -185,56 +187,60 @@
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Criteria</Table.Head>
+							<Table.Head scope="row">{t('Criteria')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell>
 									<Input
 										class="min-w-40 font-mono"
-										aria-label="Criteria {i + 1}"
+										aria-label={t('Criteria {n}', { n: i + 1 })}
 										bind:value={col.criteria}
 									/>
 								</Table.Cell>
 							{/each}
 						</Table.Row>
 						<Table.Row>
-							<Table.Head scope="row">Modify</Table.Head>
+							<Table.Head scope="row">{t('Modify')}</Table.Head>
 							{#each grid.columns as col, i (i)}
 								<Table.Cell class="text-xs">
 									<div class="flex flex-col gap-1">
 										{#if i < grid.columns.length - 1}
 											<span class="flex items-center gap-2">
 												<label class="flex items-center gap-1">
-													Or <input
+													{t('Or')}
+													<input
 														type="radio"
 														name="andOrCol{i}"
 														value="or"
 														bind:group={col.andOr}
-														aria-label="Or after column {i + 1}"
+														aria-label={t('Or after column {n}', { n: i + 1 })}
 													/>
 												</label>
 												<label class="flex items-center gap-1">
-													And <input
+													{t('And')}
+													<input
 														type="radio"
 														name="andOrCol{i}"
 														value="and"
 														bind:group={col.andOr}
-														aria-label="And after column {i + 1}"
+														aria-label={t('And after column {n}', { n: i + 1 })}
 													/>
 												</label>
 											</span>
 										{/if}
 										<span class="flex items-center gap-2">
 											<label class="flex items-center gap-1"
-												>Ins <input
+												>{t('Ins')}
+												<input
 													type="checkbox"
-													aria-label="Insert column before {i + 1}"
+													aria-label={t('Insert column before {n}', { n: i + 1 })}
 													bind:checked={colIns[i]}
 												/></label
 											>
 											<label class="flex items-center gap-1"
-												>Del <input
+												>{t('Del')}
+												<input
 													type="checkbox"
-													aria-label="Delete column {i + 1}"
+													aria-label={t('Delete column {n}', { n: i + 1 })}
 													bind:checked={colDel[i]}
 												/></label
 											>
@@ -249,36 +255,40 @@
 									<div class="flex flex-col gap-1">
 										<span class="flex items-center gap-2">
 											<label class="flex items-center gap-1">
-												Or <input
+												{t('Or')}
+												<input
 													type="radio"
 													name="andOrRow{r}"
 													value="or"
 													bind:group={row.andOr}
-													aria-label="Or row {r + 1}"
+													aria-label={t('Or row {n}', { n: r + 1 })}
 												/>
 											</label>
 											<label class="flex items-center gap-1">
-												And <input
+												{t('And')}
+												<input
 													type="radio"
 													name="andOrRow{r}"
 													value="and"
 													bind:group={row.andOr}
-													aria-label="And row {r + 1}"
+													aria-label={t('And row {n}', { n: r + 1 })}
 												/>
 											</label>
 										</span>
 										<span class="flex items-center gap-2">
 											<label class="flex items-center gap-1"
-												>Ins <input
+												>{t('Ins')}
+												<input
 													type="checkbox"
-													aria-label="Insert row before {r + 1}"
+													aria-label={t('Insert row before {n}', { n: r + 1 })}
 													bind:checked={rowIns[r]}
 												/></label
 											>
 											<label class="flex items-center gap-1"
-												>Del <input
+												>{t('Del')}
+												<input
 													type="checkbox"
-													aria-label="Delete row {r + 1}"
+													aria-label={t('Delete row {n}', { n: r + 1 })}
 													bind:checked={rowDel[r]}
 												/></label
 											>
@@ -289,7 +299,10 @@
 									<Table.Cell>
 										<Input
 											class="min-w-40 font-mono"
-											aria-label="Criteria row {r + 1} column {i + 1}"
+											aria-label={t('Criteria row {row} column {column}', {
+												row: r + 1,
+												column: i + 1
+											})}
 											bind:value={row.cells[i]}
 										/>
 									</Table.Cell>
@@ -302,15 +315,15 @@
 
 			<div class="flex flex-wrap items-end gap-6">
 				<div class="flex flex-col gap-2">
-					<Label for="qbe-add-rows">Add/Delete criteria rows</Label>
+					<Label for="qbe-add-rows">{t('Add/Delete criteria rows')}</Label>
 					<Input id="qbe-add-rows" type="number" class="w-24" bind:value={addRows} />
 				</div>
 				<div class="flex flex-col gap-2">
-					<Label for="qbe-add-columns">Add/Delete columns</Label>
+					<Label for="qbe-add-columns">{t('Add/Delete columns')}</Label>
 					<Input id="qbe-add-columns" type="number" class="w-24" bind:value={addColumns} />
 				</div>
 				<div class="flex flex-col gap-2">
-					<Label for="qbe-tables">Use tables</Label>
+					<Label for="qbe-tables">{t('Use tables')}</Label>
 					<NativeSelect
 						id="qbe-tables"
 						multiple
@@ -318,8 +331,8 @@
 						bind:value={useTables}
 						onchange={onTablesChange}
 					>
-						{#each schema.tables as t (t.name)}
-							<option value={t.name}>{t.name}</option>
+						{#each schema.tables as tb (tb.name)}
+							<option value={tb.name}>{tb.name}</option>
 						{/each}
 					</NativeSelect>
 				</div>
@@ -331,9 +344,9 @@
 		<Card.Root data-testid="qbe-saved">
 			<Card.Content class="flex flex-wrap items-end gap-4">
 				<div class="flex flex-col gap-2">
-					<Label for="qbe-search-id">Saved bookmarked search</Label>
+					<Label for="qbe-search-id">{t('Saved bookmarked search')}</Label>
 					<NativeSelect id="qbe-search-id" bind:value={searchId} onchange={loadSearch}>
-						<option value="">New bookmark</option>
+						<option value="">{t('New bookmark')}</option>
 						{#each savedSearches as s (s.id)}
 							<option value={String(s.id)}>{s.name}</option>
 						{/each}
@@ -345,25 +358,25 @@
 					class="flex items-end gap-2"
 					use:enhance={() =>
 						async ({ result, update: apply }) => {
-							if (result.type === 'success') toast.success('Search saved.');
+							if (result.type === 'success') toast.success(t('Search saved.'));
 							else if (result.type === 'failure')
-								toast.error(String(result.data?.searchError ?? 'Could not save.'));
+								toast.error(String(result.data?.searchError ?? t('Could not save.')));
 							await apply({ reset: false });
 						}}
 				>
 					<input type="hidden" name="data" value={searchData} />
 					<input type="hidden" name="id" value={searchId} />
 					<div class="flex flex-col gap-2">
-						<Label for="qbe-search-name">Name</Label>
+						<Label for="qbe-search-name">{t('Name')}</Label>
 						<Input
 							id="qbe-search-name"
 							name="name"
-							placeholder="Bookmark name"
+							placeholder={t('Bookmark name')}
 							bind:value={searchName}
 						/>
 					</div>
 					<Button type="submit" variant="outline" disabled={!hydration.ready}>
-						{current ? 'Update bookmark' : 'Create bookmark'}
+						{current ? t('Update bookmark') : t('Create bookmark')}
 					</Button>
 				</form>
 				{#if current}
@@ -373,7 +386,7 @@
 						use:enhance={() =>
 							async ({ result, update: apply }) => {
 								if (result.type === 'success') {
-									toast.success('Search deleted.');
+									toast.success(t('Search deleted.'));
 									searchId = '';
 								}
 								await apply({ reset: false });
@@ -381,7 +394,7 @@
 					>
 						<input type="hidden" name="id" value={searchId} />
 						<Button type="submit" variant="outline" class="text-destructive">
-							Delete bookmark
+							{t('Delete bookmark')}
 						</Button>
 					</form>
 				{/if}
@@ -390,7 +403,7 @@
 	{/if}
 
 	<Card.Root>
-		<Card.Header><Card.Title>SQL query on database {db}</Card.Title></Card.Header>
+		<Card.Header><Card.Title>{t('SQL query on database {db}', { db })}</Card.Title></Card.Header>
 		<Card.Content class="flex flex-col gap-4">
 			<div data-testid="qbe-sql">
 				<SqlEditor
@@ -398,13 +411,13 @@
 					readonly
 					lint={false}
 					minLines={4}
-					aria-label="Generated SQL"
-					placeholder="Press Update query to generate the SQL"
+					aria-label={t('Generated SQL')}
+					placeholder={t('Press Update query to generate the SQL')}
 				/>
 			</div>
 			<div class="flex gap-2">
-				<Button type="button" variant="outline" onclick={update}>Update query</Button>
-				<Button type="button" onclick={submit}>Submit query</Button>
+				<Button type="button" variant="outline" onclick={update}>{t('Update query')}</Button>
+				<Button type="button" onclick={submit}>{t('Submit query')}</Button>
 			</div>
 		</Card.Content>
 	</Card.Root>

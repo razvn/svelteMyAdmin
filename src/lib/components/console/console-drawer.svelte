@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Play from '@lucide/svelte/icons/play';
 	import X from '@lucide/svelte/icons/x';
 	import { onMount, tick } from 'svelte';
+	import { N_ } from '#lib/i18n/index.ts';
 	import BookmarkList from '#lib/components/sql/bookmark-list.svelte';
 	import QueryHistory from '#lib/components/sql/query-history.svelte';
 	import SqlEditor from '#lib/components/sql-editor/sql-editor.svelte';
@@ -12,6 +14,8 @@
 	import type { ScriptResult, StatementResult } from '#lib/sql/run-types.ts';
 	import { cn } from '#lib/utils.ts';
 	import { getConsoleState, type ConsoleTab } from './console-state.svelte.ts';
+
+	const { t, tn } = useI18n();
 
 	interface Props {
 		/** Current route context. */
@@ -64,7 +68,7 @@
 			const result = (await res.json()) as ScriptResult;
 			cs.addRun({ sql: text, db, table, result, error: '' });
 		} catch {
-			cs.addRun({ sql: text, db, table, result: null, error: 'The query could not be run.' });
+			cs.addRun({ sql: text, db, table, result: null, error: t('The query could not be run.') });
 		} finally {
 			running = false;
 		}
@@ -109,9 +113,9 @@
 	}
 
 	const tabs: { id: ConsoleTab; label: string }[] = [
-		{ id: 'console', label: 'Console' },
-		{ id: 'history', label: 'History' },
-		{ id: 'bookmarks', label: 'Bookmarks' }
+		{ id: 'console', label: N_('Console') },
+		{ id: 'history', label: N_('History') },
+		{ id: 'bookmarks', label: N_('Bookmarks') }
 	];
 
 	function summary(s: StatementResult): string {
@@ -120,11 +124,16 @@
 		const ms = `${formatSeconds(s.durationMs)} s`;
 		if (set) {
 			const total = s.pagination?.total ?? set.rows.length;
-			return `${set.rows.length} row${set.rows.length === 1 ? '' : 's'}${
-				total !== set.rows.length ? ` of ${total}` : ''
-			} (${ms})`;
+			return total !== set.rows.length
+				? tn('{n} row of {total} ({time})', '{n} rows of {total} ({time})', set.rows.length, {
+						total,
+						time: ms
+					})
+				: tn('{n} row ({time})', '{n} rows ({time})', set.rows.length, { time: ms });
 		}
-		return `${s.affectedRows} row${s.affectedRows === 1 ? '' : 's'} affected (${ms})`;
+		return tn('{n} row affected ({time})', '{n} rows affected ({time})', s.affectedRows, {
+			time: ms
+		});
 	}
 </script>
 
@@ -132,14 +141,14 @@
 	<section
 		class="sticky bottom-0 z-30 flex shrink-0 flex-col border-t bg-card shadow-card"
 		style="height: {cs.height}px"
-		aria-label="SQL console"
+		aria-label={t('SQL console')}
 		data-testid="console"
 	>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 		<div
 			role="separator"
 			aria-orientation="horizontal"
-			aria-label="Resize console"
+			aria-label={t('Resize console')}
 			aria-valuenow={cs.height}
 			aria-valuemin={160}
 			tabindex="0"
@@ -153,36 +162,36 @@
 		></div>
 
 		<div class="flex shrink-0 items-center gap-1 border-b px-3 py-1.5">
-			<div class="flex gap-1" role="tablist" aria-label="Console sections">
-				{#each tabs as t (t.id)}
+			<div class="flex gap-1" role="tablist" aria-label={t('Console sections')}>
+				{#each tabs as tab (tab.id)}
 					<button
 						type="button"
 						role="tab"
-						aria-selected={cs.tab === t.id}
+						aria-selected={cs.tab === tab.id}
 						class={cn(
 							'rounded-lg px-3 py-1 text-sm font-medium transition-colors',
-							cs.tab === t.id
+							cs.tab === tab.id
 								? 'bg-primary-soft text-primary'
 								: 'text-muted-foreground hover:bg-muted hover:text-foreground'
 						)}
-						onclick={() => cs.setTab(t.id)}>{t.label}</button
+						onclick={() => cs.setTab(tab.id)}>{t(tab.label)}</button
 					>
 				{/each}
 			</div>
 			<span class="ms-3 truncate text-xs text-muted-foreground" data-testid="console-context"
-				>Context: <span class="font-mono">{context}</span></span
+				>{t('Context:')} <span class="font-mono">{context}</span></span
 			>
 			<div class="ms-auto flex items-center gap-1">
 				{#if cs.tab === 'console' && cs.runs.length}
 					<Button type="button" variant="ghost" size="sm" onclick={() => cs.clearRuns()}
-						>Clear output</Button
+						>{t('Clear output')}</Button
 					>
 				{/if}
 				<Button
 					type="button"
 					variant="ghost"
 					size="icon-sm"
-					aria-label="Close console"
+					aria-label={t('Close console')}
 					onclick={() => cs.setOpen(false)}><X class="size-4" aria-hidden="true" /></Button
 				>
 			</div>
@@ -192,7 +201,7 @@
 			<div class="min-h-0 flex-1 overflow-auto px-3 py-2" bind:this={scroller}>
 				{#if cs.runs.length === 0}
 					<p class="text-sm text-muted-foreground">
-						Run a query in {context}. Press Ctrl/Cmd+Enter to execute.
+						{t('Run a query in {context}. Press Ctrl/Cmd+Enter to execute.', { context })}
 					</p>
 				{/if}
 				{#each cs.runs as r (r.id)}
@@ -238,7 +247,10 @@
 									</div>
 									{#if set.rows.length > PREVIEW_ROWS}
 										<p class="mt-1 text-xs text-muted-foreground">
-											Showing the first {PREVIEW_ROWS} of {set.rows.length} rows.
+											{t('Showing the first {shown} of {total} rows.', {
+												shown: PREVIEW_ROWS,
+												total: set.rows.length
+											})}
 										</p>
 									{/if}
 								{/if}
@@ -248,7 +260,7 @@
 								class="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
 								href={sqlPageUrl(r.sql)}
 							>
-								<ExternalLink class="size-3" aria-hidden="true" />Open in SQL page
+								<ExternalLink class="size-3" aria-hidden="true" />{t('Open in SQL page')}
 							</a>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 						{/if}
@@ -260,13 +272,13 @@
 					bind:this={editor}
 					bind:value={cs.input}
 					class="min-w-0 flex-1"
-					aria-label="Console query"
+					aria-label={t('Console query')}
 					{dialect}
 					{schemaUrl}
 					minLines={2}
 					maxHeight="7rem"
 					lint={false}
-					placeholder="Run SQL in {context}"
+					placeholder={t('Run SQL in {context}', { context })}
 					onrun={(v) => run(v)}
 				/>
 				<Button
@@ -275,7 +287,7 @@
 					disabled={running || cs.input.trim() === ''}
 					onclick={() => run(cs.input)}
 				>
-					<Play class="size-4" aria-hidden="true" />Run
+					<Play class="size-4" aria-hidden="true" />{t('Run')}
 				</Button>
 			</div>
 		{:else if cs.tab === 'history'}

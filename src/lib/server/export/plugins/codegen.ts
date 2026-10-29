@@ -3,6 +3,7 @@
  * Helpers/TableProperty.php): NHibernate C# domain objects or NHibernate XML mappings.
  * Only the table definition is used; rows are not read.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportOption, ExportPlugin, ExportScope } from '../types.ts';
 import { htmlEscape, optString, phpTrim, resolveOptions, ucfirst } from './plugin-utils.ts';
 import { type ColumnInfo, loadColumns } from './table-info.ts';
@@ -13,11 +14,11 @@ export const CODEGEN_OPTIONS: ExportOption[] = [
 	{
 		kind: 'select',
 		name: 'format',
-		label: 'Format:',
+		label: N_('Format:'),
 		default: '0',
 		choices: [
-			{ value: '0', label: 'NHibernate C# DO' },
-			{ value: '1', label: 'NHibernate XML' }
+			{ value: '0', label: N_('NHibernate C# DO') },
+			{ value: '1', label: N_('NHibernate XML') }
 		]
 	}
 ];
@@ -236,7 +237,7 @@ function xmlBody(db: string, table: string, columns: readonly ColumnInfo[], crlf
 
 const codegen: ExportPlugin = {
 	id: 'codegen',
-	label: 'CodeGen',
+	label: N_('CodeGen'),
 	extension: 'cs',
 	mimeType: 'text/cs',
 	scopes: CODEGEN_SCOPES,

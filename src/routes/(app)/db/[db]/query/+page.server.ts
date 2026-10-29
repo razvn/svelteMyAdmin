@@ -41,7 +41,8 @@ export const actions: Actions = {
 		const raw = Object.fromEntries(await request.formData());
 		if (raw.id === '') delete raw.id;
 		const parsed = saveSchema.safeParse(raw);
-		if (!parsed.success) return fail(400, { searchError: 'Give the search a name.' });
+		if (!parsed.success)
+			return fail(400, { searchError: locals.i18n.t('Give the search a name.') });
 		const res = await saveSearch(locals, params.db, parsed.data);
 		if (!res.ok) return fail(400, { searchError: res.error });
 		return { savedId: res.id };
@@ -52,9 +53,9 @@ export const actions: Actions = {
 			.int()
 			.positive()
 			.safeParse((await request.formData()).get('id'));
-		if (!id.success) return fail(400, { searchError: 'No search selected.' });
+		if (!id.success) return fail(400, { searchError: locals.i18n.t('No search selected.') });
 		const res = await deleteSearch(locals, params.db, id.data);
-		if (!res.ok) return fail(400, { searchError: 'Could not delete the search.' });
+		if (!res.ok) return fail(400, { searchError: locals.i18n.t('Could not delete the search.') });
 		return { deleted: true };
 	}
 };

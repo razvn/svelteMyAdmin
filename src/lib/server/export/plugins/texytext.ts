@@ -5,6 +5,7 @@
  *
  * Not ported: relation links and column comments / media types (they live in the pma__ tables).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ExportOption, ExportPlugin, ExportScope } from '../types.ts';
 import {
 	emit,
@@ -28,8 +29,13 @@ import {
 const TEXY_SCOPES: ExportScope[] = ['server', 'database', 'table', 'raw'];
 
 export const TEXY_OPTIONS: ExportOption[] = [
-	{ kind: 'bool', name: 'columns', label: 'Put columns names in the first row', default: false },
-	{ kind: 'text', name: 'null', label: 'Replace NULL with:', default: 'NULL' }
+	{
+		kind: 'bool',
+		name: 'columns',
+		label: N_('Put columns names in the first row'),
+		default: false
+	},
+	{ kind: 'text', name: 'null', label: N_('Replace NULL with:'), default: 'NULL' }
 ];
 
 /** One column line of the structure table (ExportTexytext::formatOneColumnDefinition). */
@@ -55,7 +61,7 @@ export function texyColumnLine(column: ColumnInfo, unique: readonly string[]): s
 
 const texytext: ExportPlugin = {
 	id: 'texytext',
-	label: 'Texy! text',
+	label: N_('Texy! text'),
 	extension: 'txt',
 	mimeType: 'text/plain',
 	scopes: TEXY_SCOPES,

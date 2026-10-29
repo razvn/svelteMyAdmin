@@ -16,6 +16,7 @@
 	import * as Tabs from '#lib/components/ui/tabs/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import { callAction } from '#lib/forms/call-action.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { escapeId } from '#lib/sql/escape.ts';
 	import { formatSeconds } from '#lib/sql/messages.ts';
 	import type {
@@ -57,6 +58,7 @@
 	}
 
 	let { data, form }: Props = $props();
+	const { t, tn } = useI18n();
 
 	const run = $derived((form as { run?: RunData } | null | undefined)?.run ?? null);
 	const formError = $derived((form as { error?: string } | null | undefined)?.error ?? null);
@@ -136,7 +138,7 @@
 		busyIndex = null;
 		const stmt = res.data?.run?.result.statements[0];
 		if (!res.ok || !stmt) {
-			toast.error(res.message ?? 'The query could not be run.');
+			toast.error(res.message ?? t('The query could not be run.'));
 			return null;
 		}
 		return stmt;
@@ -159,14 +161,14 @@
 	}
 
 	const title = $derived(
-		scope.level === 'server' ? 'SQL' : scope.level === 'db' ? 'SQL' : scope.table
+		scope.level === 'server' ? t('SQL') : scope.level === 'db' ? t('SQL') : scope.table
 	);
 	const description = $derived(
 		scope.level === 'server'
-			? 'Run SQL query/queries on server'
+			? t('Run SQL query/queries on server')
 			: scope.level === 'db'
-				? `Run SQL query/queries on database ${scope.db}`
-				: `Run SQL query/queries on table ${scope.db}.${scope.table}`
+				? t('Run SQL query/queries on database {db}', { db: scope.db })
+				: t('Run SQL query/queries on table {table}', { table: `${scope.db}.${scope.table}` })
 	);
 	const schemaUrl = $derived(
 		scope.level === 'server' ? undefined : `/api/sql/schema?db=${encodeURIComponent(scope.db)}`
@@ -181,7 +183,7 @@
 </script>
 
 <svelte:head>
-	<title>SQL - svelteMyAdmin</title>
+	<title>{t('SQL')} - svelteMyAdmin</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6 p-4 md:p-6">
@@ -209,29 +211,29 @@
 						bind:this={editor}
 						bind:value
 						name="sql_query"
-						aria-label="SQL query"
+						aria-label={t('SQL query')}
 						dialect={settings.dialect}
 						{schemaUrl}
 						minLines={8}
-						placeholder="Run SQL query"
+						placeholder={t('Run SQL query')}
 						onrun={() => formEl?.requestSubmit()}
 					/>
 					<div class="flex flex-wrap items-center gap-2">
 						{#if scope.level === 'table'}
-							{#each templates as t (t.name)}
+							{#each templates as tpl (tpl.name)}
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
-									onclick={() => useTemplate(t.name)}>{t.label}</Button
+									onclick={() => useTemplate(tpl.name)}>{tpl.label}</Button
 								>
 							{/each}
 						{/if}
 						<Button type="button" variant="ghost" size="sm" onclick={() => (value = '')}
-							>Clear</Button
+							>{t('Clear')}</Button
 						>
 						<Button type="button" variant="ghost" size="sm" onclick={() => editor?.format()}
-							>Format</Button
+							>{t('Format')}</Button
 						>
 					</div>
 				</div>
@@ -239,7 +241,7 @@
 				{#if data.tables.length}
 					<div class="min-w-0 rounded-lg border" data-testid="sql-columns">
 						<p class="border-b px-3 py-2 text-sm font-medium">
-							{scope.level === 'table' ? 'Columns' : 'Tables'}
+							{scope.level === 'table' ? t('Columns') : t('Tables')}
 						</p>
 						<div class="max-h-64 overflow-auto p-1">
 							{#if scope.level === 'table'}
@@ -247,24 +249,25 @@
 									<button
 										type="button"
 										class="block w-full truncate rounded px-2 py-1 text-start font-mono text-xs hover:bg-muted"
-										title="Insert {escapeId(c)}"
+										title={t('Insert {name}', { name: escapeId(c) })}
 										onclick={() => insert(escapeId(c))}>{c}</button
 									>
 								{/each}
 							{:else}
-								{#each data.tables as t (t.name)}
+								{#each data.tables as tb (tb.name)}
 									<Collapsible.Root>
 										<Collapsible.Trigger
 											class="block w-full truncate rounded px-2 py-1 text-start text-xs font-medium hover:bg-muted"
-											>{t.name}</Collapsible.Trigger
+											>{tb.name}</Collapsible.Trigger
 										>
 										<Collapsible.Content class="ps-3">
 											<button
 												type="button"
 												class="block w-full truncate rounded px-2 py-1 text-start font-mono text-xs text-primary hover:bg-muted"
-												onclick={() => insert(escapeId(t.name))}>insert {escapeId(t.name)}</button
+												onclick={() => insert(escapeId(tb.name))}
+												>{t('insert {name}', { name: escapeId(tb.name) })}</button
 											>
-											{#each t.columns as c (c)}
+											{#each tb.columns as c (c)}
 												<button
 													type="button"
 													class="block w-full truncate rounded px-2 py-1 text-start font-mono text-xs hover:bg-muted"
@@ -283,7 +286,7 @@
 			<div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
 				<div class="flex items-center gap-2">
 					<Checkbox id="opt-show-query" name="show_query" value="1" bind:checked={showQuery} />
-					<Label for="opt-show-query">Show this query here again</Label>
+					<Label for="opt-show-query">{t('Show this query here again')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox
@@ -292,19 +295,19 @@
 						value="1"
 						bind:checked={retainQueryBox}
 					/>
-					<Label for="opt-retain">Retain query box</Label>
+					<Label for="opt-retain">{t('Retain query box')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox id="opt-rollback" name="rollback" value="1" bind:checked={rollback} />
-					<Label for="opt-rollback">Rollback when finished</Label>
+					<Label for="opt-rollback">{t('Rollback when finished')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox id="opt-fk" name="fk_checks" value="1" bind:checked={fkChecks} />
-					<Label for="opt-fk">Enable foreign key checks</Label>
+					<Label for="opt-fk">{t('Enable foreign key checks')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox id="opt-profiling" name="profiling" value="1" bind:checked={profiling} />
-					<Label for="opt-profiling">Profiling</Label>
+					<Label for="opt-profiling">{t('Profiling')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
 					<Checkbox
@@ -313,10 +316,10 @@
 						value="1"
 						bind:checked={continueOnError}
 					/>
-					<Label for="opt-continue">Continue on error</Label>
+					<Label for="opt-continue">{t('Continue on error')}</Label>
 				</div>
 				<div class="flex items-center gap-2">
-					<Label for="opt-delimiter">Delimiter</Label>
+					<Label for="opt-delimiter">{t('Delimiter')}</Label>
 					<Input
 						id="opt-delimiter"
 						name="delimiter"
@@ -326,7 +329,7 @@
 					/>
 				</div>
 				<Button type="submit" class="ms-auto" disabled={running}>
-					<Play class="size-4" aria-hidden="true" />Go
+					<Play class="size-4" aria-hidden="true" />{t('Go')}
 				</Button>
 			</div>
 		</form>
@@ -335,9 +338,9 @@
 	<Card.Root class="gap-0 py-0" data-testid="sql-extras">
 		<Tabs.Root bind:value={panelTab} class="gap-0 p-4">
 			<Tabs.List>
-				<Tabs.Trigger value="history">SQL history</Tabs.Trigger>
-				<Tabs.Trigger value="bookmarks">Bookmarks</Tabs.Trigger>
-				<Tabs.Trigger value="bookmark-save">Bookmark this SQL query</Tabs.Trigger>
+				<Tabs.Trigger value="history">{t('SQL history')}</Tabs.Trigger>
+				<Tabs.Trigger value="bookmarks">{t('Bookmarks')}</Tabs.Trigger>
+				<Tabs.Trigger value="bookmark-save">{t('Bookmark this SQL query')}</Tabs.Trigger>
 			</Tabs.List>
 			<Tabs.Content value="history" class="pt-3">
 				<QueryHistory
@@ -383,17 +386,19 @@
 	{/if}
 
 	{#if run}
-		<section class="flex flex-col gap-4" aria-label="Results" data-testid="sql-results">
+		<section class="flex flex-col gap-4" aria-label={t('Results')} data-testid="sql-results">
 			{#if run.result.rolledBack}
 				<Alert variant="info" data-testid="rolled-back">
 					<AlertDescription
-						>The transaction was rolled back; DDL statements may have been committed implicitly.</AlertDescription
+						>{t(
+							'The transaction was rolled back; DDL statements may have been committed implicitly.'
+						)}</AlertDescription
 					>
 				</Alert>
 			{/if}
 			{#if run.result.stopped}
 				<Alert variant="warning">
-					<AlertDescription>Execution stopped at the first error.</AlertDescription>
+					<AlertDescription>{t('Execution stopped at the first error.')}</AlertDescription>
 				</Alert>
 			{/if}
 			{#each statements as s (s.index)}
@@ -409,7 +414,14 @@
 			{/each}
 			{#if statements.length > 1}
 				<p class="text-sm text-muted-foreground">
-					{statements.length} statements, {formatSeconds(run.result.totalMs)} seconds.
+					{tn(
+						'{n} statement, {seconds} seconds.',
+						'{n} statements, {seconds} seconds.',
+						statements.length,
+						{
+							seconds: formatSeconds(run.result.totalMs)
+						}
+					)}
 				</p>
 			{/if}
 		</section>

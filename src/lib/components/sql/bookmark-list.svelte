@@ -7,6 +7,7 @@
 	import { Button } from '#lib/components/ui/button/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { countVariables } from '#lib/sql/bookmark.ts';
 
 	interface Bookmark {
@@ -30,6 +31,7 @@
 
 	let { db, onload, onrun, refreshKey = 0, class: className }: Props = $props();
 
+	const { t } = useI18n();
 	let bookmarks = $state.raw<Bookmark[]>([]);
 	let available = $state(true);
 	let loaded = $state(false);
@@ -62,7 +64,7 @@
 			body: JSON.stringify({ action: 'apply', db, id: b.id, variables })
 		});
 		if (!res.ok) {
-			toast.error('The bookmark could not be loaded.');
+			toast.error(t('The bookmark could not be loaded.'));
 			return;
 		}
 		const { sql } = (await res.json()) as { sql: string };
@@ -84,21 +86,23 @@
 	async function remove(b: Bookmark) {
 		const res = await fetch(`/api/sql/bookmarks?id=${b.id}`, { method: 'DELETE' });
 		if (!res.ok) {
-			toast.error('The bookmark could not be deleted.');
+			toast.error(t('The bookmark could not be deleted.'));
 			return;
 		}
 		bookmarks = bookmarks.filter((x) => x.id !== b.id);
-		toast.success(`Bookmark ${b.label} deleted`);
+		toast.success(t('Bookmark {label} deleted', { label: b.label }));
 	}
 </script>
 
 <div class={className} data-testid="bookmark-list">
 	{#if loaded && !available}
 		<p class="text-sm text-muted-foreground">
-			Bookmarks need the configuration storage (the <code>bookmarktable</code> setting).
+			{t('Bookmarks need the configuration storage (the bookmarktable setting).')}
 		</p>
 	{:else if loaded && bookmarks.length === 0}
-		<p class="text-sm text-muted-foreground" data-testid="bookmarks-empty">No bookmarks yet.</p>
+		<p class="text-sm text-muted-foreground" data-testid="bookmarks-empty">
+			{t('No bookmarks yet.')}
+		</p>
 	{:else}
 		<ul class="flex max-h-64 flex-col gap-1 overflow-auto">
 			{#each bookmarks as b (b.id)}
@@ -107,21 +111,21 @@
 						<span class="min-w-0 flex-1 truncate text-sm font-medium" title={b.query}
 							>{b.label}</span
 						>
-						{#if b.shared}<Badge variant="info">Shared</Badge>{/if}
+						{#if b.shared}<Badge variant="info">{t('Shared')}</Badge>{/if}
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Edit bookmark {b.label}"
-							title="Load into the editor"
+							aria-label={t('Edit bookmark {label}', { label: b.label })}
+							title={t('Load into the editor')}
 							onclick={() => start(b, 'load')}><Pencil class="size-4" aria-hidden="true" /></Button
 						>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Run bookmark {b.label}"
-							title="Run"
+							aria-label={t('Run bookmark {label}', { label: b.label })}
+							title={t('Run')}
 							onclick={() => start(b, 'run')}><Play class="size-4" aria-hidden="true" /></Button
 						>
 						<Button
@@ -129,8 +133,8 @@
 							variant="ghost"
 							size="icon-sm"
 							class="text-destructive hover:text-destructive"
-							aria-label="Delete bookmark {b.label}"
-							title="Delete"
+							aria-label={t('Delete bookmark {label}', { label: b.label })}
+							title={t('Delete')}
 							onclick={() => remove(b)}><Trash2 class="size-4" aria-hidden="true" /></Button
 						>
 					</div>
@@ -146,16 +150,18 @@
 							{#each values.keys() as i (i)}
 								<div class="flex items-center gap-2">
 									<Label class="w-24 shrink-0 font-mono text-xs" for="bm-{b.id}-var-{i}"
-										>VARIABLE{i + 1}</Label
+										>{t('VARIABLE{n}', { n: i + 1 })}</Label
 									>
 									<Input id="bm-{b.id}-var-{i}" class="h-8" bind:value={values[i]} />
 								</div>
 							{/each}
 							<div class="flex justify-end gap-2">
 								<Button type="button" variant="ghost" size="sm" onclick={() => (pending = null)}
-									>Cancel</Button
+									>{t('Cancel')}</Button
 								>
-								<Button type="submit" size="sm">{pending.mode === 'run' ? 'Run' : 'Load'}</Button>
+								<Button type="submit" size="sm"
+									>{pending.mode === 'run' ? t('Run') : t('Load')}</Button
+								>
 							</div>
 						</form>
 					{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import type { Attachment } from 'svelte/attachments';
@@ -8,6 +9,8 @@
 	import { isTabActive, type TabDef } from '#lib/nav/tabs.ts';
 	import { FALLBACK_ICON, MORE_ICON, TAB_ICONS } from './tab-icons.ts';
 	import { TAB_STRIP, tabLinkClass } from './tab-styles.ts';
+
+	const { t } = useI18n();
 
 	interface Props {
 		/** Accessible name of the navigation landmark. */
@@ -26,7 +29,7 @@
 
 	const shown = $derived(visibleCount === null ? tabs : tabs.slice(0, visibleCount));
 	const overflow = $derived(visibleCount === null ? [] : tabs.slice(visibleCount));
-	const overflowActive = $derived(overflow.some((t) => isTabActive(t, current)));
+	const overflowActive = $derived(overflow.some((o) => isTabActive(o, current)));
 
 	function recompute() {
 		if (!container || !measure) return;
@@ -69,7 +72,7 @@
 				data-tab={tab.id}
 			>
 				<Icon />
-				{tab.label}
+				{t(tab.label)}
 			</a>
 		{/each}
 
@@ -79,7 +82,7 @@
 					{#snippet child({ props })}
 						<button {...props} type="button" class={linkClass(overflowActive)}>
 							<Ellipsis />
-							More
+							{t('More')}
 						</button>
 					{/snippet}
 				</DropdownMenu.Trigger>
@@ -94,7 +97,7 @@
 									aria-current={isTabActive(tab, current) ? 'page' : undefined}
 								>
 									<Icon />
-									{tab.label}
+									{t(tab.label)}
 								</a>
 							{/snippet}
 						</DropdownMenu.Item>
@@ -115,12 +118,12 @@
 			{@const Icon = TAB_ICONS[tab.id] ?? FALLBACK_ICON}
 			<span data-measure-tab class={linkClass(false)}>
 				<Icon />
-				{tab.label}
+				{t(tab.label)}
 			</span>
 		{/each}
 		<span data-measure-more class={linkClass(false)}>
 			<MORE_ICON />
-			More
+			{t('More')}
 		</span>
 	</div>
 </div>

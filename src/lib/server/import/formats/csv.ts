@@ -7,6 +7,8 @@
  * Feed text chunks to `push`, finish with `end`; rows come back as soon as their line is complete.
  */
 
+import { N_ } from '#lib/i18n/translator.ts';
+
 export interface CsvOptions {
 	terminated: string;
 	enclosed: string;
@@ -29,11 +31,12 @@ export interface CsvRow {
 }
 
 export class CsvFormatError extends Error {
+	/** `msgid` is the English msgid with a `{line}` placeholder. */
 	constructor(
-		message: string,
+		readonly msgid: string,
 		readonly line: number
 	) {
-		super(message);
+		super(msgid.replace('{line}', String(line)));
 		this.name = 'CsvFormatError';
 	}
 }
@@ -45,11 +48,14 @@ export function unescapeCsvOption(value: string): string {
 
 /** Parameter validation of ImportCsv::buildErrorsForParams; returns the error message or null. */
 export function validateCsvOptions(o: CsvOptions): string | null {
-	if (o.terminated.length === 0) return 'Invalid parameter for CSV import: Columns terminated with';
-	if ([...o.enclosed].length > 1) return 'Invalid parameter for CSV import: Columns enclosed with';
-	if ([...o.escaped].length > 1) return 'Invalid parameter for CSV import: Columns escaped with';
+	if (o.terminated.length === 0)
+		return N_('Invalid parameter for CSV import: Columns terminated with');
+	if ([...o.enclosed].length > 1)
+		return N_('Invalid parameter for CSV import: Columns enclosed with');
+	if ([...o.escaped].length > 1)
+		return N_('Invalid parameter for CSV import: Columns escaped with');
 	if ([...o.newLine].length !== 1 && o.newLine !== 'auto') {
-		return 'Invalid parameter for CSV import: Lines terminated with';
+		return N_('Invalid parameter for CSV import: Lines terminated with');
 	}
 	return null;
 }
@@ -143,17 +149,14 @@ export class CsvParser {
 				for (;;) {
 					if (p >= len) {
 						if (!final) return null;
-						throw new CsvFormatError(
-							`Invalid format of CSV input on line ${this.line}.`,
-							this.line
-						);
+						throw new CsvFormatError(N_('Invalid format of CSV input on line {line}.'), this.line);
 					}
 					const ch = b[p];
 					if (esc !== '' && ch === esc && esc !== enc) {
 						if (p + 1 >= len) {
 							if (!final) return null;
 							throw new CsvFormatError(
-								`Invalid format of CSV input on line ${this.line}.`,
+								N_('Invalid format of CSV input on line {line}.'),
 								this.line
 							);
 						}

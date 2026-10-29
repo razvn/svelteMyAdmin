@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { Dialog as SheetPrimitive } from 'bits-ui';
 	import XIcon from '@lucide/svelte/icons/x';
 	import { Button } from '#lib/components/ui/button/index.ts';
@@ -11,6 +12,8 @@
 	import SheetPortal from './sheet-portal.svelte';
 	import type { Snippet } from 'svelte';
 	import type { ComponentProps } from 'svelte';
+
+	const { t } = useI18n();
 
 	let {
 		ref = $bindable(null),
@@ -46,7 +49,7 @@
 				{#snippet child({ props })}
 					<Button variant="ghost" class="absolute top-4 right-4" size="icon-sm" {...props}>
 						<XIcon />
-						<span class="sr-only">Close</span>
+						<span class="sr-only">{t('Close')}</span>
 					</Button>
 				{/snippet}
 			</SheetPrimitive.Close>

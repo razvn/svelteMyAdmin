@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useI18n } from '#lib/i18n/index.ts';
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import KeyRound from '@lucide/svelte/icons/key-round';
@@ -21,20 +22,22 @@
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import type { PageProps } from './$types';
 
+	const { t, tn } = useI18n();
+
 	let { data, form }: PageProps = $props();
 
 	const serverRows = $derived([
-		{ label: 'Server', value: data.server.label, testid: 'server-name' },
-		{ label: 'Connection', value: data.server.connection },
-		{ label: 'Server type', value: data.server.type, testid: 'server-type' },
+		{ label: t('Server'), value: data.server.label, testid: 'server-name' },
+		{ label: t('Connection'), value: data.server.connection },
+		{ label: t('Server type'), value: data.server.type, testid: 'server-type' },
 		{
-			label: 'Server connection',
-			value: data.server.ssl ? 'SSL is used' : 'SSL is not being used'
+			label: t('Server connection'),
+			value: data.server.ssl ? t('SSL is used') : t('SSL is not being used')
 		},
-		{ label: 'Server version', value: data.server.version, testid: 'server-version' },
-		{ label: 'Protocol version', value: data.server.protocolVersion },
-		{ label: 'User', value: data.server.user },
-		{ label: 'Server charset', value: data.server.charset }
+		{ label: t('Server version'), value: data.server.version, testid: 'server-version' },
+		{ label: t('Protocol version'), value: data.server.protocolVersion },
+		{ label: t('User'), value: data.server.user },
+		{ label: t('Server charset'), value: data.server.charset }
 	]);
 	const webRows = $derived([
 		{ label: 'Node.js', value: data.webServer.nodeVersion },
@@ -48,51 +51,54 @@
 </svelte:head>
 
 <PageHeader
-	title="Welcome to svelteMyAdmin"
-	description="Overview of {data.server.label} and your connection settings."
+	title={t('Welcome to svelteMyAdmin')}
+	description={t('Overview of {server} and your connection settings.', {
+		server: data.server.label
+	})}
 />
 
 {#if !data.storageComplete}
 	<Alert variant="warning" data-testid="storage-warning">
 		<AlertDescription>
-			The phpMyAdmin configuration storage is not completely configured, some extended features have
-			been deactivated.
+			{t(
+				'The phpMyAdmin configuration storage is not completely configured, some extended features have been deactivated.'
+			)}
 			<a
 				class="font-medium underline underline-offset-4"
-				href={resolve(bare('/server/check-relations'))}>Find out why</a
+				href={resolve(bare('/server/check-relations'))}>{t('Find out why')}</a
 			>.
 		</AlertDescription>
 	</Alert>
 {/if}
 
-<section aria-label="Server overview" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+<section aria-label={t('Server overview')} class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	<StatCard
-		label="Server version"
+		label={t('Server version')}
 		value={data.kpi.version}
 		icon={Server}
 		tone="primary"
 		hint={data.server.type}
 	/>
 	<StatCard
-		label="Uptime"
-		value={data.kpi.available ? formatUptimeShort(data.kpi.uptime) : 'n/a'}
+		label={t('Uptime')}
+		value={data.kpi.available ? formatUptimeShort(data.kpi.uptime) : t('n/a')}
 		icon={Clock}
 		tone="success"
-		hint="Since the last server start"
+		hint={t('Since the last server start')}
 	/>
 	<StatCard
-		label="Databases"
+		label={t('Databases')}
 		value={formatNumber(data.databases.length)}
 		icon={Database}
 		tone="info"
-		hint="Visible to {data.server.user}"
+		hint={t('Visible to {user}', { user: data.server.user })}
 	/>
 	<StatCard
-		label="Queries per hour"
-		value={data.kpi.available ? formatNumber(data.kpi.questionsPerHour) : 'n/a'}
+		label={t('Queries per hour')}
+		value={data.kpi.available ? formatNumber(data.kpi.questionsPerHour) : t('n/a')}
 		icon={Activity}
 		tone="warning"
-		hint="{formatNumber(data.kpi.threadsConnected)} connected threads"
+		hint={tn('{n} connected thread', '{n} connected threads', data.kpi.threadsConnected)}
 	/>
 </section>
 
@@ -100,7 +106,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Settings class="size-4 text-primary" />General settings</Card.Title
+				><Settings class="size-4 text-primary" />{t('General settings')}</Card.Title
 			>
 		</Card.Header>
 		<Card.Content class="grid gap-4">
@@ -116,7 +122,7 @@
 					class={buttonVariants({ variant: 'outline' })}
 				>
 					<KeyRound />
-					Change password
+					{t('Change password')}
 				</a>
 			{/if}
 		</Card.Content>
@@ -125,7 +131,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Palette class="size-4 text-primary" />Appearance settings</Card.Title
+				><Palette class="size-4 text-primary" />{t('Appearance settings')}</Card.Title
 			>
 		</Card.Header>
 		<Card.Content>
@@ -136,7 +142,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Server class="size-4 text-primary" />Database server</Card.Title
+				><Server class="size-4 text-primary" />{t('Database server')}</Card.Title
 			>
 		</Card.Header>
 		<Card.Content><InfoList rows={serverRows} /></Card.Content>
@@ -145,7 +151,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="flex items-center gap-2"
-				><Monitor class="size-4 text-primary" />Web server</Card.Title
+				><Monitor class="size-4 text-primary" />{t('Web server')}</Card.Title
 			>
 		</Card.Header>
 		<Card.Content><InfoList rows={webRows} /></Card.Content>
@@ -159,16 +165,16 @@
 		</Card.Header>
 		<Card.Content class="grid gap-4">
 			<InfoList
-				rows={[{ label: 'Version', value: data.webServer.appVersion, testid: 'app-version' }]}
+				rows={[{ label: t('Version'), value: data.webServer.appVersion, testid: 'app-version' }]}
 			/>
 			<ul class="grid gap-1 text-sm">
-				<li class="text-muted-foreground">Roadmap: <code>docs/ROADMAP.md</code></li>
+				<li class="text-muted-foreground">{t('Roadmap:')} <code>docs/ROADMAP.md</code></li>
 				<li>
 					<a
 						class="font-medium text-primary underline-offset-4 hover:underline"
 						href="https://docs.phpmyadmin.net/en/latest/"
 						rel="noreferrer"
-						target="_blank">phpMyAdmin documentation</a
+						target="_blank">{t('phpMyAdmin documentation')}</a
 					>
 				</li>
 			</ul>

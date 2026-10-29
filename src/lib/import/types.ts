@@ -1,5 +1,7 @@
 /** Shapes shared by the import server code, the NDJSON progress stream and the import page. */
 
+import { N_ } from '#lib/i18n/translator.ts';
+
 export type ImportScope =
 	{ level: 'server' } | { level: 'db'; db: string } | { level: 'table'; db: string; table: string };
 
@@ -10,10 +12,10 @@ export const IMPORT_FORMATS: ImportFormat[] = ['sql', 'csv', 'ldi', 'ods', 'xml'
 export const FORMAT_LABELS: Record<ImportFormat, string> = {
 	sql: 'SQL',
 	csv: 'CSV',
-	ldi: 'CSV using LOAD DATA',
-	ods: 'OpenDocument Spreadsheet',
+	ldi: N_('CSV using LOAD DATA'),
+	ods: N_('OpenDocument Spreadsheet'),
 	xml: 'XML',
-	mediawiki: 'MediaWiki Table'
+	mediawiki: N_('MediaWiki Table')
 };
 
 /** File extension (without compression suffix) => format, for "format by extension". */

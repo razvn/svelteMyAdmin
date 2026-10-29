@@ -4,6 +4,7 @@
 	import * as Dialog from '#lib/components/ui/dialog/index.ts';
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.ts';
 	import { Textarea } from '#lib/components/ui/textarea/index.ts';
 	import {
@@ -27,6 +28,7 @@
 
 	let { open = $bindable(), db, query, oncreated }: Props = $props();
 
+	const { t } = useI18n();
 	let name = $state('');
 	let orReplace = $state(false);
 	let algorithm = $state<CreateViewForm['algorithm']>('UNDEFINED');
@@ -68,19 +70,19 @@
 				body: JSON.stringify({ sql: built.sql, db })
 			});
 			if (!res.ok) {
-				error = 'The view could not be created.';
+				error = t('The view could not be created.');
 				return;
 			}
 			const result = (await res.json()) as ScriptResult;
 			const stmt = result.statements[0];
 			if (!stmt || !stmt.ok) {
-				error = stmt ? errorMessage(stmt.error.errno, stmt.error.message) : 'No result.';
+				error = stmt ? errorMessage(stmt.error.errno, stmt.error.message) : t('No result.');
 				return;
 			}
 			open = false;
 			oncreated?.(name.trim());
 		} catch {
-			error = 'The view could not be created.';
+			error = t('The view could not be created.');
 		} finally {
 			busy = false;
 		}
@@ -90,14 +92,16 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[92vh] overflow-auto sm:max-w-2xl" data-testid="create-view-dialog">
 		<Dialog.Header>
-			<Dialog.Title>Create view</Dialog.Title>
-			<Dialog.Description>Create a view in database {db} from this query.</Dialog.Description>
+			<Dialog.Title>{t('Create view')}</Dialog.Title>
+			<Dialog.Description
+				>{t('Create a view in database {db} from this query.', { db })}</Dialog.Description
+			>
 		</Dialog.Header>
 
 		<div class="grid gap-3 sm:grid-cols-2">
 			<div class="flex flex-col gap-1.5">
-				<Label for="view-name">VIEW name</Label>
-				<Input id="view-name" bind:value={name} maxlength={64} placeholder="View name" />
+				<Label for="view-name">{t('VIEW name')}</Label>
+				<Input id="view-name" bind:value={name} maxlength={64} placeholder={t('View name')} />
 			</div>
 			<div class="flex items-end gap-2 pb-2">
 				<Checkbox id="view-or-replace" bind:checked={orReplace} />
@@ -114,32 +118,32 @@
 			<div class="flex flex-col gap-1.5">
 				<Label for="view-security">SQL SECURITY</Label>
 				<NativeSelect.Root id="view-security" class="w-full" bind:value={sqlSecurity}>
-					<NativeSelect.Option value="">(default)</NativeSelect.Option>
+					<NativeSelect.Option value="">{t('(default)')}</NativeSelect.Option>
 					{#each VIEW_SECURITY as a (a)}
 						<NativeSelect.Option value={a}>{a}</NativeSelect.Option>
 					{/each}
 				</NativeSelect.Root>
 			</div>
 			<div class="flex flex-col gap-1.5">
-				<Label for="view-definer">Definer</Label>
+				<Label for="view-definer">{t('Definer')}</Label>
 				<Input id="view-definer" bind:value={definer} maxlength={100} placeholder="user@host" />
 			</div>
 			<div class="flex flex-col gap-1.5">
 				<Label for="view-check">WITH CHECK OPTION</Label>
 				<NativeSelect.Root id="view-check" class="w-full" bind:value={withCheck}>
-					<NativeSelect.Option value="">(none)</NativeSelect.Option>
+					<NativeSelect.Option value="">{t('(none)')}</NativeSelect.Option>
 					{#each VIEW_CHECK_OPTIONS as a (a)}
 						<NativeSelect.Option value={a}>{a}</NativeSelect.Option>
 					{/each}
 				</NativeSelect.Root>
 			</div>
 			<div class="flex flex-col gap-1.5 sm:col-span-2">
-				<Label for="view-columns">Column names</Label>
+				<Label for="view-columns">{t('Column names')}</Label>
 				<Input
 					id="view-columns"
 					bind:value={columnNames}
 					maxlength={100}
-					placeholder="comma separated, optional"
+					placeholder={t('comma separated, optional')}
 				/>
 			</div>
 			<div class="flex flex-col gap-1.5 sm:col-span-2">
@@ -161,8 +165,8 @@
 		{#if error}<p class="text-sm text-destructive" role="alert">{error}</p>{/if}
 
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => (open = false)}>Cancel</Button>
-			<Button type="button" disabled={busy} onclick={submit}>Create</Button>
+			<Button type="button" variant="outline" onclick={() => (open = false)}>{t('Cancel')}</Button>
+			<Button type="button" disabled={busy} onclick={submit}>{t('Create')}</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

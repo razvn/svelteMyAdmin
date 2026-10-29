@@ -2,6 +2,7 @@
  * Browser side of an import: POST the raw file to `/api/import` with XMLHttpRequest (upload
  * progress) and read the NDJSON events (`progress`, `done`) from the response while it streams.
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import type { ImportEvent, ImportOptionValues, ImportResult, ImportScope } from './types.ts';
 
 export interface ImportSubmission {
@@ -87,18 +88,20 @@ export function startImport(
 			cb.onUpload?.(e.loaded, e.lengthComputable ? e.total : file.size);
 		xhr.onprogress = consume;
 		xhr.onerror = () =>
-			reject(new Error('The upload failed. Check your connection and try again.'));
-		xhr.onabort = () => reject(new Error('The import was cancelled.'));
+			reject(new Error(N_('The upload failed. Check your connection and try again.')));
+		xhr.onabort = () => reject(new Error(N_('The import was cancelled.')));
 		xhr.onload = () => {
 			consume();
 			if (xhr.status === 413) {
 				reject(
 					new Error(
-						'The file is larger than the upload limit of the server. Raise BODY_SIZE_LIMIT (adapter-node) or import a smaller or compressed file.'
+						N_(
+							'The file is larger than the upload limit of the server. Raise BODY_SIZE_LIMIT (adapter-node) or import a smaller or compressed file.'
+						)
 					)
 				);
 			} else if (xhr.status === 401 || xhr.status === 403) {
-				reject(new Error('Your session has expired. Log in again.'));
+				reject(new Error(N_('Your session has expired. Log in again.')));
 			} else if (done) {
 				resolve(done);
 			} else if (failure) {

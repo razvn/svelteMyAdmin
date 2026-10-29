@@ -3,6 +3,7 @@
  * gzip through zlib, zip through fflate (first file of the archive), charset decoding.
  * bzip2 is not supported (no pure JS decoder is bundled).
  */
+import { N_ } from '#lib/i18n/translator.ts';
 import { once } from 'node:events';
 import { createGunzip } from 'node:zlib';
 import { Unzip, UnzipInflate } from 'fflate';
@@ -11,7 +12,11 @@ import type { Compression, ImportFormat } from '#lib/import/types.ts';
 
 /** A failure that is the user's to fix: reported as the import message, not as a server error. */
 export class ImportAbort extends Error {
-	constructor(message: string) {
+	/** `message` is an English msgid (mark with N_); the orchestrator translates it with `params`. */
+	constructor(
+		message: string,
+		readonly params?: Record<string, string | number>
+	) {
 		super(message);
 		this.name = 'ImportAbort';
 	}
@@ -58,7 +63,7 @@ async function* gunzip(src: AsyncIterable<Uint8Array>): AsyncGenerator<Uint8Arra
 	try {
 		for await (const out of gz) yield out as Uint8Array;
 	} catch {
-		throw new ImportAbort('The file could not be decompressed (invalid gzip data).');
+		throw new ImportAbort(N_('The file could not be decompressed (invalid gzip data).'));
 	} finally {
 		gz.destroy();
 		await feed.catch(() => {});
@@ -87,9 +92,9 @@ async function* unzipFirst(src: AsyncIterable<Uint8Array>): AsyncGenerator<Uint8
 		}
 	};
 	const fail = () => {
-		throw new ImportAbort(
-			`The ZIP archive could not be read: ${(failure as Error | null)?.message ?? 'invalid data'}`
-		);
+		throw new ImportAbort(N_('The ZIP archive could not be read: {reason}'), {
+			reason: (failure as Error | null)?.message ?? 'invalid data'
+		});
 	};
 	try {
 		for await (const c of src) {
@@ -101,11 +106,13 @@ async function* unzipFirst(src: AsyncIterable<Uint8Array>): AsyncGenerator<Uint8
 		if (!done) unzip.push(new Uint8Array(0), true);
 	} catch (e) {
 		if (e instanceof ImportAbort) throw e;
-		throw new ImportAbort(`The ZIP archive could not be read: ${(e as Error).message}`);
+		throw new ImportAbort(N_('The ZIP archive could not be read: {reason}'), {
+			reason: (e as Error).message
+		});
 	}
 	if (failure) fail();
 	while (queue.length > 0) yield queue.shift()!;
-	if (!chosen) throw new ImportAbort('The ZIP archive contains no file.');
+	if (!chosen) throw new ImportAbort(N_('The ZIP archive contains no file.'));
 }
 
 async function* rechain(first: Uint8Array, it: AsyncIterator<Uint8Array>) {
@@ -148,7 +155,7 @@ export async function prepareSource(
 	}
 	if (compression === 'bzip2') {
 		throw new ImportAbort(
-			'bzip2 compressed files are not supported. Decompress the file first, or use gzip or zip.'
+			N_('bzip2 compressed files are not supported. Decompress the file first, or use gzip or zip.')
 		);
 	}
 	const bytes =
@@ -182,7 +189,7 @@ export async function collectBytes(
 	let total = 0;
 	for await (const c of bytes) {
 		total += c.length;
-		if (total > limit) throw new ImportAbort(memoryMessage(limit));
+		if (total > limit) throw memoryAbort(limit);
 		parts.push(c);
 	}
 	const out = new Uint8Array(total);
@@ -198,10 +205,15 @@ export async function collectText(text: AsyncIterable<string>, limit: number): P
 	let out = '';
 	for await (const s of text) {
 		out += s;
-		if (out.length > limit) throw new ImportAbort(memoryMessage(limit));
+		if (out.length > limit) throw memoryAbort(limit);
 	}
 	return out;
 }
 
-export const memoryMessage = (limit: number): string =>
-	`This format is read into memory and the file is larger than the allowed ${Math.round(limit / 1048576)} MiB (MemoryLimit).`;
+export const memoryAbort = (limit: number): ImportAbort =>
+	new ImportAbort(
+		N_(
+			'This format is read into memory and the file is larger than the allowed {mib} MiB (MemoryLimit).'
+		),
+		{ mib: Math.round(limit / 1048576) }
+	);
