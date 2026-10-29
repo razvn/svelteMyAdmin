@@ -9,10 +9,13 @@ const MAX_IMPORT_BYTES = 512 * 1024;
 
 export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	const prefs = await loadPrefs(locals, cookies);
+	// the 2fa entry holds the TOTP secret: never shown in the export box
+	const visible = { ...prefs.data };
+	delete visible['2fa'];
 	return {
 		storage: storageInfo(prefs),
-		count: Object.keys(prefs.data).length,
-		json: exportJson(prefs.data),
+		count: Object.keys(visible).length,
+		json: exportJson(visible),
 		saved: url.searchParams.get('saved'),
 		dropped: url.searchParams.get('dropped')
 	};

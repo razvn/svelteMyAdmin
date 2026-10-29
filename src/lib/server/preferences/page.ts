@@ -192,8 +192,16 @@ export async function importPrefs(
 	};
 	const parsed = parseImport(text, opts);
 	if (!parsed.ok) return { ok: false, error: parsed.error };
-	const current = merge ? (await loadPrefs(locals, cookies)).data : {};
-	const next = dropExactDefaults({ ...current, ...parsed.data }, opts.base, locals.serverIndex);
+	const existing = (await loadPrefs(locals, cookies)).data;
+	// the two-factor setting is only changed on its own page (an imported file must not disable it)
+	const imported = { ...parsed.data };
+	delete imported['2fa'];
+	const keep = existing['2fa'] === undefined ? {} : { '2fa': existing['2fa'] };
+	const current = merge ? existing : {};
+	const next = {
+		...dropExactDefaults({ ...current, ...imported }, opts.base, locals.serverIndex),
+		...keep
+	};
 	const error = await savePrefs(locals, cookies, next, secure);
 	if (error) return { ok: false, error };
 	return { ok: true, count: Object.keys(parsed.data).length, dropped: parsed.dropped };
@@ -204,5 +212,12 @@ export async function resetPrefs(
 	cookies: Cookies,
 	secure: boolean
 ): Promise<string | null> {
-	return savePrefs(locals, cookies, {}, secure);
+	// resetting the preferences keeps the two-factor setting
+	const existing = (await loadPrefs(locals, cookies)).data;
+	return savePrefs(
+		locals,
+		cookies,
+		existing['2fa'] === undefined ? {} : { '2fa': existing['2fa'] },
+		secure
+	);
 }

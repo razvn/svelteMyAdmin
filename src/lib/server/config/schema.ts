@@ -104,6 +104,10 @@ export const configSchema = z
 	.object({
 		blowfish_secret: z.string().default(''),
 		PmaAbsoluteUri: z.string().default(''),
+		DBG: z
+			.object({ simple2fa: z.boolean().default(false) })
+			.loose()
+			.default({ simple2fa: false }),
 		AllowThirdPartyFraming: z.union([z.boolean(), z.literal('sameorigin')]).default(false),
 		Servers: z.array(serverSchema).default([]),
 		ServerDefault: z.number().int().min(0).default(1),

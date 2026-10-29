@@ -13,7 +13,9 @@ export const sessionPayloadSchema = z.object({
 	user: z.string(),
 	password: z.string(),
 	createdAt: z.number(),
-	lastActivity: z.number()
+	lastActivity: z.number(),
+	/** false while the second factor is pending; absent (sessions from before 2FA) means verified. */
+	twoFactorVerified: z.boolean().optional()
 });
 export type SessionPayload = z.infer<typeof sessionPayloadSchema>;
 
