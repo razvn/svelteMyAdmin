@@ -10,3 +10,4 @@ bun.lockb
 
 # Project docs (orchestrator-owned)
 /docs/
+src/lib/i18n/locales/

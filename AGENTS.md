@@ -56,6 +56,16 @@ config.sample.json         committed sample; config.json is git-ignored (overrid
   Style only with theme tokens (`bg-background`, `text-foreground`, `text-muted-foreground`, `border`,
   `bg-primary`, ...), never raw colours. Light/dark/system via `mode-watcher` (`ModeWatcher` in the root layout).
 
+## i18n
+
+All user-visible UI strings must go through `t()` / `tn()` / `tc()` (`const { t, tn, tc, fmt } = useI18n()` from
+`#lib/i18n/index.ts`; server code: `locals.i18n.t()`). English text is the key; whole sentences, `{params}`
+instead of concatenation, `tn` for plurals, never translate SQL, identifiers or MySQL error messages.
+Catalogs are `src/lib/i18n/locales/<lang>/<area>.json` (area = path of the source file); after adding strings run
+`pnpm i18n:extract`, `pnpm i18n:import-mo fr|es`, fill the rest in `fr`/`es` by hand and `pnpm i18n:check --ci`
+(`pnpm test` fails on incomplete `fr`/`es` catalogs). Do not name variables `t`. Full rules and the area mapping:
+`docs/I18N.md`.
+
 ## UI design
 
 The look (grey canvas, white rounded cards, indigo primary, soft status pills) is specified in

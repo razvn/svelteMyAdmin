@@ -1,0 +1,19 @@
+{
+	"A modern MySQL & MariaDB administration tool": "Un outil d'administration MySQL et MariaDB moderne",
+	"Browse databases, run queries and keep an eye on your servers from one clean dashboard.": "Parcourez vos bases de données, exécutez des requêtes et gardez un œil sur vos serveurs depuis un seul tableau de bord clair.",
+	"Compatible with phpMyAdmin configuration storage.": "Compatible avec le stockage de configuration de phpMyAdmin.",
+	"Dark": "Sombre",
+	"Host": "Hôte",
+	"Language": "Langue",
+	"Light": "Clair",
+	"Log in": "Connexion",
+	"Logging in...": "Connexion en cours...",
+	"Password": "Mot de passe",
+	"Port": "Port",
+	"Server": "Serveur",
+	"System": "Système",
+	"Theme": "Thème",
+	"Use your MySQL / MariaDB account to continue.": "Utilisez votre compte MySQL / MariaDB pour continuer.",
+	"Username": "Utilisateur",
+	"default server": "serveur par défaut"
+}

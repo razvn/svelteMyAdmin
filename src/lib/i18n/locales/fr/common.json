@@ -1,0 +1,12 @@
+{
+	",": " ",
+	".": ",",
+	"B": "o",
+	"EiB": "Eio",
+	"GiB": "Gio",
+	"KiB": "kio",
+	"MiB": "Mio",
+	"PiB": "Pio",
+	"TiB": "Tio",
+	"{days} days, {hours} hours, {minutes} minutes and {seconds} seconds": "{days} jour(s), {hours} heure(s), {minutes} minute(s) et {seconds} seconde(s)"
+}

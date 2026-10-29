@@ -5,9 +5,19 @@
 	import { Toaster } from '#lib/components/ui/sonner/index.ts';
 	import { onMount } from 'svelte';
 	import { markHydrated } from '#lib/hooks/hydration.svelte.ts';
+	import { I18n, setI18n } from '#lib/i18n/index.ts';
 	import type { LayoutProps } from './$types';
 
-	let { children }: LayoutProps = $props();
+	let { data, children }: LayoutProps = $props();
+
+	const i18n = new I18n(() => data);
+	setI18n(i18n);
+
+	// Keep <html lang dir> in sync after a client-side language switch (SSR sets them via app.html).
+	$effect(() => {
+		document.documentElement.lang = i18n.locale;
+		document.documentElement.dir = i18n.dir;
+	});
 
 	onMount(markHydrated);
 </script>

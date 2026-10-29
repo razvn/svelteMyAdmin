@@ -9,20 +9,21 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import { Label } from '#lib/components/ui/label/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
+	import LanguageSelect from '#lib/components/i18n/language-select.svelte';
+	import { useI18n } from '#lib/i18n/index.ts';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
 	let server = $derived(String(form?.server || data.selectedServer));
-	let lang = $state('en');
 	let submitting = $state(false);
+	const { t } = useI18n();
 
 	const serverLabel = $derived(data.servers.find((s) => String(s.index) === server)?.label ?? '');
-	const langLabel = $derived(data.languages.find((l) => l.code === lang)?.label ?? '');
 </script>
 
 <svelte:head>
-	<title>Log in - svelteMyAdmin</title>
+	<title>{t('Log in')} - svelteMyAdmin</title>
 </svelte:head>
 
 <main class="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
@@ -43,14 +44,16 @@
 		</div>
 		<div class="relative max-w-md">
 			<p class="text-4xl leading-tight font-semibold tracking-tight">
-				A modern MySQL &amp; MariaDB administration tool
+				{t('A modern MySQL & MariaDB administration tool')}
 			</p>
 			<p class="mt-4 text-lg text-primary-foreground/80">
-				Browse databases, run queries and keep an eye on your servers from one clean dashboard.
+				{t(
+					'Browse databases, run queries and keep an eye on your servers from one clean dashboard.'
+				)}
 			</p>
 		</div>
 		<p class="relative text-sm text-primary-foreground/70">
-			Compatible with phpMyAdmin configuration storage.
+			{t('Compatible with phpMyAdmin configuration storage.')}
 		</p>
 	</aside>
 
@@ -63,9 +66,9 @@
 		<Card.Root class="w-full max-w-md">
 			<Card.Header>
 				<Card.Title>
-					<h1 class="text-2xl font-semibold tracking-tight">Log in</h1>
+					<h1 class="text-2xl font-semibold tracking-tight">{t('Log in')}</h1>
 				</Card.Title>
-				<Card.Description>Use your MySQL / MariaDB account to continue.</Card.Description>
+				<Card.Description>{t('Use your MySQL / MariaDB account to continue.')}</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				<form
@@ -96,7 +99,7 @@
 
 					{#if data.servers.length > 1}
 						<div class="grid gap-2">
-							<Label for="server">Server</Label>
+							<Label for="server">{t('Server')}</Label>
 							<Select.Root type="single" name="server" bind:value={server}>
 								<Select.Trigger id="server" class="w-full">{serverLabel}</Select.Trigger>
 								<Select.Content>
@@ -113,17 +116,17 @@
 					{#if data.allowArbitraryServer}
 						<div class="grid grid-cols-[1fr_6rem] gap-2">
 							<div class="grid gap-2">
-								<Label for="pma_servername">Host</Label>
+								<Label for="pma_servername">{t('Host')}</Label>
 								<Input
 									id="pma_servername"
 									name="pma_servername"
-									placeholder="default server"
+									placeholder={t('default server')}
 									autocomplete="off"
 									value={form?.host ?? ''}
 								/>
 							</div>
 							<div class="grid gap-2">
-								<Label for="pma_serverport">Port</Label>
+								<Label for="pma_serverport">{t('Port')}</Label>
 								<Input
 									id="pma_serverport"
 									name="pma_serverport"
@@ -137,7 +140,7 @@
 					{/if}
 
 					<div class="grid gap-2">
-						<Label for="username">Username</Label>
+						<Label for="username">{t('Username')}</Label>
 						<Input
 							id="username"
 							name="username"
@@ -148,24 +151,17 @@
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="password">Password</Label>
+						<Label for="password">{t('Password')}</Label>
 						<Input id="password" name="password" type="password" autocomplete="current-password" />
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="lang">Language</Label>
-						<Select.Root type="single" name="lang" bind:value={lang}>
-							<Select.Trigger id="lang" class="w-full">{langLabel}</Select.Trigger>
-							<Select.Content>
-								{#each data.languages as l (l.code)}
-									<Select.Item value={l.code} label={l.label}>{l.label}</Select.Item>
-								{/each}
-							</Select.Content>
-						</Select.Root>
+						<Label for="lang">{t('Language')}</Label>
+						<LanguageSelect id="lang" name="lang" />
 					</div>
 
 					<Button type="submit" disabled={submitting} class="w-full">
-						{submitting ? 'Logging in...' : 'Log in'}
+						{submitting ? t('Logging in...') : t('Log in')}
 					</Button>
 				</form>
 			</Card.Content>

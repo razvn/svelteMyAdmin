@@ -7,6 +7,7 @@ export function isPublicPath(pathname: string): boolean {
 		pathname.startsWith('/login/') ||
 		pathname === '/logout' ||
 		pathname === '/api/health' ||
+		pathname === '/api/lang' ||
 		pathname.startsWith('/_app/')
 	);
 }

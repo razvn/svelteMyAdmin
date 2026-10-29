@@ -24,6 +24,7 @@ import {
 } from '#lib/server/two-factor/gate.ts';
 import { readSession } from '#lib/server/auth/plugins/cookie.ts';
 import { loadPrefs } from '#lib/server/preferences/store.ts';
+import { applyLocale, fillHtmlLang } from '#lib/server/i18n/locale.ts';
 
 const redirectTo = (location: string, status = 302) =>
 	new Response(null, { status, headers: { location } });
@@ -33,6 +34,15 @@ const legacyRedirect: Handle = ({ event, resolve }) => {
 	const target = legacyRedirectTarget(event.url);
 	if (target !== null) return redirectTo(target);
 	return resolve(event);
+};
+
+/** Language of the request (cookie, DefaultLang, Accept-Language) and `<html lang dir>`. */
+const localeHandle: Handle = async ({ event, resolve }) => {
+	await applyLocale(event);
+	return resolve(event, {
+		// Runs while rendering, i.e. after `auth` refined the locale with the user's `lang` preference.
+		transformPageChunk: ({ html }) => fillHtmlLang(html, event.locals.locale)
+	});
 };
 
 /** Wrap a response so `close` runs when its body has been fully sent or cancelled. */
@@ -201,6 +211,7 @@ const auth: Handle = async ({ event, resolve }) => {
 		// (loaded once per request); the unmerged config stays available via `getConfig()`.
 		if (!isPublic) {
 			const prefs = await loadPrefs(event.locals, event.cookies);
+			await applyLocale(event, prefs.data.lang);
 			const effective = buildEffectiveConfig(config, prefs.data, ctx.serverIndex);
 			event.locals.config = effective.config;
 			if (Object.keys(effective.serverOverrides).length > 0) {
@@ -222,7 +233,7 @@ const auth: Handle = async ({ event, resolve }) => {
 	return connection ? closeAfterBody(response, close) : response;
 };
 
-export const handle: Handle = sequence(legacyRedirect, auth);
+export const handle: Handle = sequence(legacyRedirect, localeHandle, auth);
 
 export const handleError: HandleServerError = ({ kind, error, event }) => {
 	if (kind === 'app' || kind === 'framework' || kind === 'validation') {

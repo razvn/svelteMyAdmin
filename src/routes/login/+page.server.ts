@@ -1,5 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
+import { availableCodes } from '#lib/i18n/catalog.ts';
+import { LANG_COOKIE } from '#lib/i18n/languages.ts';
+import { matchLanguage } from '#lib/i18n/resolve.ts';
 import { EXPIRED_MESSAGE } from '#lib/server/auth/expired.ts';
 import { attemptLogin, safeRedirectTarget, serverLabel } from '#lib/server/auth/index.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -32,8 +35,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 			.filter((s) => s.auth === 'cookie')
 			.map(({ index, label }) => ({ index, label })),
 		selectedServer: locals.serverIndex,
-		allowArbitraryServer: config.AllowArbitraryServer,
-		languages: [{ code: 'en', label: 'English' }]
+		allowArbitraryServer: config.AllowArbitraryServer
 	};
 };
 
@@ -49,6 +51,17 @@ export const actions: Actions = {
 				port: ''
 			});
 		const data = form.data;
+		// The language chosen on the form (phpMyAdmin also remembers it at login).
+		const lang = matchLanguage(data.lang, availableCodes());
+		if (lang) {
+			cookies.set(LANG_COOKIE, lang, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: url.protocol === 'https:',
+				maxAge: 60 * 60 * 24 * 365
+			});
+		}
 
 		const result = await attemptLogin(
 			{ cookies, url, config: locals.config, clientIp: locals.clientIp },

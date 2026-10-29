@@ -8,6 +8,10 @@ import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
 declare global {
 	namespace App {
 		interface Locals {
+			/** Resolved interface language code (see `#lib/i18n/resolve.ts`). */
+			locale: string;
+			/** Translation functions for `locale`, for server code: `locals.i18n.t('...')`. */
+			i18n: import('#lib/i18n/translator.ts').Translator;
 			/** Loaded configuration (shared, read-only). */
 			config: AppConfig;
 			/** 1-based index of the active server in `config.Servers`. */

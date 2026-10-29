@@ -1,6 +1,34 @@
-/** Number/byte formatting ported from phpMyAdmin's Util::formatNumber() / Util::formatByteDown() (en locale). */
+/**
+ * Number/byte formatting ported from phpMyAdmin's Util::formatNumber() / Util::formatByteDown().
+ * Output is English by default; pass a `LocaleFormat` (see `useI18n().fmt`, built from the active catalog
+ * like phpMyAdmin's `__(',')` / `__('.')` / `__('KiB')`) to localise separators and units.
+ */
 
-const BYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB'];
+export interface LocaleFormat {
+	/** `Intl` locale for dates. */
+	locale: string;
+	/** Thousands separator (phpMyAdmin `__(',')`). */
+	thousands: string;
+	/** Decimal separator (phpMyAdmin `__('.')`). */
+	decimal: string;
+	/** Byte units B, KiB, MiB, GiB, TiB, PiB, EiB. */
+	units: readonly string[];
+	/** Duration sentence; defaults to the English one. */
+	timespan?: (days: number, hours: number, minutes: number, seconds: number) => string;
+}
+
+export const EN_FORMAT: LocaleFormat = {
+	locale: 'en',
+	thousands: ',',
+	decimal: '.',
+	units: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB']
+};
+
+/** Swap the English `,` and `.` of a formatted number for the locale's separators. */
+function localize(text: string, lf: LocaleFormat): string {
+	if (lf.thousands === ',' && lf.decimal === '.') return text;
+	return text.replace(/[,.]/g, (c) => (c === ',' ? lf.thousands : lf.decimal));
+}
 
 /** PHP `round()`: half away from zero. */
 function phpRound(n: number): number {
@@ -8,10 +36,13 @@ function phpRound(n: number): number {
 }
 
 /** Integer with thousands separators, like `number_format($v, 0)`. */
-export function formatNumber(value: number | string | null | undefined): string {
+export function formatNumber(
+	value: number | string | null | undefined,
+	lf: LocaleFormat = EN_FORMAT
+): string {
 	const n = Number(value ?? 0);
 	if (!Number.isFinite(n) || n === 0) return '0';
-	return phpRound(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+	return localize(phpRound(n).toLocaleString('en-US', { maximumFractionDigits: 0 }), lf);
 }
 
 /**
@@ -22,38 +53,42 @@ export function formatNumber(value: number | string | null | undefined): string 
 export function formatByteDown(
 	value: number | string | null | undefined,
 	limes = 6,
-	comma = 0
+	comma = 0,
+	lf: LocaleFormat = EN_FORMAT
 ): [string, string] | null {
 	if (value === null || value === undefined) return null;
 	let v = Number(value);
 	if (!Number.isFinite(v)) v = 0;
 	const dh = 10 ** comma;
 	const li = 10 ** limes;
-	let unit = BYTE_UNITS[0];
+	let unit = lf.units[0];
+	let scaled = false;
 	for (let d = 6, ex = 15; d >= 1; d--, ex -= 3) {
 		if (v >= li * 10 ** ex) {
 			v = phpRound(v / (1024 ** d / dh)) / dh;
-			unit = BYTE_UNITS[d];
+			unit = lf.units[d];
+			scaled = true;
 			break;
 		}
 	}
-	if (unit === BYTE_UNITS[0]) return [formatNumber(v), unit];
+	if (!scaled) return [formatNumber(v, lf), unit];
 	// formatNumber(v, 5, comma, onlyDown = true, noTrailingZero = false): v is below 1000 here
 	// except for huge EiB values, which are only grouped.
 	const text = v.toLocaleString('en-US', {
 		minimumFractionDigits: comma,
 		maximumFractionDigits: comma
 	});
-	return [text, unit];
+	return [localize(text, lf), unit];
 }
 
 /** `formatByteDown` joined with a space: "16.0 KiB". */
 export function formatBytes(
 	value: number | string | null | undefined,
 	limes = 3,
-	comma = 1
+	comma = 1,
+	lf: LocaleFormat = EN_FORMAT
 ): string {
-	const r = formatByteDown(value, limes, comma);
+	const r = formatByteDown(value, limes, comma, lf);
 	return r ? `${r[0]} ${r[1]}` : '';
 }
 
@@ -80,12 +115,12 @@ const SI_UNITS: Record<number, string> = {
 };
 
 /** PHP number_format with "." decimals and "," thousands. */
-export function numberFormat(value: number, decimals = 0): string {
+export function numberFormat(value: number, decimals = 0, lf: LocaleFormat = EN_FORMAT): string {
 	const fixed = Math.abs(value).toFixed(decimals);
 	const [int, frac] = fixed.split('.');
 	const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	const sign = value < 0 && Number(fixed) !== 0 ? '-' : '';
-	return sign + grouped + (frac ? `.${frac}` : '');
+	return localize(sign + grouped + (frac ? `.${frac}` : ''), lf);
 }
 
 /**
@@ -97,7 +132,18 @@ export function formatSi(
 	digitsLeft = 3,
 	digitsRight = 0,
 	onlyDown = false,
-	noTrailingZero = true
+	noTrailingZero = true,
+	lf: LocaleFormat = EN_FORMAT
+): string {
+	return localize(formatSiEn(value, digitsLeft, digitsRight, onlyDown, noTrailingZero), lf);
+}
+
+function formatSiEn(
+	value: number | string,
+	digitsLeft: number,
+	digitsRight: number,
+	onlyDown: boolean,
+	noTrailingZero: boolean
 ): string {
 	let v = typeof value === 'string' ? Number(value) : value;
 	if (!Number.isFinite(v) || v === 0) return '0';
@@ -128,7 +174,7 @@ export function formatSi(
 }
 
 /** "1 days, 2 hours, 3 minutes and 4 seconds" (Util::timespanFormat). */
-export function timespanFormat(totalSeconds: number): string {
+export function timespanFormat(totalSeconds: number, lf: LocaleFormat = EN_FORMAT): string {
 	let seconds = Math.max(0, Math.floor(totalSeconds));
 	const days = Math.floor(seconds / 86400);
 	seconds -= days * 86400;
@@ -136,7 +182,10 @@ export function timespanFormat(totalSeconds: number): string {
 	seconds -= hours * 3600;
 	const minutes = Math.floor(seconds / 60);
 	seconds -= minutes * 60;
-	return `${days} days, ${hours} hours, ${minutes} minutes and ${seconds} seconds`;
+	return (
+		lf.timespan?.(days, hours, minutes, seconds) ??
+		`${days} days, ${hours} hours, ${minutes} minutes and ${seconds} seconds`
+	);
 }
 
 /** Truncate with an ellipsis. */
@@ -154,4 +203,50 @@ export function formatUptimeShort(totalSeconds: number): string {
 	if (hours > 0) return `${hours}h ${minutes}m`;
 	if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
 	return `${seconds}s`;
+}
+
+// --- Dates (Intl: localised month/day names and ordering) ---
+
+type DateInput = Date | number | string;
+type DateStyle = 'short' | 'medium' | 'long' | 'full';
+
+const toDate = (v: DateInput): Date => (v instanceof Date ? v : new Date(v));
+
+/** Localised date, e.g. "29 oct. 2026" (fr, medium). Invalid dates give an empty string. */
+export function formatDate(
+	value: DateInput,
+	lf: LocaleFormat | string = EN_FORMAT,
+	style: DateStyle = 'medium'
+): string {
+	const d = toDate(value);
+	if (Number.isNaN(d.getTime())) return '';
+	return new Intl.DateTimeFormat(typeof lf === 'string' ? lf : lf.locale, {
+		dateStyle: style
+	}).format(d);
+}
+
+/** Localised date and time. */
+export function formatDateTime(
+	value: DateInput,
+	lf: LocaleFormat | string = EN_FORMAT,
+	style: DateStyle = 'medium'
+): string {
+	const d = toDate(value);
+	if (Number.isNaN(d.getTime())) return '';
+	return new Intl.DateTimeFormat(typeof lf === 'string' ? lf : lf.locale, {
+		dateStyle: style,
+		timeStyle: style === 'full' || style === 'long' ? 'medium' : 'short'
+	}).format(d);
+}
+
+/** Localised month names (index 0 = January). */
+export function monthNames(
+	lf: LocaleFormat | string = EN_FORMAT,
+	width: 'long' | 'short' = 'long'
+): string[] {
+	const f = new Intl.DateTimeFormat(typeof lf === 'string' ? lf : lf.locale, {
+		month: width,
+		timeZone: 'UTC'
+	});
+	return Array.from({ length: 12 }, (_, m) => f.format(new Date(Date.UTC(2024, m, 15))));
 }
