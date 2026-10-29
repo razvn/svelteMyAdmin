@@ -33,6 +33,7 @@
 	import { Input } from '#lib/components/ui/input/index.ts';
 	import * as Select from '#lib/components/ui/select/index.ts';
 	import * as Table from '#lib/components/ui/table/index.ts';
+	import FavoriteStar from '#lib/components/table/favorite-star.svelte';
 	import { formatByteDown, formatNumber } from '#lib/format.ts';
 	import type { PageProps } from './$types';
 
@@ -376,13 +377,16 @@
 								/>
 							</Table.Cell>
 							<Table.Cell class="font-mono">
-								<a
-									href={tableHref(t.name, 'browse')}
-									class="font-medium text-foreground hover:text-primary hover:underline"
-									title={t.comment}
-								>
-									{t.name}
-								</a>
+								<div class="flex items-center gap-1">
+									<a
+										href={tableHref(t.name, 'browse')}
+										class="font-medium text-foreground hover:text-primary hover:underline"
+										title={t.comment}
+									>
+										{t.name}
+									</a>
+									<FavoriteStar db={data.db} table={t.name} class="size-6" />
+								</div>
 							</Table.Cell>
 							<Table.Cell>
 								<div class="flex items-center justify-center gap-0.5">

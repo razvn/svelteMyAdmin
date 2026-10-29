@@ -12,7 +12,25 @@ export { withControl };
 
 /** Table keys of the server config that name a `pma__*` table. */
 export type StorageKey =
-	'bookmarktable' | 'history' | 'table_uiprefs' | 'savedsearches' | 'export_templates';
+	| 'bookmarktable'
+	| 'relation'
+	| 'table_info'
+	| 'table_coords'
+	| 'pdf_pages'
+	| 'column_info'
+	| 'history'
+	| 'recent'
+	| 'favorite'
+	| 'table_uiprefs'
+	| 'tracking'
+	| 'userconfig'
+	| 'users'
+	| 'usergroups'
+	| 'navigationhiding'
+	| 'savedsearches'
+	| 'central_columns'
+	| 'designer_settings'
+	| 'export_templates';
 
 /** Qualified, escaped name of a storage table; null when the feature is not configured. */
 export function storageTable(

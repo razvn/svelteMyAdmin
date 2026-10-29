@@ -6,14 +6,17 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Database from '@lucide/svelte/icons/database';
 	import Eye from '@lucide/svelte/icons/eye';
+	import EyeOff from '@lucide/svelte/icons/eye-off';
 	import FunctionSquare from '@lucide/svelte/icons/square-function';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Table2 from '@lucide/svelte/icons/table-2';
 	import Terminal from '@lucide/svelte/icons/square-terminal';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
 	import { dbHref, tableHref, type NavConfig } from '#lib/nav/config.ts';
+	import type { HiddenType } from '#lib/nav/hidden.ts';
 	import { tabHref } from '#lib/nav/tabs.ts';
 	import { cn } from '#lib/utils.ts';
+	import HiddenItemsDialog from './hidden-items-dialog.svelte';
 	import ItemGroup from './item-group.svelte';
 	import type { NavState } from './nav-state.svelte.ts';
 
@@ -44,6 +47,11 @@
 		`${tabHref('db', { db: name }, 'routines')}?type=${type}&item=${encodeURIComponent(item)}`;
 	const eventHref = (item: string) =>
 		`${tabHref('db', { db: name }, 'events')}?item=${encodeURIComponent(item)}`;
+	let hiddenOpen = $state(false);
+	const hide = (type: HiddenType) =>
+		children?.canHide
+			? (item: string) => void navState.setHidden(name, item, type, true)
+			: undefined;
 	const isCurrentTable = (t: string) => isCurrent && currentTable === t;
 </script>
 
@@ -105,6 +113,7 @@
 						isActive={isCurrentTable}
 						quickHref={(t) => tabHref('table', { db: name, table: t }, nav.quickTabTable)}
 						quickLabel="Open {nav.quickTabTable}"
+						onhide={hide('table')}
 						newEntry={{ label: 'New table', href: tabHref('db', { db: name }, 'create-table') }}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
@@ -116,6 +125,7 @@
 						title="Views"
 						icon={Eye}
 						items={children.views}
+						onhide={hide('view')}
 						hrefFor={(t) => tableHref(nav, name, t)}
 						isActive={isCurrentTable}
 						quickHref={(t) => tabHref('table', { db: name, table: t }, nav.quickTabTable)}
@@ -130,6 +140,7 @@
 						title="Procedures"
 						icon={Terminal}
 						items={children.procedures}
+						onhide={hide('procedure')}
 						hrefFor={routineHref('PROCEDURE')}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
@@ -140,6 +151,7 @@
 						title="Functions"
 						icon={FunctionSquare}
 						items={children.functions}
+						onhide={hide('function')}
 						hrefFor={routineHref('FUNCTION')}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
@@ -150,12 +162,28 @@
 						title="Events"
 						icon={CalendarClock}
 						items={children.events}
+						onhide={hide('event')}
 						hrefFor={eventHref}
 						itemFilterMinimum={nav.itemFilterMinimum}
 						maxItems={nav.maxItems}
 					/>
 				{/if}
+				{#if children.canHide && (children.hiddenCount ?? 0) > 0}
+					<Sidebar.MenuSubItem>
+						<button
+							type="button"
+							class="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-start text-xs text-muted-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+							data-testid="show-hidden-{name}"
+							onclick={() => (hiddenOpen = true)}
+						>
+							<EyeOff class="size-3.5" />
+							Show hidden items ({children.hiddenCount})
+						</button>
+					</Sidebar.MenuSubItem>
+				{/if}
 			{/if}
 		</Sidebar.MenuSub>
 	{/if}
 </Sidebar.MenuItem>
+
+<HiddenItemsDialog bind:open={hiddenOpen} db={name} {navState} />

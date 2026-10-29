@@ -3,6 +3,7 @@
 	import { bare } from '#lib/nav/paths.ts';
 	import type { Component } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import EyeOff from '@lucide/svelte/icons/eye-off';
 	import Table2 from '@lucide/svelte/icons/table-2';
 	import Plus from '@lucide/svelte/icons/plus';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.ts';
@@ -19,6 +20,8 @@
 		/** Quick-access link next to an item (e.g. table structure). */
 		quickHref?: (name: string) => string;
 		quickLabel?: string;
+		/** Hide an item from the tree (navigationhiding feature); no button when omitted. */
+		onhide?: (name: string) => void;
 		/** "New ..." entry shown first. */
 		newEntry?: { label: string; href: string };
 		itemFilterMinimum: number;
@@ -35,6 +38,7 @@
 		isActive = () => false,
 		quickHref,
 		quickLabel = 'Open',
+		onhide,
 		newEntry,
 		itemFilterMinimum,
 		maxItems,
@@ -117,10 +121,25 @@
 								href={resolve(bare(quickHref(name)))}
 								aria-label={quickLabel}
 								title={quickLabel}
-								class="absolute end-1 top-1/2 hidden size-5 -translate-y-1/2 items-center justify-center rounded text-sidebar-foreground/70 outline-hidden group-focus-within/item:flex group-hover/item:flex hover:bg-sidebar-border focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+								class={cn(
+									'absolute top-1/2 hidden size-5 -translate-y-1/2 items-center justify-center rounded text-sidebar-foreground/70 outline-hidden group-focus-within/item:flex group-hover/item:flex hover:bg-sidebar-border focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+									onhide ? 'end-7' : 'end-1'
+								)}
 							>
 								<Table2 class="size-3.5" />
 							</a>
+						{/if}
+						{#if onhide}
+							<button
+								type="button"
+								aria-label="Hide {name}"
+								title="Hide"
+								data-testid="hide-{name}"
+								onclick={() => onhide(name)}
+								class="absolute end-1 top-1/2 hidden size-5 -translate-y-1/2 items-center justify-center rounded text-sidebar-foreground/70 outline-hidden group-focus-within/item:flex group-hover/item:flex hover:bg-sidebar-border focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+							>
+								<EyeOff class="size-3.5" />
+							</button>
 						{/if}
 					</Sidebar.MenuSubItem>
 				{/each}

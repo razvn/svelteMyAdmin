@@ -1,4 +1,5 @@
 import { createContext } from 'svelte';
+import type { HiddenType } from '#lib/nav/hidden.ts';
 import type { DbChildren } from '#lib/nav/types.ts';
 
 export type ChildrenFetcher = (db: string) => Promise<DbChildren>;
@@ -55,6 +56,22 @@ export class NavState {
 		} catch {
 			this.status[db] = 'error';
 		}
+	}
+
+	/** Hide or unhide one item (navigationhiding) and refetch the database. */
+	async setHidden(db: string, name: string, type: HiddenType, hidden: boolean): Promise<boolean> {
+		try {
+			const res = await fetch('/api/navigation/hidden', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ db, name, type, hidden })
+			});
+			if (!res.ok) return false;
+		} catch {
+			return false;
+		}
+		await this.load(db, true);
+		return true;
 	}
 
 	/** "Reload navigation": refetch every expanded database. */

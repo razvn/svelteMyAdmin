@@ -6,4 +6,8 @@ export interface DbChildren {
 	procedures: string[];
 	functions: string[];
 	events: string[];
+	/** The navigationhiding feature is available (the tree offers "Hide"). */
+	canHide?: boolean;
+	/** Number of hidden items of this database. */
+	hiddenCount?: number;
 }

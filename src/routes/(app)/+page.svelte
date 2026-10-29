@@ -16,6 +16,7 @@
 	import PageHeader from '#lib/components/app-shell/page-header.svelte';
 	import StatCard from '#lib/components/app-shell/stat-card.svelte';
 	import { formatNumber, formatUptimeShort } from '#lib/format.ts';
+	import { Alert, AlertDescription } from '#lib/components/ui/alert/index.ts';
 	import { buttonVariants } from '#lib/components/ui/button/index.ts';
 	import * as Card from '#lib/components/ui/card/index.ts';
 	import type { PageProps } from './$types';
@@ -50,6 +51,19 @@
 	title="Welcome to svelteMyAdmin"
 	description="Overview of {data.server.label} and your connection settings."
 />
+
+{#if !data.storageComplete}
+	<Alert variant="warning" data-testid="storage-warning">
+		<AlertDescription>
+			The phpMyAdmin configuration storage is not completely configured, some extended features have
+			been deactivated.
+			<a
+				class="font-medium underline underline-offset-4"
+				href={resolve(bare('/server/check-relations'))}>Find out why</a
+			>.
+		</AlertDescription>
+	</Alert>
+{/if}
 
 <section aria-label="Server overview" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	<StatCard
