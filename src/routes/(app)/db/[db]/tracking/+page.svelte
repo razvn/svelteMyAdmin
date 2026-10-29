@@ -15,7 +15,7 @@
 	import { hydration } from '#lib/hooks/hydration.svelte.ts';
 	import type { PageProps } from './$types';
 	import { useI18n } from '#lib/i18n/index.ts';
-	const { t, tn } = useI18n();
+	const { t } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -185,11 +185,7 @@
 							defaults={data.defaults}
 							version={1}
 							hidden={selectedUntracked.map((tbl) => ({ name: 'table', value: tbl }))}
-							submitLabel={tn(
-								'Create version for {n} table',
-								'Create version for {n} tables',
-								selectedUntracked.length
-							)}
+							submitLabel={t('Create version for {n} table(s)', { n: selectedUntracked.length })}
 						/>
 					{/if}
 				</Card.Content>

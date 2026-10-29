@@ -138,11 +138,9 @@ export const actions: Actions = {
 		if (!missing) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {
 			message:
-				locals.i18n.tn(
-					'{n} column removed from the central list.',
-					'{n} columns removed from the central list.',
-					list.length - missing.length
-				) +
+				locals.i18n.t('{n} column(s) removed from the central list.', {
+					n: list.length - missing.length
+				}) +
 				(missing.length
 					? ' ' + locals.i18n.t('Not in the list: {columns}.', { columns: missing.join(', ') })
 					: '')
@@ -163,11 +161,7 @@ export const actions: Actions = {
 		if (!res) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {
 			message:
-				locals.i18n.tn(
-					'{n} column added to the central list.',
-					'{n} columns added to the central list.',
-					res.added.length
-				) +
+				locals.i18n.t('{n} column(s) added to the central list.', { n: res.added.length }) +
 				(res.existing.length
 					? ' ' +
 						locals.i18n.t('Already in the list: {columns}.', { columns: res.existing.join(', ') })

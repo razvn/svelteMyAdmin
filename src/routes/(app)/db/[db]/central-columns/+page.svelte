@@ -16,7 +16,7 @@
 	import { newColumn, type ColumnDef } from '#lib/sql/column-definition.ts';
 	import type { PageProps } from './$types';
 	import { useI18n } from '#lib/i18n/index.ts';
-	const { t, tn } = useI18n();
+	const { t } = useI18n();
 
 	let { data, form }: PageProps = $props();
 
@@ -85,7 +85,7 @@
 		<Card.Root>
 			<Card.Header>
 				<Card.Title>{t('Columns in the central list')}</Card.Title>
-				<Card.Description>{tn('{n} column', '{n} columns', data.total)}</Card.Description>
+				<Card.Description>{t('{n} column(s)', { n: data.total })}</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<form method="GET" action={base} class="flex items-center gap-2">

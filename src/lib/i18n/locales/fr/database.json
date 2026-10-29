@@ -58,11 +58,7 @@
 	"Create": "Créer",
 	"Create new table": "Créer une nouvelle table",
 	"Create table": "Nouvelle table",
-	"Create version for {n} table": [
-		"Créer une version pour {n} table",
-		"Créer une version pour {n} tables",
-		"Créer une version pour {n} tables"
-	],
+	"Create version for {n} table(s)": "Créer une version pour {n} table(s)",
 	"Created": "Créé",
 	"Data dictionary": "Dictionnaire de données",
 	"Data dictionary, {n} table.": [

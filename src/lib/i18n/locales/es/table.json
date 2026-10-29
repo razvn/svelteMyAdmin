@@ -714,16 +714,9 @@
 		"{n} columnas",
 		"{n} columnas"
 	],
-	"{n} column added to the central list.": [
-		"{n} columna añadida a la lista central.",
-		"{n} columnas añadidas a la lista central.",
-		"{n} columnas añadidas a la lista central."
-	],
-	"{n} column removed from the central list.": [
-		"{n} columna quitada de la lista central.",
-		"{n} columnas quitadas de la lista central.",
-		"{n} columnas quitadas de la lista central."
-	],
+	"{n} column(s)": "{n} columna(s)",
+	"{n} column(s) added to the central list.": "{n} columna(s) añadida(s) a la lista central.",
+	"{n} column(s) removed from the central list.": "{n} columna(s) quitada(s) de la lista central.",
 	"{n} ignored.": "{n} ignorada(s).",
 	"{n} new column": [
 		"{n} columna nueva",
@@ -756,10 +749,6 @@
 		"{n} filas se modificarían."
 	],
 	"{n} rows": "{n} filas",
-	"{n} statement executed.": [
-		"{n} sentencia ejecutada.",
-		"{n} sentencias ejecutadas.",
-		"{n} sentencias ejecutadas."
-	],
+	"{n} statement(s) executed.": "{n} sentencia(s) ejecutada(s).",
 	"{y} by {x}": "{y} según {x}"
 }

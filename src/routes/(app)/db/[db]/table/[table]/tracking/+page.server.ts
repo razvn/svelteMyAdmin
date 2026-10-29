@@ -174,11 +174,7 @@ export const actions: Actions = {
 			});
 		}
 		return {
-			message: locals.i18n.tn(
-				'{n} statement executed.',
-				'{n} statements executed.',
-				entries.value.length
-			)
+			message: locals.i18n.t('{n} statement(s) executed.', { n: entries.value.length })
 		};
 	}
 };
