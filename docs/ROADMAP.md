@@ -140,6 +140,27 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 - Status monitor charts, Advisor rules (S), Normalization wizard (S), GIS visualization (S)
 - Two-factor auth (done, 9d: TOTP app + WebAuthn, cookie auth only; `simple` with DBG.simple2fa; legacy U2F `key` not implemented), setup wizard, error reporting (H/S)
 
+### Phase 11 — SQLite configuration storage (S)
+
+Alternative backend for the configuration storage, so the `pma__*` features work without a `pmadb`
+on the administered server (managed/shared hosting, ephemeral review databases, MariaDB server of
+the sample config). Opt-in; the MySQL pmadb stays the default and phpMyAdmin-compatible.
+
+- Config: new app-specific key `ConfigStorage: { type: "sqlite", path }` (not a `$cfg` key).
+  Resolution per server: a server with `pmadb` configured keeps it; otherwise the SQLite file.
+- `node:sqlite` (built into Node ≥ 22.13, no native dependency); file and schema created on
+  startup, schema ported from `create_tables.sql` plus a `server` key column (one file serves
+  every server; ids like `host:port`, stable across config reordering).
+- Storage layer: per-feature repositories (bookmarks, history, recent/favorite, userconfig,
+  relations/designer, tracking, saved searches, central columns, ui prefs, navigation hiding,
+  user groups, export templates…) with a MySQL and a SQLite implementation; every call site of
+  `withStorageTable`/`withControl` goes through it, including the rename/drop cascades.
+- Feature detection unchanged from the UI's point of view; the storage-setup page shows which
+  backend a server uses.
+- Tests: the repository contract suite runs against both backends (SQLite always, MySQL when
+  Docker is up); e2e on the MariaDB server without pmadb.
+- Optional: `pnpm storage:import-pmadb` copies an existing MySQL pmadb into the SQLite file.
+
 ## Working process (orchestration)
 
 1. Orchestrator writes a precise task brief (scope, files, reference PHP files, acceptance tests).
@@ -160,3 +181,4 @@ Legend — model: **S** = Sonnet 5.5 (complex/structural), **H** = Haiku 5.5 (me
 - [x] Phase 8 — Configuration storage
 - [x] Phase 9 — Advanced
 - [x] Phase 10 — Internationalisation (en, fr, es; see docs/I18N.md to add languages)
+- [ ] Phase 11 — SQLite configuration storage
