@@ -4,8 +4,8 @@
  * configuration storage is missing or unreachable.
  */
 import { z } from 'zod';
-import { escapeQualified } from '#lib/server/db/escape.ts';
-import { withControl } from '#lib/server/table/control.ts';
+import { hasRepo, withRepo } from '#lib/server/storage/index.ts';
+import type { MimeRow } from '#lib/server/storage/types.ts';
 import {
 	inputKey,
 	mimeTypes,
@@ -15,13 +15,7 @@ import {
 	resolveOutput
 } from '#lib/transformations/registry.ts';
 
-export interface MimeRow {
-	mimetype: string;
-	transformation: string;
-	transformation_options: string;
-	input_transformation: string;
-	input_transformation_options: string;
-}
+export type { MimeRow };
 
 export const emptyMime = (): MimeRow => ({
 	mimetype: '',
@@ -34,13 +28,10 @@ export const emptyMime = (): MimeRow => ({
 /** Column name -> settings. */
 export type MimeMap = Map<string, MimeRow>;
 
-function table(locals: App.Locals): string | null {
-	const { server, config } = locals;
-	if (!config.BrowseMIME || !server.pmadb || !server.column_info) return null;
-	return escapeQualified(server.pmadb, server.column_info);
+/** BrowseMIME is on and the column information storage is available. */
+function available(locals: App.Locals): boolean {
+	return locals.config.BrowseMIME && hasRepo(locals.server, 'columnInfo');
 }
-
-const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 
 /**
  * Settings of the columns of one table that have any; an empty map when the storage is usable but
@@ -51,31 +42,11 @@ export async function loadMime(
 	db: string,
 	tableName: string
 ): Promise<MimeMap | null> {
-	const qualified = table(locals);
-	if (!qualified) return null;
-	const rows = await withControl(locals, async (conn) => {
-		const [res] = await conn.query(
-			'SELECT `column_name`, `mimetype`, `transformation`, `transformation_options`, ' +
-				'`input_transformation`, `input_transformation_options` FROM ' +
-				qualified +
-				" WHERE `db_name` = ? AND `table_name` = ? AND (`mimetype` != '' OR `transformation` != '' " +
-				"OR `transformation_options` != '' OR `input_transformation` != '' " +
-				"OR `input_transformation_options` != '')",
-			[db, tableName]
-		);
-		return res as Record<string, unknown>[];
-	});
+	if (!available(locals)) return null;
+	const rows = await withRepo(locals, 'columnInfo', (repo) => repo.loadMime(db, tableName));
 	if (!rows) return null;
 	const map: MimeMap = new Map();
-	for (const r of rows) {
-		map.set(str(r.column_name), {
-			mimetype: str(r.mimetype),
-			transformation: str(r.transformation),
-			transformation_options: str(r.transformation_options),
-			input_transformation: str(r.input_transformation),
-			input_transformation_options: str(r.input_transformation_options)
-		});
-	}
+	for (const { column, ...row } of rows) map.set(column, row);
 	return map;
 }
 
@@ -116,60 +87,13 @@ export async function saveMime(
 	tableName: string,
 	entries: MimeEntry[]
 ): Promise<boolean> {
-	const qualified = table(locals);
-	if (!qualified) return false;
-	const done = await withControl(locals, async (conn) => {
-		for (const entry of entries) {
-			const row = sanitizeMime(entry);
-			if (entry.oldName && entry.oldName !== entry.column) {
-				await conn.query(
-					`UPDATE ${qualified} SET \`column_name\` = ? WHERE \`db_name\` = ? AND \`table_name\` = ? AND \`column_name\` = ?`,
-					[entry.column, db, tableName, entry.oldName]
-				);
-			}
-			const hasValue = Object.values(row).some((v) => v.length > 0);
-			const [found] = await conn.query(
-				`SELECT \`comment\` FROM ${qualified} WHERE \`db_name\` = ? AND \`table_name\` = ? AND \`column_name\` = ?`,
-				[db, tableName, entry.column]
-			);
-			const existing = (found as Record<string, unknown>[])[0];
-			const key = [db, tableName, entry.column];
-			if (existing) {
-				if (hasValue || str(existing.comment).length > 0) {
-					await conn.query(
-						`UPDATE ${qualified} SET \`mimetype\` = ?, \`transformation\` = ?, \`transformation_options\` = ?, ` +
-							'`input_transformation` = ?, `input_transformation_options` = ? ' +
-							'WHERE `db_name` = ? AND `table_name` = ? AND `column_name` = ?',
-						[
-							row.mimetype,
-							row.transformation,
-							row.transformation_options,
-							row.input_transformation,
-							row.input_transformation_options,
-							...key
-						]
-					);
-				} else {
-					await conn.query(
-						`DELETE FROM ${qualified} WHERE \`db_name\` = ? AND \`table_name\` = ? AND \`column_name\` = ?`,
-						key
-					);
-				}
-			} else if (hasValue) {
-				await conn.query(
-					`INSERT INTO ${qualified} (\`db_name\`, \`table_name\`, \`column_name\`, \`mimetype\`, \`transformation\`, ` +
-						'`transformation_options`, `input_transformation`, `input_transformation_options`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-					[
-						...key,
-						row.mimetype,
-						row.transformation,
-						row.transformation_options,
-						row.input_transformation,
-						row.input_transformation_options
-					]
-				);
-			}
-		}
+	if (!available(locals)) return false;
+	const done = await withRepo(locals, 'columnInfo', async (repo) => {
+		await repo.saveMime(
+			db,
+			tableName,
+			entries.map((e) => ({ column: e.column, oldName: e.oldName, row: sanitizeMime(e) }))
+		);
 		return true;
 	});
 	return done === true;

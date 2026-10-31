@@ -16,12 +16,7 @@ import {
 	parseSelectedAccounts,
 	withPrivilegeSummaries
 } from '#lib/server/privileges/index.ts';
-import {
-	listGroups,
-	listMemberships,
-	setUserGroup,
-	withGroupTables
-} from '#lib/server/pmadb/user-groups.ts';
+import { withUserGroups } from '#lib/server/pmadb/user-groups.ts';
 import { buildFlushPrivileges, supportsRoles } from '#lib/sql/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -50,9 +45,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 
 	// User groups (configurable menus) are optional: only when both pmadb tables answer.
-	const groupInfo = await withGroupTables(locals, async (conn, t) => ({
-		memberships: await listMemberships(conn, t),
-		groups: (await listGroups(conn, t)).map((g) => g.name)
+	const groupInfo = await withUserGroups(locals, async (repo) => ({
+		memberships: await repo.listMemberships(),
+		groups: (await repo.listGroups()).map((g) => g.name)
 	}));
 	const memberships = groupInfo?.memberships ?? {};
 
@@ -138,9 +133,9 @@ export const actions: Actions = {
 		const group = String(fd.get('usergroup') ?? '');
 		if (username === '')
 			return fail(400, { groupError: locals.i18n.t('Missing parameter: username') });
-		const res = await withGroupTables(locals, async (conn, t) => {
-			if (group !== '' && !(await listGroups(conn, t)).some((g) => g.name === group)) return false;
-			await setUserGroup(conn, t, username, group === '' ? null : group);
+		const res = await withUserGroups(locals, async (repo) => {
+			if (group !== '' && !(await repo.listGroups()).some((g) => g.name === group)) return false;
+			await repo.setUserGroup(username, group === '' ? null : group);
 			return true;
 		});
 		if (res === undefined)

@@ -3,17 +3,8 @@
  * control connection, JSON like phpMyAdmin) and kept in server memory per login otherwise, which is
  * the equivalent of phpMyAdmin's session fallback.
  */
-import type { Connection } from 'mysql2/promise';
-import {
-	addTable,
-	hasTable,
-	parseTables,
-	removeTable,
-	serializeTables,
-	type ListKind,
-	type TableRef
-} from '#lib/nav/recent.ts';
-import { withStorageTable } from './index.ts';
+import { addTable, hasTable, removeTable, type ListKind, type TableRef } from '#lib/nav/recent.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 
 export type { ListKind, TableRef };
 
@@ -28,30 +19,7 @@ const username = (locals: App.Locals) => locals.session?.user ?? '';
 const maxFor = (locals: App.Locals, kind: ListKind) =>
 	Math.max(0, kind === 'recent' ? locals.config.NumRecentTables : locals.config.NumFavoriteTables);
 
-// ---- storage -----------------------------------------------------------------------------------
-
-export async function selectTablesRow(
-	conn: Connection,
-	qualified: string,
-	user: string
-): Promise<TableRef[]> {
-	const [rows] = await conn.query(`SELECT \`tables\` FROM ${qualified} WHERE \`username\` = ?`, [
-		user
-	]);
-	return parseTables((rows as { tables?: unknown }[])[0]?.tables);
-}
-
-export async function replaceTablesRow(
-	conn: Connection,
-	qualified: string,
-	user: string,
-	list: readonly TableRef[]
-): Promise<void> {
-	await conn.query(`REPLACE INTO ${qualified} (\`username\`, \`tables\`) VALUES (?, ?)`, [
-		user,
-		serializeTables(list)
-	]);
-}
+export { replaceTablesRow, selectTablesRow } from '#lib/server/storage/mysql/recent-favorite.ts';
 
 // ---- entry points ------------------------------------------------------------------------------
 
@@ -60,16 +28,14 @@ export async function getTableList(
 	locals: App.Locals,
 	kind: ListKind
 ): Promise<{ tables: TableRef[]; persistent: boolean }> {
-	const stored = await withStorageTable(locals, kind, (conn, q) =>
-		selectTablesRow(conn, q, username(locals))
-	);
+	const stored = await withRepo(locals, kind, (repo) => repo.select(username(locals)));
 	if (stored) return { tables: stored, persistent: true };
 	return { tables: [...(memory.get(memoryKey(locals, kind)) ?? [])], persistent: false };
 }
 
 async function save(locals: App.Locals, kind: ListKind, list: TableRef[]): Promise<void> {
-	const saved = await withStorageTable(locals, kind, async (conn, q) => {
-		await replaceTablesRow(conn, q, username(locals), list);
+	const saved = await withRepo(locals, kind, async (repo) => {
+		await repo.replace(username(locals), list);
 		return true;
 	});
 	if (saved) return;

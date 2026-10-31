@@ -75,6 +75,14 @@ export const serverSchema = z
 		designer_settings: pmaTable,
 		export_templates: pmaTable,
 		MaxTableUiprefs: z.number().int().default(100),
+		/**
+		 * Derived by the loader (not a phpMyAdmin key, do not set it): absolute path of the SQLite
+		 * configuration storage used by this server (top-level `ConfigStorage`, only for servers
+		 * without `pmadb`).
+		 */
+		sqlite_storage: z.string().optional(),
+		/** App-specific: `false` keeps this server without configuration storage despite a top-level `ConfigStorage`. */
+		ConfigStorage: z.literal(false).optional(),
 
 		SessionTimeZone: z.string().default(''),
 		AllowRoot: z.boolean().default(true),
@@ -100,6 +108,13 @@ export const serverSchema = z
 export type ServerConfig = z.infer<typeof serverSchema>;
 export type ServerConfigInput = z.input<typeof serverSchema>;
 
+/** App-specific (not a phpMyAdmin key): where servers without `pmadb` keep their configuration storage. */
+export const configStorageSchema = z.object({
+	type: z.literal('sqlite'),
+	/** Relative paths resolve from the directory of the config file. */
+	path: z.string().min(1)
+});
+
 export const configSchema = z
 	.object({
 		blowfish_secret: z.string().default(''),
@@ -110,6 +125,7 @@ export const configSchema = z
 			.default({ simple2fa: false }),
 		AllowThirdPartyFraming: z.union([z.boolean(), z.literal('sameorigin')]).default(false),
 		Servers: z.array(serverSchema).default([]),
+		ConfigStorage: configStorageSchema.optional(),
 		ServerDefault: z.number().int().min(0).default(1),
 
 		MaxDbList: z.number().int().default(100),

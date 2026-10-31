@@ -40,9 +40,13 @@
 	<PageHeader
 		icon={DatabaseZap}
 		title={t('Configuration storage')}
-		description={t(
-			'phpMyAdmin configuration storage (pmadb): the tables behind bookmarks, relations, history, favorites and more.'
-		)}
+		description={status.backend === 'sqlite'
+			? t(
+					'svelteMyAdmin configuration storage (SQLite file): the data behind bookmarks, relations, history, favorites and more.'
+				)
+			: t(
+					'phpMyAdmin configuration storage (pmadb): the tables behind bookmarks, relations, history, favorites and more.'
+				)}
 	/>
 
 	{#if error}
@@ -73,7 +77,21 @@
 		</Alert>
 	{/if}
 
-	{#if !status.configured}
+	{#if status.backend === 'sqlite'}
+		<Alert variant={status.reachable ? 'success' : 'destructive'} data-testid="storage-sqlite">
+			<AlertTitle>
+				{status.reachable
+					? t('This server uses a SQLite configuration storage')
+					: t('The SQLite configuration storage cannot be opened')}
+			</AlertTitle>
+			<AlertDescription>
+				<code class="font-mono text-sm">{status.sqlitePath}</code>
+				<p class="mt-1">
+					{t('Every feature is available and the file is created automatically.')}
+				</p>
+			</AlertDescription>
+		</Alert>
+	{:else if !status.configured}
 		<Alert variant="warning" data-testid="storage-unconfigured">
 			<AlertTitle>{t('Configuration of pmadb... not OK')}</AlertTitle>
 			<AlertDescription>
@@ -92,7 +110,7 @@
 		</Alert>
 	{/if}
 
-	{#if !status.allWorks}
+	{#if !status.allWorks && status.backend !== 'sqlite'}
 		<Card.Root>
 			<Card.Header>
 				<Card.Title>{t('Create the storage')}</Card.Title>
@@ -150,8 +168,10 @@
 	<Card.Root class="gap-0 py-0">
 		<Card.Header class="border-b py-5">
 			<Card.Title class="flex items-center gap-3">
-				pmadb
-				<code class="font-mono text-sm font-normal">{status.configured ? status.pmadb : '-'}</code>
+				{status.backend === 'sqlite' ? t('SQLite file') : 'pmadb'}
+				<code class="font-mono text-sm font-normal">
+					{status.backend === 'sqlite' ? status.sqlitePath : status.configured ? status.pmadb : '-'}
+				</code>
 				<Badge
 					variant={status.allWorks ? 'success' : status.configured ? 'warning' : 'destructive'}
 					data-testid="storage-summary"

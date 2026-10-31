@@ -7,9 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
-import type { Connection } from 'mysql2/promise';
-import { escapeQualified } from '#lib/server/db/escape.ts';
-import { withControl } from '#lib/server/table/control.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 
 export interface PrefsContext {
 	locals: App.Locals;
@@ -28,17 +26,6 @@ export interface TablePrefs {
 }
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-/** Run `fn` against `pma__table_uiprefs`; undefined when the storage is not configured/reachable. */
-async function withStorage<T>(
-	locals: App.Locals,
-	fn: (conn: Connection, qualified: string) => Promise<T>
-): Promise<T | undefined> {
-	const server = locals.server;
-	if (!server.pmadb || !server.table_uiprefs) return undefined;
-	const qualified = escapeQualified(server.pmadb, server.table_uiprefs);
-	return withControl(locals, (conn) => fn(conn, qualified));
-}
 
 const cookieName = (db: string, table: string) =>
 	'sma_ui_' +
@@ -60,13 +47,9 @@ function parsePrefs(text: unknown): TablePrefs {
 /** Stored preferences: configuration storage when available, else the cookie. */
 export async function loadPrefs(ctx: PrefsContext): Promise<TablePrefs> {
 	const user = ctx.locals.session?.user ?? '';
-	const stored = await withStorage(ctx.locals, async (conn, qualified) => {
-		const [rows] = await conn.query(
-			`SELECT prefs FROM ${qualified} WHERE username = ? AND db_name = ? AND table_name = ?`,
-			[user, ctx.db, ctx.table]
-		);
-		const row = (rows as { prefs: unknown }[])[0];
-		return row ? parsePrefs(row.prefs) : {};
+	const stored = await withRepo(ctx.locals, 'tableUiPrefs', async (repo) => {
+		const json = await repo.get(user, ctx.db, ctx.table);
+		return json === null ? {} : parsePrefs(json);
 	});
 	if (stored) return stored;
 	return parsePrefs(ctx.cookies.get(cookieName(ctx.db, ctx.table)));
@@ -82,12 +65,8 @@ export async function savePrefs(ctx: PrefsContext, patch: TablePrefs): Promise<v
 	}
 	const json = JSON.stringify(next);
 	const user = ctx.locals.session?.user ?? '';
-	const saved = await withStorage(ctx.locals, async (conn, qualified) => {
-		await conn.query(
-			`INSERT INTO ${qualified} (username, db_name, table_name, prefs) VALUES (?, ?, ?, ?) ` +
-				'ON DUPLICATE KEY UPDATE prefs = VALUES(prefs)',
-			[user, ctx.db, ctx.table, json]
-		);
+	const saved = await withRepo(ctx.locals, 'tableUiPrefs', async (repo) => {
+		await repo.set(user, ctx.db, ctx.table, json);
 		return true;
 	});
 	if (!saved) {

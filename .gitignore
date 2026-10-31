@@ -26,6 +26,7 @@ test-results
 
 # Local configuration (contains secrets)
 /config.json
+/var/
 playwright-report
 .vitest-attachments
 .claude/settings.local.json

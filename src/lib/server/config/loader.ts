@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { configSchema, serverSchema, type AppConfig } from './schema';
 
 export class ConfigError extends Error {
@@ -19,7 +19,10 @@ export function getConfigPath(env: NodeJS.ProcessEnv = process.env): string {
  * phpMyAdmin defaults. When no server is configured a default one is added,
  * like phpMyAdmin does.
  */
-export function parseConfig(raw: unknown = {}): AppConfig {
+export function parseConfig(
+	raw: unknown = {},
+	baseDir: string = dirname(getConfigPath())
+): AppConfig {
 	const result = configSchema.safeParse(raw ?? {});
 	if (!result.success) {
 		const details = result.error.issues
@@ -35,6 +38,13 @@ export function parseConfig(raw: unknown = {}): AppConfig {
 		throw new ConfigError(
 			`Invalid configuration: ServerDefault (${config.ServerDefault}) refers to a missing server`
 		);
+	}
+	// Servers without a pmadb use the SQLite configuration storage when one is configured.
+	if (config.ConfigStorage) {
+		const path = resolve(baseDir, config.ConfigStorage.path);
+		for (const server of config.Servers) {
+			if (!server.pmadb && server.ConfigStorage !== false) server.sqlite_storage = path;
+		}
 	}
 	return config;
 }
@@ -53,7 +63,7 @@ export function loadConfig(path: string = getConfigPath()): AppConfig {
 			cause: e
 		});
 	}
-	return parseConfig(raw);
+	return parseConfig(raw, dirname(resolve(path)));
 }
 
 let cached: AppConfig | undefined;

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { z } from 'zod';
 import { HIDDEN_TYPES } from '#lib/nav/hidden.ts';
-import { storageTable } from '#lib/server/pmadb/index.ts';
+import { hasRepo } from '#lib/server/storage/index.ts';
 import { hideItem, listHiddenItems, unhideItem } from '#lib/server/pmadb/navigation-hiding.ts';
 import type { RequestHandler } from './$types';
 
@@ -12,7 +12,7 @@ const dbName = z.string().min(1).max(64);
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const parsed = dbName.safeParse(url.searchParams.get('db'));
 	if (!parsed.success) error(400, locals.i18n.t('Invalid database name'));
-	const available = storageTable(locals.server, 'navigationhiding') !== null;
+	const available = hasRepo(locals.server, 'navigationHiding');
 	const items = available ? await listHiddenItems(locals, parsed.data) : undefined;
 	return Response.json({ available: items !== undefined, items: items ?? [] }, { headers });
 };

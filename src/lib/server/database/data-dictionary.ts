@@ -3,13 +3,8 @@
  */
 import type { Connection } from 'mysql2/promise';
 import type { DatabaseInterface, IndexInfo } from '../db/dbi';
-import { escapeQualified } from '../db/escape';
-import {
-	getDbComment,
-	hasColumnInfo,
-	withControlConnection,
-	type StorageServer
-} from './operations';
+import { storageRepos } from '#lib/server/storage/index.ts';
+import { getDbComment, hasColumnInfo, type StorageServer } from './operations';
 
 type Row = Record<string, unknown>;
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
@@ -114,36 +109,25 @@ export async function loadDataDictionary(
 	const pmaComments = new Map<string, string>();
 	const pmaMime = new Map<string, string>();
 	if (storage) {
-		await withControlConnection(dbi, server, async (c) => {
-			const [res] = await c.query(
-				`SELECT table_name AS t, column_name AS c, \`comment\` AS cm, mimetype AS m FROM ${escapeQualified(
-					server.pmadb,
-					server.column_info
-				)} WHERE db_name = ? AND table_name <> ''`,
-				[db]
-			);
-			for (const r of res as Row[]) {
-				if (str(r.cm)) pmaComments.set(`${str(r.t)}\0${str(r.c)}`, str(r.cm));
-				if (str(r.m)) pmaMime.set(`${str(r.t)}\0${str(r.c)}`, mimeFromStorage(str(r.m)));
+		const repos = storageRepos(server, async () => dbi.conn);
+		try {
+			for (const r of (await repos.columnInfo?.listForDb(db)) ?? []) {
+				if (r.comment) pmaComments.set(`${r.table}\0${r.column}`, r.comment);
+				if (r.mimetype) pmaMime.set(`${r.table}\0${r.column}`, mimeFromStorage(r.mimetype));
 			}
-			if (server.relation) {
-				try {
-					const [rel] = await c.query(
-						`SELECT master_table AS t, master_field AS c, foreign_db AS fd, foreign_table AS ft, ` +
-							`foreign_field AS fc FROM ${escapeQualified(server.pmadb, server.relation)} WHERE master_db = ?`,
-						[db]
-					);
-					for (const r of rel as Row[]) {
-						const key = `${str(r.t)}\0${str(r.c)}`;
-						if (relations.has(key)) continue;
-						const target = str(r.fd) === db ? str(r.ft) : `${str(r.fd)}.${str(r.ft)}`;
-						relations.set(key, `${target} -> ${str(r.fc)}`);
-					}
-				} catch {
-					// relation table not available
-				}
+		} catch {
+			// column info not available
+		}
+		try {
+			for (const r of (await repos.relation?.listForDb(db)) ?? []) {
+				const key = `${r.masterTable}\0${r.column}`;
+				if (relations.has(key)) continue;
+				const target = r.refDb === db ? r.refTable : `${r.refDb}.${r.refTable}`;
+				relations.set(key, `${target} -> ${r.refColumn}`);
 			}
-		}).catch(() => {});
+		} catch {
+			// relation table not available
+		}
 	}
 
 	const tables: DictionaryTable[] = [];

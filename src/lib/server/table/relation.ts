@@ -4,11 +4,9 @@
  * (`pma__relation`) and display column (`pma__table_info`) when the configuration storage exists.
  */
 import { z } from 'zod';
-import type { ServerConfig } from '../config/schema';
 import { sqlErrorMessage } from '../database/common';
-import { withControlConnection, type StorageServer } from '../database/operations';
+import { storageRepos, type StorageServer } from '#lib/server/storage/index.ts';
 import type { DatabaseInterface } from '../db/dbi';
-import { escapeQualified } from '../db/escape';
 import {
 	FK_ACTIONS,
 	buildAddForeignKey,
@@ -223,14 +221,10 @@ export async function dropForeignKey(
 
 // --- configuration storage: internal relations and display column ---
 
-export type RelationServer = StorageServer & Pick<ServerConfig, 'table_info'>;
+export type RelationServer = StorageServer;
 
-export interface InternalRelation {
-	column: string;
-	refDb: string;
-	refTable: string;
-	refColumn: string;
-}
+import type { InternalRelation } from '#lib/server/storage/types.ts';
+export type { InternalRelation };
 
 export interface StorageFeatures {
 	/** `pma__relation` is configured and reachable. */
@@ -239,29 +233,17 @@ export interface StorageFeatures {
 	tableInfo: boolean;
 }
 
-async function tableReachable(
-	dbi: DatabaseInterface,
-	server: RelationServer,
-	table: string
-): Promise<boolean> {
-	if (!server.pmadb || !table) return false;
-	try {
-		await withControlConnection(dbi, server, (c) =>
-			c.query(`SELECT 1 FROM ${escapeQualified(server.pmadb, table)} LIMIT 1`)
-		);
-		return true;
-	} catch {
-		return false;
-	}
-}
+const reposOf = (dbi: DatabaseInterface, server: RelationServer) =>
+	storageRepos(server, async () => dbi.conn);
 
 export async function detectStorage(
 	dbi: DatabaseInterface,
 	server: RelationServer
 ): Promise<StorageFeatures> {
+	const repos = reposOf(dbi, server);
 	const [relation, tableInfo] = await Promise.all([
-		tableReachable(dbi, server, server.relation),
-		tableReachable(dbi, server, server.table_info)
+		repos.relation?.ping() ?? false,
+		repos.tableInfo?.ping() ?? false
 	]);
 	return { relation, tableInfo };
 }
@@ -272,21 +254,7 @@ export async function loadInternalRelations(
 	db: string,
 	table: string
 ): Promise<InternalRelation[]> {
-	const rows = await withControlConnection(dbi, server, async (c) => {
-		const [r] = await c.query(
-			'SELECT master_field, foreign_db, foreign_table, foreign_field FROM ' +
-				`${escapeQualified(server.pmadb, server.relation)} WHERE master_db = ? AND master_table = ? ` +
-				'ORDER BY master_field',
-			[db, table]
-		);
-		return r as Row[];
-	});
-	return rows.map((r) => ({
-		column: str(r.master_field),
-		refDb: str(r.foreign_db),
-		refTable: str(r.foreign_table),
-		refColumn: str(r.foreign_field)
-	}));
+	return (await reposOf(dbi, server).relation?.listForTable(db, table)) ?? [];
 }
 
 export async function loadDisplayField(
@@ -295,15 +263,7 @@ export async function loadDisplayField(
 	db: string,
 	table: string
 ): Promise<string> {
-	const rows = await withControlConnection(dbi, server, async (c) => {
-		const [r] = await c.query(
-			`SELECT display_field FROM ${escapeQualified(server.pmadb, server.table_info)} ` +
-				'WHERE db_name = ? AND table_name = ?',
-			[db, table]
-		);
-		return r as Row[];
-	});
-	return str(rows[0]?.display_field);
+	return (await reposOf(dbi, server).tableInfo?.get(db, table)) ?? '';
 }
 
 const internalSchema = z.object({
@@ -323,38 +283,29 @@ export async function saveInternalRelation(
 	const parsed = internalSchema.safeParse(raw);
 	if (!parsed.success) return fail(tr.t('Invalid input.'));
 	const rel = parsed.data;
-	if (!(await tableReachable(dbi, server, server.relation))) {
+	const relationRepo = reposOf(dbi, server).relation;
+	if (!relationRepo || !(await relationRepo.ping())) {
 		return fail(tr.t('The relation table of the configuration storage is not available.'));
 	}
 	const caps = await getCaps(dbi);
 	const own = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 	if (!own.includes(rel.column)) return fail(tr.t('Unknown column {name}.', { name: rel.column }));
-	const target = `${escapeQualified(server.pmadb, server.relation)}`;
 	const remove = rel.refDb === '' && rel.refTable === '' && rel.refColumn === '';
-	const statements: { sql: string; params: unknown[] }[] = [
-		{
-			sql: `DELETE FROM ${target} WHERE master_db = ? AND master_table = ? AND master_field = ?`,
-			params: [db, table, rel.column]
-		}
-	];
 	if (!remove) {
 		if (!rel.refDb || !rel.refTable || !rel.refColumn)
 			return fail(tr.t('Choose the referenced column.'));
 		const refCols = await listColumnNames(dbi, rel.refDb, rel.refTable);
 		if (!refCols.includes(rel.refColumn))
 			return fail(tr.t('The referenced column does not exist.'));
-		statements.push({
-			sql:
-				`INSERT INTO ${target} (master_db, master_table, master_field, foreign_db, foreign_table, ` +
-				'foreign_field) VALUES (?, ?, ?, ?, ?, ?)',
-			params: [db, table, rel.column, rel.refDb, rel.refTable, rel.refColumn]
-		});
 	}
 	try {
-		await withControlConnection(dbi, server, async (c) => {
-			for (const s of statements) await c.query(s.sql, s.params);
-		});
-		return { ok: true, sql: statements.map((s) => s.sql) };
+		const sql = await relationRepo.set(
+			db,
+			table,
+			rel.column,
+			remove ? null : { db: rel.refDb, table: rel.refTable, column: rel.refColumn }
+		);
+		return { ok: true, sql };
 	} catch (e) {
 		return fail(sqlErrorMessage(e, N_('The statement failed.')));
 	}
@@ -370,7 +321,8 @@ export async function saveDisplayField(
 ): Promise<ActionResult> {
 	const parsed = displaySchema.safeParse(raw);
 	if (!parsed.success) return fail(tr.t('Invalid input.'));
-	if (!(await tableReachable(dbi, server, server.table_info))) {
+	const infoRepo = reposOf(dbi, server).tableInfo;
+	if (!infoRepo || !(await infoRepo.ping())) {
 		return fail(tr.t('The table information table of the configuration storage is not available.'));
 	}
 	const column = parsed.data.column;
@@ -379,18 +331,8 @@ export async function saveDisplayField(
 		const own = (await loadColumns(dbi, db, table, caps)).map((c) => c.def.name);
 		if (!own.includes(column)) return fail(tr.t('Unknown column {name}.', { name: column }));
 	}
-	const target = escapeQualified(server.pmadb, server.table_info);
 	try {
-		await withControlConnection(dbi, server, async (c) => {
-			if (column === '') {
-				await c.query(`DELETE FROM ${target} WHERE db_name = ? AND table_name = ?`, [db, table]);
-			} else {
-				await c.query(
-					`REPLACE INTO ${target} (db_name, table_name, display_field) VALUES (?, ?, ?)`,
-					[db, table, column]
-				);
-			}
-		});
+		await infoRepo.set(db, table, column);
 		return { ok: true, sql: [] };
 	} catch (e) {
 		return fail(sqlErrorMessage(e, N_('The statement failed.')));

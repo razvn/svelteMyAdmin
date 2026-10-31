@@ -181,4 +181,4 @@ the sample config). Opt-in; the MySQL pmadb stays the default and phpMyAdmin-com
 - [x] Phase 8 — Configuration storage
 - [x] Phase 9 — Advanced
 - [x] Phase 10 — Internationalisation (en, fr, es; see docs/I18N.md to add languages)
-- [ ] Phase 11 — SQLite configuration storage
+- [x] Phase 11 — SQLite configuration storage (opt-in `ConfigStorage`, repositories in `src/lib/server/storage`; see README)

@@ -7,7 +7,9 @@
 import type { Connection } from 'mysql2/promise';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
 import { createConnection } from '#lib/server/db/connection.ts';
-import { storageTable } from '#lib/server/pmadb/index.ts';
+import { mysqlRepos, storageKind, storageRepos } from '#lib/server/storage/index.ts';
+import type { Run } from '#lib/server/storage/mysql/runner.ts';
+import type { TrackingRepo } from '#lib/server/storage/types.ts';
 import { handleQuery, type TrackingCtx } from '#lib/server/pmadb/tracking.ts';
 import { analyseStatement, parseUse } from '#lib/tracking/analyse.ts';
 
@@ -33,8 +35,7 @@ export function installTracking(
 	server: ServerConfig,
 	user: string
 ): TrackingHook | null {
-	const q = storageTable(server, 'tracking');
-	if (!q) return null;
+	if (storageKind(server) === 'none') return null;
 
 	// Appends run one after the other (a statement's record is awaited before its result is
 	// returned, and close() waits for the tail), so no write is dropped or lost on close.
@@ -43,8 +44,9 @@ export function installTracking(
 	let own: Connection | undefined;
 	let broken = false;
 
-	const ctx = async (): Promise<TrackingCtx | null> => {
-		if (broken) return null;
+	// MySQL: the storage connection is the control user's (opened once, lazily) or the bare user
+	// connection; SQLite needs no connection.
+	const run: Run = async (fn) => {
 		let c: Connection = bare;
 		if (server.controluser) {
 			try {
@@ -60,12 +62,18 @@ export function installTracking(
 			} catch (e) {
 				console.error('[tracking] cannot open the control connection:', e);
 				broken = true;
-				return null;
+				throw e;
 			}
 			c = own;
 		}
-		return { conn: c, q, user, server };
+		return fn(c);
 	};
+	const repo: TrackingRepo | null =
+		storageKind(server) === 'mysql'
+			? mysqlRepos(server, run).tracking
+			: storageRepos(server, async () => bare).tracking;
+	if (!repo) return null;
+	const ctx = (): TrackingCtx | null => (broken ? null : { repo, user, server });
 
 	const record = (sql: string | null): Promise<void> => {
 		if (!sql || !CANDIDATE.test(sql.slice(0, 300))) return Promise.resolve();
@@ -78,7 +86,7 @@ export function installTracking(
 		const db = currentDb;
 		const run = chain.then(async () => {
 			try {
-				const c = await ctx();
+				const c = ctx();
 				if (c) await handleQuery(c, bare, db, sql);
 			} catch (e) {
 				// Tracking must never break the statement of the user.

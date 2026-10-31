@@ -5,7 +5,7 @@ A SvelteKit + Svelte 5 re-implementation of phpMyAdmin 5.2.3. See `docs/ROADMAP.
 
 ## Requirements
 
-- Node.js >= 22, pnpm
+- Node.js >= 22.13 (built-in `node:sqlite`), pnpm
 - Docker (optional, for the integration test databases)
 
 ## Setup
@@ -26,6 +26,29 @@ pnpm db:down   # stop and delete data
 
 Seeded with the fixture database `sma_test` and the phpMyAdmin configuration storage database
 `phpmyadmin` (control user `pma` / `pmapass`).
+
+## Configuration storage
+
+Bookmarks, history, favourites, user preferences, relations, designer pages, tracking... live in the
+`pma__*` tables.
+
+- A server with `pmadb` set uses the MySQL pmadb exactly like phpMyAdmin (both applications can share it).
+- A server **without** `pmadb` can use a SQLite file instead through the app-specific top-level key
+  `ConfigStorage` (not a phpMyAdmin `$cfg` key):
+
+  ```json
+  { "ConfigStorage": { "type": "sqlite", "path": "./var/storage.sqlite" } }
+  ```
+
+  Relative paths resolve from the directory of the config file. The file and its schema (the `pma__*`
+  tables of `create_tables.sql` ported to SQLite, plus a `server` column) are created on first use, so
+  every feature is available and nothing has to be set up. One file serves all servers; a server is
+  identified by `host:port` (or its socket), not by its position in `Servers`. Set
+  `"ConfigStorage": false` on a server to keep it without any storage.
+
+- Without either, the storage features are off (the server falls back to cookies/memory).
+
+The storage page (`/server/check-relations`) shows which backend the server uses.
 
 ## Scripts
 

@@ -6,7 +6,7 @@ import {
 	listBookmarks,
 	removeBookmark
 } from '#lib/server/pmadb/bookmarks.ts';
-import { storageTable } from '#lib/server/pmadb/index.ts';
+import { hasRepo } from '#lib/server/storage/index.ts';
 import type { RequestHandler } from './$types';
 
 const dbName = z.string().max(64).default('');
@@ -15,7 +15,7 @@ const headers = { 'cache-control': 'no-store' };
 /** Bookmarks of one database ('' = server level): the user's own and the shared ones. */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const db = dbName.parse(url.searchParams.get('db') ?? '');
-	const available = storageTable(locals.server, 'bookmarktable') !== null;
+	const available = hasRepo(locals.server, 'bookmarks');
 	const bookmarks = available ? await listBookmarks(locals, db) : undefined;
 	return Response.json(
 		{ available: bookmarks !== undefined, bookmarks: bookmarks ?? [] },

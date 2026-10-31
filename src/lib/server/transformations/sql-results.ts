@@ -1,10 +1,11 @@
 /** Attach browser display transformations to the result sets of the SQL console. */
 import type { ScriptResult } from '#lib/sql/run-types.ts';
+import { hasRepo } from '#lib/server/storage/index.ts';
 import { loadMime, type MimeMap } from './column-info.ts';
 import { fieldTargets, transformCells, type RowTransforms } from './apply.ts';
 
 export async function attachTransforms(locals: App.Locals, result: ScriptResult): Promise<void> {
-	if (!locals.config.BrowseMIME || !locals.server.pmadb || !locals.server.column_info) return;
+	if (!locals.config.BrowseMIME || !hasRepo(locals.server, 'columnInfo')) return;
 	const cache = new Map<string, Promise<MimeMap | null>>();
 	const mimeOf = (db: string, table: string) => {
 		const key = JSON.stringify([db, table]);

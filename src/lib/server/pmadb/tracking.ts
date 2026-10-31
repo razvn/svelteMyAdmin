@@ -1,11 +1,12 @@
 /**
- * Change tracking in `pma__tracking` (libraries/classes/Tracker.php). All functions take the
- * storage connection `conn` and the qualified table name `q`; statements of the tracked table are
- * read from the user connection `src`.
+ * Change tracking (libraries/classes/Tracker.php). All functions take a `TrackingCtx` (the tracking
+ * repository of the configuration storage); statements of the tracked table are read from the user
+ * connection `src`.
  */
 import type { Connection } from 'mysql2/promise';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
 import { escapeId } from '#lib/server/db/escape.ts';
+import type { TrackingRepo, TrackingVersionRow } from '#lib/server/storage/types.ts';
 import {
 	analyseStatement,
 	formatDate,
@@ -22,8 +23,7 @@ import {
 } from '#lib/tracking/analyse.ts';
 
 export interface TrackingCtx {
-	conn: Connection;
-	q: string;
+	repo: TrackingRepo;
 	/** Name written in the log (`# log <date> <user>`). */
 	user: string;
 	server: Pick<
@@ -38,11 +38,6 @@ export interface TrackingCtx {
 
 type Row = Record<string, unknown>;
 
-async function rows(ctx: TrackingCtx, sql: string, params: unknown[] = []): Promise<Row[]> {
-	const [r] = await ctx.conn.query(sql, params);
-	return r as Row[];
-}
-
 /** Keep only known statement names (the column is a SET). */
 export function normaliseTrackingSet(set: string): string {
 	const wanted = new Set(
@@ -54,42 +49,20 @@ export function normaliseTrackingSet(set: string): string {
 	return TRACKING_STATEMENTS.filter((s) => wanted.has(s)).join(',');
 }
 
-export async function isAnyTrackingInProgress(ctx: TrackingCtx, db: string): Promise<boolean> {
-	const r = await rows(
-		ctx,
-		`SELECT 1 AS x FROM ${ctx.q} WHERE tracking_active = 1 AND db_name = ? LIMIT 1`,
-		[db]
-	);
-	return r.length > 0;
-}
+export const isAnyTrackingInProgress = (ctx: TrackingCtx, db: string): Promise<boolean> =>
+	ctx.repo.anyActive(db);
 
 /** Highest version (optionally one tracking `statement`); -1 when none. */
-export async function getVersion(
+export const getVersion = (
 	ctx: TrackingCtx,
 	db: string,
 	table: string,
 	statement?: string
-): Promise<number> {
-	let sql = `SELECT MAX(version) AS v FROM ${ctx.q} WHERE db_name = ? AND table_name = ?`;
-	const params = [db, table];
-	if (statement) {
-		sql += ' AND FIND_IN_SET(?, tracking) > 0';
-		params.push(statement);
-	}
-	const r = await rows(ctx, sql, params);
-	const v = r[0]?.v;
-	return v === null || v === undefined ? -1 : Number(v);
-}
+): Promise<number> => ctx.repo.maxVersion(db, table, statement);
 
 /** Is the newest version of the table active? */
-export async function isTracked(ctx: TrackingCtx, db: string, table: string): Promise<boolean> {
-	const r = await rows(
-		ctx,
-		`SELECT tracking_active FROM ${ctx.q} WHERE db_name = ? AND table_name = ? ORDER BY version DESC LIMIT 1`,
-		[db, table]
-	);
-	return Number(r[0]?.tracking_active) === 1;
-}
+export const isTracked = (ctx: TrackingCtx, db: string, table: string): Promise<boolean> =>
+	ctx.repo.isActive(db, table);
 
 const plain = (r: Row): PhpValue => {
 	const o: { [k: string]: PhpValue } = {};
@@ -131,10 +104,17 @@ export async function createVersion(
 	const ddl = String(def?.['Create Table'] ?? def?.['Create View'] ?? '');
 	createSql += `${logComment(date, ctx.user)}${ddl};\n`;
 
-	await ctx.conn.query(
-		`INSERT INTO ${ctx.q} (db_name, table_name, version, date_created, date_updated, schema_snapshot, schema_sql, data_sql, tracking) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		[db, table, o.version, date, date, snapshot, createSql, '\n', set]
-	);
+	await ctx.repo.insert({
+		db,
+		table,
+		version: o.version,
+		created: date,
+		updated: date,
+		snapshot,
+		schemaSql: createSql,
+		dataSql: '\n',
+		tracking: set
+	});
 	await setActive(ctx, db, table, o.version - 1, false);
 	return true;
 }
@@ -151,83 +131,43 @@ export async function createDatabaseVersion(
 	}
 	createSql += logComment(date, ctx.user) + o.query;
 	const set = normaliseTrackingSet(o.trackingSet || 'CREATE DATABASE,ALTER DATABASE,DROP DATABASE');
-	await ctx.conn.query(
-		`INSERT INTO ${ctx.q} (db_name, table_name, version, date_created, date_updated, schema_snapshot, schema_sql, data_sql, tracking) VALUES (?, '', ?, ?, ?, '', ?, ?, ?)`,
-		[o.db, o.version, date, date, createSql, '\n', set]
-	);
+	await ctx.repo.insert({
+		db: o.db,
+		table: '',
+		version: o.version,
+		created: date,
+		updated: date,
+		snapshot: '',
+		schemaSql: createSql,
+		dataSql: '\n',
+		tracking: set
+	});
 }
 
-export async function setActive(
+export const setActive = (
 	ctx: TrackingCtx,
 	db: string,
 	table: string,
 	version: number,
 	active: boolean
-): Promise<void> {
-	await ctx.conn.query(
-		`UPDATE ${ctx.q} SET tracking_active = ? WHERE db_name = ? AND table_name = ? AND version = ?`,
-		[active ? 1 : 0, db, table, version]
-	);
-}
+): Promise<void> => ctx.repo.setActive(db, table, version, active);
 
-export async function deleteTracking(
+export const deleteTracking = (
 	ctx: TrackingCtx,
 	db: string,
 	table: string,
 	version?: number
-): Promise<void> {
-	let sql = `DELETE FROM ${ctx.q} WHERE db_name = ? AND table_name = ?`;
-	const params: (string | number)[] = [db, table];
-	if (version) {
-		sql += ' AND version = ?';
-		params.push(version);
-	}
-	await ctx.conn.query(sql, params);
-}
+): Promise<void> => ctx.repo.delete(db, table, version);
 
-export interface VersionRow {
-	db: string;
-	table: string;
-	version: number;
-	created: string;
-	updated: string;
-	tracking: string;
-	active: boolean;
-}
-
-const toVersion = (r: Row): VersionRow => ({
-	db: String(r.db_name),
-	table: String(r.table_name),
-	version: Number(r.version),
-	created: String(r.date_created),
-	updated: String(r.date_updated),
-	tracking: String(r.tracking ?? ''),
-	active: Number(r.tracking_active) === 1
-});
+export type VersionRow = TrackingVersionRow;
 
 /** Versions of one table, newest first. */
-export async function listVersions(
-	ctx: TrackingCtx,
-	db: string,
-	table: string
-): Promise<VersionRow[]> {
-	const r = await rows(
-		ctx,
-		`SELECT * FROM ${ctx.q} WHERE db_name = ? AND table_name = ? ORDER BY version DESC`,
-		[db, table]
-	);
-	return r.map(toVersion);
-}
+export const listVersions = (ctx: TrackingCtx, db: string, table: string): Promise<VersionRow[]> =>
+	ctx.repo.listVersions(db, table);
 
 /** Newest version of every tracked table of a database (Tracker::getTrackedTables). */
-export async function listTrackedTables(ctx: TrackingCtx, db: string): Promise<VersionRow[]> {
-	const r = await rows(
-		ctx,
-		`SELECT t.* FROM ${ctx.q} t JOIN (SELECT table_name, MAX(version) AS v FROM ${ctx.q} WHERE db_name = ? AND table_name <> '' GROUP BY table_name) m ON t.table_name = m.table_name AND t.version = m.v WHERE t.db_name = ? ORDER BY t.table_name`,
-		[db, db]
-	);
-	return r.map(toVersion);
-}
+export const listTrackedTables = (ctx: TrackingCtx, db: string): Promise<VersionRow[]> =>
+	ctx.repo.listTracked(db);
 
 export interface TrackedData {
 	tracking: string;
@@ -245,23 +185,18 @@ export async function getTrackedData(
 	table: string,
 	version: number
 ): Promise<TrackedData | null> {
-	const r = await rows(
-		ctx,
-		`SELECT * FROM ${ctx.q} WHERE db_name = ? AND table_name = ? AND version = ? LIMIT 1`,
-		[db, table, version]
-	);
-	const row = r[0];
+	const row = await ctx.repo.get(db, table, version);
 	if (!row) return null;
-	const ddlog = parseLog(row.schema_sql === null ? null : String(row.schema_sql));
-	const dmlog = parseLog(row.data_sql === null ? null : String(row.data_sql));
+	const ddlog = parseLog(row.schema_sql);
+	const dmlog = parseLog(row.data_sql);
 	const dates = [...ddlog, ...dmlog].map((e) => e.date).sort();
-	const snap = phpUnserialize(row.schema_snapshot === null ? null : String(row.schema_snapshot));
+	const snap = phpUnserialize(row.schema_snapshot);
 	const s = (snap && !Array.isArray(snap) && typeof snap === 'object' ? snap : {}) as {
 		COLUMNS?: Row[];
 		INDEXES?: Row[];
 	};
 	return {
-		tracking: String(row.tracking ?? ''),
+		tracking: row.tracking,
 		snapshot: { COLUMNS: s.COLUMNS ?? [], INDEXES: s.INDEXES ?? [] },
 		ddlog,
 		dmlog,
@@ -271,20 +206,14 @@ export async function getTrackedData(
 }
 
 /** Replace one log (Tracker::changeTrackingData). */
-export async function saveLog(
+export const saveLog = (
 	ctx: TrackingCtx,
 	db: string,
 	table: string,
 	version: number,
 	which: 'ddl' | 'dml',
 	entries: LogEntry[]
-): Promise<void> {
-	const col = which === 'ddl' ? 'schema_sql' : 'data_sql';
-	await ctx.conn.query(
-		`UPDATE ${ctx.q} SET ${escapeId(col)} = ? WHERE db_name = ? AND table_name = ? AND version = ?`,
-		[serializeLog(entries), db, table, version]
-	);
-}
+): Promise<void> => ctx.repo.saveLog(db, table, version, which, serializeLog(entries));
 
 /**
  * Tracker::handleQuery: append a statement that ran on `src` to the active tracking version of
@@ -329,16 +258,14 @@ export async function handleQuery(
 	}
 	if (!(await isTracked(ctx, db, a.table))) return;
 
-	const col = a.type === 'DDL' ? 'schema_sql' : 'data_sql';
-	const chunk = '\n' + logChunk(formatDate(), ctx.user, sql, db);
-	let update = `UPDATE ${ctx.q} SET ${escapeId(col)} = CONCAT(COALESCE(${escapeId(col)}, ''), ?), date_updated = ?`;
-	const params: (string | number)[] = [chunk, formatDate()];
-	if (a.identifier === 'RENAME TABLE' && a.tableAfterRename) {
-		update += ', table_name = ?';
-		params.push(a.tableAfterRename);
-	}
-	update +=
-		' WHERE FIND_IN_SET(?, tracking) > 0 AND db_name = ? AND table_name = ? AND version = ?';
-	params.push(a.identifier, db, a.table, version);
-	await ctx.conn.query(update, params);
+	await ctx.repo.appendLog({
+		db,
+		table: a.table,
+		version,
+		which: a.type === 'DDL' ? 'ddl' : 'dml',
+		chunk: '\n' + logChunk(formatDate(), ctx.user, sql, db),
+		updated: formatDate(),
+		statement: a.identifier,
+		renameTo: a.identifier === 'RENAME TABLE' && a.tableAfterRename ? a.tableAfterRename : undefined
+	});
 }

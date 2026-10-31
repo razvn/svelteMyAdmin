@@ -2,15 +2,8 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { columnSchema, normalizeColumns } from '#lib/server/database/create-table.ts';
 import { getColumnEditorContext } from '#lib/server/database/create-table.ts';
-import {
-	addCentral,
-	addTableColumns,
-	countCentral,
-	deleteCentral,
-	listCentral,
-	updateCentral
-} from '#lib/server/pmadb/central-columns.ts';
-import { withStorageTable } from '#lib/server/pmadb/index.ts';
+import { addColumnsOfTable } from '#lib/server/pmadb/central-columns.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 import { fromColumnDef, toColumnDef, type CentralColumn } from '#lib/sql/central-columns.ts';
 import type { ColumnDef } from '#lib/sql/column-definition.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -30,11 +23,11 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const tables = (await dbi.listTables(params.db))
 		.filter((tbl) => tbl.type === 'BASE TABLE')
 		.map((tbl) => tbl.name);
-	const listed = await withStorageTable(locals, 'central_columns', async (conn, q) => {
+	const listed = await withRepo(locals, 'centralColumns', async (repo) => {
 		const [columns, total, all] = await Promise.all([
-			listCentral(conn, q, params.db, { pos, num: size, filter }),
-			countCentral(conn, q, params.db, filter),
-			listCentral(conn, q, params.db)
+			repo.list(params.db, { pos, num: size, filter }),
+			repo.count(params.db, filter),
+			repo.list(params.db)
 		]);
 		return { columns, total, names: new Set(all.map((c) => c.name)) };
 	});
@@ -95,15 +88,15 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const def = await parseDefinition(locals, String(fd.get('definition') ?? ''));
 		if (typeof def === 'string') return fail(400, { error: def });
-		const done = await withStorageTable(locals, 'central_columns', async (conn, q) => {
+		const done = await withRepo(locals, 'centralColumns', async (repo) => {
 			try {
 				if (def.original) {
-					await updateCentral(conn, q, params.db, def.original, def.column);
+					await repo.update(params.db, def.original, def.column);
 					return {
 						message: locals.i18n.t('Column {name} has been updated.', { name: def.column.name })
 					};
 				}
-				const res = await addCentral(conn, q, params.db, [def.column]);
+				const res = await repo.add(params.db, [def.column]);
 				if (res.existing.length) {
 					return {
 						error: locals.i18n.t(
@@ -132,8 +125,8 @@ export const actions: Actions = {
 	delete: async ({ request, locals, params }) => {
 		const list = names(await request.formData());
 		if (list.length === 0) return fail(400, { error: locals.i18n.t('No columns selected.') });
-		const missing = await withStorageTable(locals, 'central_columns', (conn, q) =>
-			deleteCentral(conn, q, params.db, list)
+		const missing = await withRepo(locals, 'centralColumns', (repo) =>
+			repo.delete(params.db, list)
 		);
 		if (!missing) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {
@@ -155,8 +148,8 @@ export const actions: Actions = {
 		if (!table || list.length === 0)
 			return fail(400, { error: locals.i18n.t('No columns selected.') });
 		const dbi = await locals.dbi;
-		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
-			addTableColumns(conn, q, dbi, params.db, table, list)
+		const res = await withRepo(locals, 'centralColumns', (repo) =>
+			addColumnsOfTable(repo, dbi, params.db, table, list)
 		);
 		if (!res) return fail(400, { error: locals.i18n.t(UNAVAILABLE) });
 		return {

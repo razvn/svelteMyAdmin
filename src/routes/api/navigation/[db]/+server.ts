@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { applyHidden } from '#lib/nav/hidden.ts';
 import { getDbChildren } from '#lib/server/navigation/children.ts';
 import { toNavConfig } from '#lib/server/navigation/config.ts';
-import { storageTable } from '#lib/server/pmadb/index.ts';
+import { hasRepo } from '#lib/server/storage/index.ts';
 import { listHiddenItems } from '#lib/server/pmadb/navigation-hiding.ts';
 import type { RequestHandler } from './$types';
 
@@ -18,7 +18,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	if (!(await dbi.databaseExists(db))) error(404, locals.i18n.t('Database not found'));
 	const children = await getDbChildren(dbi, db, toNavConfig(locals.config));
 	// Hidden items (pma__navigationhiding) are filtered out of the data, not just the view.
-	const canHide = storageTable(locals.server, 'navigationhiding') !== null;
+	const canHide = hasRepo(locals.server, 'navigationHiding');
 	const hidden = canHide ? await listHiddenItems(locals, db) : undefined;
 	const body = hidden
 		? { ...applyHidden(children, hidden), canHide: true, hiddenCount: hidden.length }

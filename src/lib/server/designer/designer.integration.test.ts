@@ -4,6 +4,8 @@ import { createConnection, type Connection } from '../db/connection.ts';
 import { DatabaseInterface } from '../db/dbi.ts';
 import type { RelationServer } from '../table/relation.ts';
 import { exportQuerySchema, exportSchema } from './export.ts';
+import { connectionRunner } from '../storage/mysql/runner.ts';
+import { designerPagesRepo } from '../storage/mysql/designer.ts';
 import { createRelation, deleteRelation, setDisplayField } from './relations.ts';
 import { loadDesignerSchema } from './schema.ts';
 import {
@@ -243,7 +245,7 @@ for (const { name, port } of servers) {
 			});
 			const id = await createPage(conn, t, db, 'export');
 			await savePositions(conn, t, db, id, { authors: { x: 400, y: 40 }, books: { x: 40, y: 40 } });
-			const storage = { conn, tables: t };
+			const storage = designerPagesRepo(connectionRunner(conn), t);
 			const svg = await exportSchema(
 				dbi,
 				server,

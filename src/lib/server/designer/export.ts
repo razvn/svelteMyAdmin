@@ -9,10 +9,9 @@ import {
 } from '#lib/designer/export.ts';
 import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
 import type { RelationServer } from '#lib/server/table/relation.ts';
-import type { Connection } from 'mysql2/promise';
 import { renderPdf } from './export-pdf.ts';
 import { loadDesignerSchema } from './schema.ts';
-import { loadPositions, type DesignerTables } from './storage.ts';
+import type { DesignerPagesRepo } from '#lib/server/storage/types.ts';
 
 const flag = z
 	.enum(['0', '1', 'on', 'off', 'true', 'false'])
@@ -55,19 +54,19 @@ export interface SchemaFile {
 	extension: string;
 }
 
-/** `storage` = the pages tables with a control connection, null when not configured. */
+/** `storage` = the pages repository, null when not configured. */
 export async function exportSchema(
 	dbi: DatabaseInterface,
 	server: RelationServer,
 	db: string,
 	q: ExportQuery,
-	storage: { conn: Connection; tables: DesignerTables } | null,
+	storage: DesignerPagesRepo | null,
 	appVersion = ''
 ): Promise<SchemaFile> {
 	const schema = await loadDesignerSchema(dbi, server, db);
 	const positions =
 		storage && q.page > 0
-			? await loadPositions(storage.conn, storage.tables, db, q.page)
+			? await storage.loadPositions(db, q.page)
 			: autoLayout(schema.tables, schema.relations);
 	const model = buildExportModel(db, schema.tables, schema.relations, positions, toOptions(q));
 	if (q.format === 'svg') {

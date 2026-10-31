@@ -8,7 +8,14 @@ import createTablesSql from '../../../../docker/initdb/create_tables.sql?raw';
 import { escapeId, escapeQualified } from '#lib/server/db/escape.ts';
 import { N_ } from '#lib/i18n/index.ts';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
-import { withControl, type StorageKey } from './index.ts';
+import {
+	attempt,
+	controlRunner,
+	storageKind,
+	storageRepos,
+	type StorageKey,
+	type StorageKind
+} from '#lib/server/storage/index.ts';
 
 export interface FeatureDef {
 	/** Config key of the server (`$cfg['Servers'][$i][key]`). */
@@ -70,7 +77,7 @@ export const PMA_FEATURES: readonly FeatureDef[] = [
 	}
 ];
 
-type StorageServer = Partial<Pick<ServerConfig, StorageKey | 'pmadb'>>;
+type StorageServer = Partial<Pick<ServerConfig, StorageKey | 'pmadb' | 'sqlite_storage'>>;
 
 export interface FeatureStatus extends FeatureDef {
 	/** Configured table name ('' = not configured). */
@@ -82,7 +89,11 @@ export interface FeatureStatus extends FeatureDef {
 }
 
 export interface StorageStatus {
-	/** `pmadb` is set in the server config. */
+	/** Which backend the server uses: the MySQL pmadb, the SQLite file (`ConfigStorage`) or none. */
+	backend: StorageKind;
+	/** Absolute path of the SQLite file ('' unless `backend` is `sqlite`). */
+	sqlitePath: string;
+	/** `pmadb` is set in the server config (or a SQLite storage is in use). */
 	configured: boolean;
 	/** The configured pmadb, or phpMyAdmin's default name when none is configured. */
 	pmadb: string;
@@ -99,8 +110,30 @@ export const DEFAULT_PMADB = 'phpmyadmin';
 /** Pure: combine the configured names with the tables found in the pmadb (null = unreachable). */
 export function featureStatuses(
 	server: StorageServer,
-	existing: ReadonlySet<string> | null
+	existing: ReadonlySet<string> | null,
+	sqliteOpens = true
 ): StorageStatus {
+	if (!server.pmadb && server.sqlite_storage) {
+		// SQLite: every feature is available (the schema is created on open), nothing to configure.
+		const features = PMA_FEATURES.map((f): FeatureStatus => ({
+			...f,
+			name: f.table,
+			configured: true,
+			exists: sqliteOpens,
+			ok: sqliteOpens
+		}));
+		const missing = features.filter((f) => !f.ok).length;
+		return {
+			backend: 'sqlite',
+			sqlitePath: server.sqlite_storage,
+			configured: true,
+			pmadb: '',
+			reachable: sqliteOpens,
+			features,
+			allWorks: missing === 0,
+			missing
+		};
+	}
 	const configured = !!server.pmadb;
 	const features = PMA_FEATURES.map((f): FeatureStatus => {
 		const name = (server[f.key] as string | undefined) ?? '';
@@ -110,6 +143,8 @@ export function featureStatuses(
 	});
 	const missing = features.filter((f) => !f.ok).length;
 	return {
+		backend: storageKind({ pmadb: server.pmadb ?? '', sqlite_storage: undefined }),
+		sqlitePath: '',
 		configured,
 		pmadb: server.pmadb || DEFAULT_PMADB,
 		reachable: configured && existing !== null,
@@ -193,7 +228,11 @@ export async function createMissingTables(
 /** Status of the configuration storage of the active server (control connection). */
 export async function getStorageStatus(locals: App.Locals): Promise<StorageStatus> {
 	const server = locals.server;
-	if (!server.pmadb) return featureStatuses(server, null);
-	const existing = await withControl(locals, (conn) => listPmadbTables(conn, server.pmadb));
+	if (!server.pmadb) {
+		const sqliteOpens = storageRepos(server, async () => locals.db).bookmarks !== null;
+		return featureStatuses(server, null, sqliteOpens);
+	}
+	const run = controlRunner(server, () => locals.db);
+	const existing = await attempt(() => run((conn) => listPmadbTables(conn, server.pmadb)));
 	return featureStatuses(server, existing ?? null);
 }

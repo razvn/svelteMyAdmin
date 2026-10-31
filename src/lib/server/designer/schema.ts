@@ -5,8 +5,7 @@
  * Relations that point to another database are not drawn.
  */
 import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
-import { escapeQualified } from '#lib/server/db/escape.ts';
-import { withControlConnection } from '#lib/server/database/operations.ts';
+import { storageRepos } from '#lib/server/storage/index.ts';
 import { detectStorage, type RelationServer } from '#lib/server/table/relation.ts';
 import type { DesignerRelation, DesignerTable } from '#lib/designer/types.ts';
 
@@ -92,47 +91,32 @@ export async function loadDesignerSchema(
 	}
 
 	const displayFields = new Map<string, string>();
-	if (storage.relation) {
-		const internal = await withControlConnection(dbi, server, async (c) => {
-			const [r] = await c.query(
-				'SELECT master_table, master_field, foreign_db, foreign_table, foreign_field FROM ' +
-					`${escapeQualified(server.pmadb, server.relation)} WHERE master_db = ?`,
-				[db]
-			);
-			return r as Row[];
-		}).catch(() => [] as Row[]);
+	const repos = storageRepos(server, async () => dbi.conn);
+	if (storage.relation && repos.relation) {
+		const internal = await repos.relation.listForDb(db).catch(() => []);
 		for (const r of internal) {
-			if (s(r.foreign_db) !== db) continue;
+			if (r.refDb !== db) continue;
 			// an InnoDB foreign key of the same column wins over the internal relation
 			if (
 				relations.some(
-					(x) =>
-						x.kind === 'fk' &&
-						x.fromTable === s(r.master_table) &&
-						x.fromColumn === s(r.master_field)
+					(x) => x.kind === 'fk' && x.fromTable === r.masterTable && x.fromColumn === r.column
 				)
 			) {
 				continue;
 			}
 			relations.push({
-				id: `internal:${s(r.master_table)}:${s(r.master_field)}`,
+				id: `internal:${r.masterTable}:${r.column}`,
 				kind: 'internal',
-				fromTable: s(r.master_table),
-				fromColumn: s(r.master_field),
-				toTable: s(r.foreign_table),
-				toColumn: s(r.foreign_field)
+				fromTable: r.masterTable,
+				fromColumn: r.column,
+				toTable: r.refTable,
+				toColumn: r.refColumn
 			});
 		}
 	}
-	if (storage.tableInfo) {
-		const info = await withControlConnection(dbi, server, async (c) => {
-			const [r] = await c.query(
-				`SELECT table_name, display_field FROM ${escapeQualified(server.pmadb, server.table_info)} WHERE db_name = ?`,
-				[db]
-			);
-			return r as Row[];
-		}).catch(() => [] as Row[]);
-		for (const r of info) displayFields.set(s(r.table_name), s(r.display_field));
+	if (storage.tableInfo && repos.tableInfo) {
+		const info = await repos.tableInfo.listForDb(db).catch(() => []);
+		for (const r of info) displayFields.set(r.table, r.displayField);
 	}
 
 	const names = new Set(tableRows.map((r) => s(r.name)));

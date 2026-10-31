@@ -1,15 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { menuTabs, TAB_LEVELS } from '#lib/nav/user-groups.ts';
-import {
-	deleteGroup,
-	getGroup,
-	groupExists,
-	listGroups,
-	listGroupUsers,
-	saveGroup,
-	withGroupTables
-} from '#lib/server/pmadb/user-groups.ts';
+import { withUserGroups } from '#lib/server/pmadb/user-groups.ts';
+import { allTabKeys } from '#lib/nav/user-groups.ts';
 import { getCapabilities } from '#lib/server/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -23,16 +16,12 @@ const levelTabs = TAB_LEVELS.map((level) => ({
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const dbi = await locals.dbi;
 	const caps = await getCapabilities(dbi);
-	const enabled = await withGroupTables(locals, async (conn, t) => {
-		await conn.query(`SELECT 1 FROM ${t.groups} LIMIT 1`);
-		await conn.query(`SELECT 1 FROM ${t.users} LIMIT 1`);
-		return true;
-	});
+	const enabled = await withUserGroups(locals, (repo) => repo.ping());
 	if (!enabled) return { state: 'disabled' as const, levelTabs };
 	if (!caps.isSuperUser) return { state: 'no-privileges' as const, levelTabs };
 
-	const view = await withGroupTables(locals, async (conn, t) => {
-		const groups = await listGroups(conn, t);
+	const view = await withUserGroups(locals, async (repo) => {
+		const groups = await repo.listGroups();
 		const usersOf = url.searchParams.get('users');
 		const editName = url.searchParams.get('edit');
 		const edit = editName ? groups.find((g) => g.name === editName) : undefined;
@@ -44,7 +33,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					l.tabs.filter((tab) => g.tabs[tab.key] !== false).map((tab) => locals.i18n.t(tab.label))
 				)
 			})),
-			members: usersOf ? { group: usersOf, users: await listGroupUsers(conn, t, usersOf) } : null,
+			members: usersOf ? { group: usersOf, users: await repo.listGroupUsers(usersOf) } : null,
 			edit: edit
 				? {
 						name: edit.name,
@@ -74,11 +63,11 @@ export const actions: Actions = {
 		const isNew = fd.get('mode') === 'add';
 		const name = groupName.safeParse(fd.get('userGroup'));
 		if (!name.success) return fail(400, { error: locals.i18n.t('Group name is required.') });
-		const res = await withGroupTables(locals, async (conn, t) => {
-			const exists = await groupExists(conn, t, name.data);
+		const res = await withUserGroups(locals, async (repo) => {
+			const exists = await repo.groupExists(name.data);
 			if (isNew && exists) return 'exists' as const;
 			if (!isNew && !exists) return 'missing' as const;
-			await saveGroup(conn, t, name.data, allowedKeys(fd));
+			await repo.saveGroup(name.data, allowedKeys(fd), allTabKeys());
 			return 'ok' as const;
 		});
 		if (res === undefined)
@@ -95,9 +84,9 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const name = groupName.safeParse(fd.get('userGroup'));
 		if (!name.success) return fail(400, { error: locals.i18n.t('Group name is required.') });
-		const res = await withGroupTables(locals, async (conn, t) => {
-			if (!(await getGroup(conn, t, name.data))) return false;
-			await deleteGroup(conn, t, name.data);
+		const res = await withUserGroups(locals, async (repo) => {
+			if (!(await repo.getGroup(name.data))) return false;
+			await repo.deleteGroup(name.data);
 			return true;
 		});
 		if (res === undefined)

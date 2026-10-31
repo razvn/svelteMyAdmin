@@ -1,7 +1,7 @@
 import { isSystemSchema } from '#lib/server/admin/databases.ts';
 import { fail } from '@sveltejs/kit';
-import { storageTable, withStorageTable } from '#lib/server/pmadb/index.ts';
-import { addTableColumns, deleteCentral } from '#lib/server/pmadb/central-columns.ts';
+import { hasRepo, withRepo } from '#lib/server/storage/index.ts';
+import { addColumnsOfTable } from '#lib/server/pmadb/central-columns.ts';
 import { alterAction } from '#lib/server/table/actions.ts';
 import {
 	addKey,
@@ -41,7 +41,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		indexes,
 		stats,
 		partitions,
-		centralAvailable: storageTable(locals.server, 'central_columns') !== null,
+		centralAvailable: hasRepo(locals.server, 'centralColumns'),
 		canRenameIndex: supportsRenameIndex(caps),
 		canInvisible: supportsInvisibleIndex(caps),
 		invisibleLabel:
@@ -59,8 +59,8 @@ export const actions: Actions = {
 	centralAdd: async ({ request, locals, params }) => {
 		const columns = (await request.formData()).getAll('column').map(String);
 		const dbi = await locals.dbi;
-		const res = await withStorageTable(locals, 'central_columns', (conn, q) =>
-			addTableColumns(conn, q, dbi, params.db, params.table, columns)
+		const res = await withRepo(locals, 'centralColumns', (repo) =>
+			addColumnsOfTable(repo, dbi, params.db, params.table, columns)
 		);
 		if (!res)
 			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });
@@ -75,8 +75,8 @@ export const actions: Actions = {
 	},
 	centralRemove: async ({ request, locals, params }) => {
 		const columns = (await request.formData()).getAll('column').map(String);
-		const missing = await withStorageTable(locals, 'central_columns', (conn, q) =>
-			deleteCentral(conn, q, params.db, columns)
+		const missing = await withRepo(locals, 'centralColumns', (repo) =>
+			repo.delete(params.db, columns)
 		);
 		if (!missing)
 			return fail(400, { error: locals.i18n.t('The central list of columns is not available.') });

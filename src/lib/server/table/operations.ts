@@ -14,7 +14,6 @@ import {
 	planDatabaseCopy,
 	rows,
 	runStatements,
-	withControlConnection,
 	withSessionRestored,
 	type CopyWhat,
 	type DatabaseSnapshot,
@@ -22,6 +21,7 @@ import {
 	type PlanStep,
 	type StorageServer
 } from '../database/operations';
+import { storageRepos } from '#lib/server/storage/index.ts';
 import { executePlan, type ExecResult, type Plan, type ResultSet } from '../database/structure';
 import type { DatabaseInterface } from '../db/dbi';
 import { escapeId, escapeQualified, quoteValue } from '../db/escape';
@@ -310,29 +310,12 @@ export async function adjustTablePrivileges(
 	return { sql };
 }
 
-export type TableMetaServer = StorageServer & { table_info: string };
-
-/** Is the configuration storage table `name` configured and reachable? */
-async function hasPmaTable(
-	dbi: DatabaseInterface,
-	server: TableMetaServer,
-	name: string
-): Promise<boolean> {
-	if (!server.pmadb || !name) return false;
-	try {
-		await withControlConnection(dbi, server, (c) =>
-			c.query(`SELECT 1 FROM ${escapeQualified(server.pmadb, name)} LIMIT 1`)
-		);
-		return true;
-	} catch {
-		return false;
-	}
-}
+export type TableMetaServer = StorageServer;
 
 /**
  * Relation::renameTable (move) / Table::moveCopy (copy): carry the column comments + MIME types
  * (`pma__column_info`), the display column (`pma__table_info`) and the internal relations
- * (`pma__relation`) over to the renamed / copied table.
+ * (`pma__relation`) over to the renamed / copied table. Returns the statements that ran.
  */
 export async function transferTableMeta(
 	dbi: DatabaseInterface,
@@ -341,59 +324,12 @@ export async function transferTableMeta(
 	to: { db: string; table: string },
 	move: boolean
 ): Promise<string[]> {
+	const repos = storageRepos(server, async () => dbi.conn);
+	const available = [repos.columnInfo, repos.tableInfo, repos.relation].filter((r) => r !== null);
+	const reachable: typeof available = [];
+	for (const repo of available) if (await repo.ping()) reachable.push(repo);
 	const statements: string[] = [];
-	const qv = quoteValue;
-	const f = { db: qv(from.db), table: qv(from.table) };
-	const t = { db: qv(to.db), table: qv(to.table) };
-	if (await hasPmaTable(dbi, server, server.column_info)) {
-		const tbl = escapeQualified(server.pmadb, server.column_info);
-		statements.push(
-			move
-				? `UPDATE ${tbl} SET \`db_name\` = ${t.db}, \`table_name\` = ${t.table} ` +
-						`WHERE \`db_name\` = ${f.db} AND \`table_name\` = ${f.table}`
-				: `INSERT IGNORE INTO ${tbl} (\`db_name\`, \`table_name\`, \`column_name\`, \`comment\`, ` +
-						'`mimetype`, `transformation`, `transformation_options`, `input_transformation`, ' +
-						`\`input_transformation_options\`) SELECT ${t.db}, ${t.table}, \`column_name\`, \`comment\`, ` +
-						'`mimetype`, `transformation`, `transformation_options`, `input_transformation`, ' +
-						`\`input_transformation_options\` FROM ${tbl} WHERE \`db_name\` = ${f.db} AND \`table_name\` = ${f.table}`
-		);
-	}
-	if (await hasPmaTable(dbi, server, server.table_info)) {
-		const tbl = escapeQualified(server.pmadb, server.table_info);
-		statements.push(
-			move
-				? `UPDATE ${tbl} SET \`db_name\` = ${t.db}, \`table_name\` = ${t.table} ` +
-						`WHERE \`db_name\` = ${f.db} AND \`table_name\` = ${f.table}`
-				: `INSERT IGNORE INTO ${tbl} (\`db_name\`, \`table_name\`, \`display_field\`) ` +
-						`SELECT ${t.db}, ${t.table}, \`display_field\` FROM ${tbl} ` +
-						`WHERE \`db_name\` = ${f.db} AND \`table_name\` = ${f.table}`
-		);
-	}
-	if (await hasPmaTable(dbi, server, server.relation)) {
-		const tbl = escapeQualified(server.pmadb, server.relation);
-		if (move) {
-			statements.push(
-				`UPDATE ${tbl} SET \`foreign_db\` = ${t.db}, \`foreign_table\` = ${t.table} ` +
-					`WHERE \`foreign_db\` = ${f.db} AND \`foreign_table\` = ${f.table}`,
-				`UPDATE ${tbl} SET \`master_db\` = ${t.db}, \`master_table\` = ${t.table} ` +
-					`WHERE \`master_db\` = ${f.db} AND \`master_table\` = ${f.table}`
-			);
-		} else {
-			statements.push(
-				`INSERT IGNORE INTO ${tbl} (\`master_db\`, \`master_table\`, \`master_field\`, \`foreign_db\`, ` +
-					`\`foreign_table\`, \`foreign_field\`) SELECT ${t.db}, ${t.table}, \`master_field\`, ${t.db}, ` +
-					`\`foreign_table\`, \`foreign_field\` FROM ${tbl} ` +
-					`WHERE \`master_db\` = ${f.db} AND \`master_table\` = ${f.table}`,
-				`INSERT IGNORE INTO ${tbl} (\`master_db\`, \`master_table\`, \`master_field\`, \`foreign_db\`, ` +
-					`\`foreign_table\`, \`foreign_field\`) SELECT ${t.db}, \`master_table\`, \`master_field\`, ${t.db}, ` +
-					`${t.table}, \`foreign_field\` FROM ${tbl} ` +
-					`WHERE \`foreign_db\` = ${f.db} AND \`foreign_table\` = ${f.table}`
-			);
-		}
-	}
-	for (const s of statements) {
-		await withControlConnection(dbi, server, (c) => c.query(s));
-	}
+	for (const repo of reachable) statements.push(...(await repo.transferTable(from, to, move)));
 	return statements;
 }
 

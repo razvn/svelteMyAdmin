@@ -5,7 +5,7 @@
  */
 import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
 import { escapeQualified } from '#lib/server/db/escape.ts';
-import { withControl } from '#lib/server/table/control.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 import { columnKind } from '#lib/table/column-kind.ts';
 
 export interface ForeignKey {
@@ -50,28 +50,9 @@ export async function listForeignKeys(
 		// no access to information_schema: no links
 	}
 
-	const server = locals.server;
-	if (server.pmadb && server.relation) {
-		const internal = await withControl(locals, async (conn) => {
-			const [rows] = await conn.query(
-				'SELECT master_field, foreign_db, foreign_table, foreign_field FROM ' +
-					escapeQualified(server.pmadb, server.relation) +
-					' WHERE master_db = ? AND master_table = ?',
-				[db, table]
-			);
-			return rows as Row[];
-		});
-		for (const r of internal ?? []) {
-			const column = s(r.master_field);
-			if (!found.has(column)) {
-				found.set(column, {
-					column,
-					refDb: s(r.foreign_db),
-					refTable: s(r.foreign_table),
-					refColumn: s(r.foreign_field)
-				});
-			}
-		}
+	const internal = await withRepo(locals, 'relation', (repo) => repo.listForTable(db, table));
+	for (const r of internal ?? []) {
+		if (!found.has(r.column)) found.set(r.column, r);
 	}
 	return [...found.values()];
 }
@@ -87,18 +68,8 @@ export async function displayColumn(
 	table: string,
 	refColumn: string
 ): Promise<string | null> {
-	const server = locals.server;
-	if (server.pmadb && server.table_info) {
-		const configured = await withControl(locals, async (conn) => {
-			const [rows] = await conn.query(
-				`SELECT display_field FROM ${escapeQualified(server.pmadb, server.table_info)} ` +
-					'WHERE db_name = ? AND table_name = ?',
-				[db, table]
-			);
-			return s((rows as Row[])[0]?.display_field);
-		});
-		if (configured) return configured;
-	}
+	const configured = await withRepo(locals, 'tableInfo', (repo) => repo.get(db, table));
+	if (configured) return configured;
 	try {
 		const columns = await dbi.getColumns(db, table);
 		const hit = columns.find(

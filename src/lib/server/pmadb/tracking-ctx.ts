@@ -1,4 +1,4 @@
-import { withStorageTable } from './index.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 import type { TrackingCtx } from './tracking.ts';
 
 export type TrackingResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -13,19 +13,15 @@ export async function withTracking<T>(
 	locals: App.Locals,
 	fn: (ctx: TrackingCtx) => Promise<T>
 ): Promise<TrackingResult<T>> {
-	const res = await withStorageTable(
-		locals,
-		'tracking',
-		async (conn, q): Promise<TrackingResult<T>> => {
-			try {
-				return {
-					ok: true,
-					value: await fn({ conn, q, user: locals.session?.user ?? '', server: locals.server })
-				};
-			} catch (e) {
-				return { ok: false, error: (e as { sqlMessage?: string }).sqlMessage ?? String(e) };
-			}
+	const res = await withRepo(locals, 'tracking', async (repo): Promise<TrackingResult<T>> => {
+		try {
+			return {
+				ok: true,
+				value: await fn({ repo, user: locals.session?.user ?? '', server: locals.server })
+			};
+		} catch (e) {
+			return { ok: false, error: (e as { sqlMessage?: string }).sqlMessage ?? String(e) };
 		}
-	);
+	});
 	return res ?? { ok: false, error: UNAVAILABLE };
 }

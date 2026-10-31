@@ -4,20 +4,8 @@ import { autoLayout } from '#lib/designer/auto.ts';
 import { DEFAULT_VIEW, isDesignerKey, toView } from '#lib/designer/settings.ts';
 import { createRelation, deleteRelation, setDisplayField } from '#lib/server/designer/relations.ts';
 import { loadDesignerSchema } from '#lib/server/designer/schema.ts';
-import {
-	createPage,
-	deletePage,
-	listPages,
-	loadPositions,
-	loadSettings,
-	pageExists,
-	renamePage,
-	savePositions,
-	saveSetting,
-	settingsTable,
-	withDesignerTables
-} from '#lib/server/designer/storage.ts';
-import { withStorageTable } from '#lib/server/pmadb/index.ts';
+import { loadDesignerSettings, saveDesignerSetting } from '#lib/server/designer/storage.ts';
+import { hasRepo, withRepo } from '#lib/server/storage/index.ts';
 import type { RelationServer } from '#lib/server/table/relation.ts';
 import type { Positions } from '#lib/designer/types.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -27,7 +15,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const server = locals.server as RelationServer;
 	const schema = await loadDesignerSchema(dbi, server, params.db);
 
-	const pages = await withDesignerTables(locals, (c, t) => listPages(c, t, params.db));
+	const pages = await withRepo(locals, 'designerPages', (r) => r.listPages(params.db));
 	const requested = Number.parseInt(url.searchParams.get('page') ?? '', 10);
 	const fallback = pages?.[0]?.id ?? null;
 	const pageId =
@@ -37,19 +25,17 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	let persisted = false;
 	if (pageId !== null) {
 		positions =
-			(await withDesignerTables(locals, (c, t) => loadPositions(c, t, params.db, pageId))) ?? {};
+			(await withRepo(locals, 'designerPages', (r) => r.loadPositions(params.db, pageId))) ?? {};
 		persisted = true;
 	} else {
 		positions = autoLayout(schema.tables, schema.relations);
 	}
 
 	let settings = DEFAULT_VIEW;
-	const settingsQ = settingsTable(locals.server);
-	if (settingsQ && locals.session) {
+	const settingsAvailable = hasRepo(locals.server, 'designerSettings');
+	if (settingsAvailable && locals.session) {
 		const user = locals.session.user;
-		const stored = await withStorageTable(locals, 'designer_settings', (c, q) =>
-			loadSettings(c, q, user)
-		);
+		const stored = await withRepo(locals, 'designerSettings', (r) => loadDesignerSettings(r, user));
 		if (stored) settings = toView(stored);
 	}
 
@@ -64,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		positions,
 		persisted,
 		settings,
-		settingsAvailable: settingsQ !== null
+		settingsAvailable
 	};
 };
 
@@ -91,9 +77,9 @@ export const actions: Actions = {
 		const dbi = await locals.dbi;
 		const schema = await loadDesignerSchema(dbi, locals.server as RelationServer, params.db);
 		const positions = autoLayout(schema.tables, schema.relations);
-		const id = await withDesignerTables(locals, async (c, t) => {
-			const nr = await createPage(c, t, params.db, name);
-			await savePositions(c, t, params.db, nr, positions);
+		const id = await withRepo(locals, 'designerPages', async (r) => {
+			const nr = await r.createPage(params.db, name);
+			await r.savePositions(params.db, nr, positions);
 			return nr;
 		});
 		if (id === undefined)
@@ -110,9 +96,9 @@ export const actions: Actions = {
 		if (!Number.isInteger(id) || !name || name.length > 50) {
 			return fail(400, { error: locals.i18n.t('Enter a page name (up to 50 characters).') });
 		}
-		const done = await withDesignerTables(locals, async (c, t) => {
-			if (!(await pageExists(c, t, params.db, id))) return false;
-			await renamePage(c, t, params.db, id, name);
+		const done = await withRepo(locals, 'designerPages', async (r) => {
+			if (!(await r.pageExists(params.db, id))) return false;
+			await r.renamePage(params.db, id, name);
 			return true;
 		});
 		if (done === undefined)
@@ -126,9 +112,9 @@ export const actions: Actions = {
 	deletePage: async ({ request, locals, params }) => {
 		const id = Number.parseInt(String((await request.formData()).get('page') ?? ''), 10);
 		if (!Number.isInteger(id)) return fail(400, { error: locals.i18n.t('Invalid page.') });
-		const done = await withDesignerTables(locals, async (c, t) => {
-			if (!(await pageExists(c, t, params.db, id))) return false;
-			await deletePage(c, t, params.db, id);
+		const done = await withRepo(locals, 'designerPages', async (r) => {
+			if (!(await r.pageExists(params.db, id))) return false;
+			await r.deletePage(params.db, id);
 			return true;
 		});
 		if (done === undefined)
@@ -149,9 +135,9 @@ export const actions: Actions = {
 		const known = new Set((await dbi.listTables(params.db)).map((t) => t.name));
 		const positions: Positions = {};
 		for (const [name, p] of Object.entries(parsed.data)) if (known.has(name)) positions[name] = p;
-		const done = await withDesignerTables(locals, async (c, t) => {
-			if (!(await pageExists(c, t, params.db, id))) return false;
-			await savePositions(c, t, params.db, id, positions);
+		const done = await withRepo(locals, 'designerPages', async (r) => {
+			if (!(await r.pageExists(params.db, id))) return false;
+			await r.savePositions(params.db, id, positions);
 			return true;
 		});
 		if (done === undefined)
@@ -169,8 +155,8 @@ export const actions: Actions = {
 		if (!isDesignerKey(key) || !locals.session)
 			return fail(400, { error: locals.i18n.t('Invalid setting.') });
 		const user = locals.session.user;
-		const done = await withStorageTable(locals, 'designer_settings', async (c, q) => {
-			await saveSetting(c, q, user, key, value);
+		const done = await withRepo(locals, 'designerSettings', async (r) => {
+			await saveDesignerSetting(r, user, key, value);
 			return true;
 		});
 		// no storage: the setting just lives for the session

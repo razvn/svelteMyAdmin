@@ -1,5 +1,7 @@
 {
 	"blowfish_secret": "change-me-to-a-long-random-string-of-at-least-32-chars",
+	"_comment_ConfigStorage": "App-specific, not a phpMyAdmin key. Servers WITHOUT pmadb keep bookmarks, history, favourites, preferences, relations... in this SQLite file (relative paths resolve from this file's directory). Servers with pmadb keep using the MySQL pmadb, exactly like phpMyAdmin. Remove the key to turn the features off for servers without pmadb, or set \"ConfigStorage\": false on one server to exclude it.",
+	"ConfigStorage": { "type": "sqlite", "path": "./var/storage.sqlite" },
 	"Servers": [
 		{
 			"verbose": "Local MySQL 8.4",
@@ -38,6 +40,15 @@
 			"port": 33307,
 			"AllowNoPassword": false,
 			"AllowRoot": true
+		},
+		{
+			"verbose": "Local MariaDB 11.4 (no storage)",
+			"auth_type": "cookie",
+			"host": "127.0.0.1",
+			"port": 33307,
+			"AllowNoPassword": false,
+			"AllowRoot": true,
+			"ConfigStorage": false
 		}
 	],
 	"LoginCookieValidity": 1440,

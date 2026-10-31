@@ -9,11 +9,10 @@
 import type { Connection } from 'mysql2/promise';
 import { z } from 'zod';
 import { isSystemSchema, parseGrants } from '../admin/databases';
-import type { ServerConfig } from '../config/schema';
-import { createConnection } from '../db/connection';
 import type { DatabaseInterface } from '../db/dbi';
 import { escapeId, escapeQualified, escapeString, quoteValue } from '../db/escape';
 import { SOURCE_TRANSLATOR, type Translator } from '#lib/i18n/translator.ts';
+import { storageRepos, type StorageServer } from '#lib/server/storage/index.ts';
 
 type Row = Record<string, unknown>;
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
@@ -660,64 +659,23 @@ export async function getDatabaseCollation(dbi: DatabaseInterface, db: string): 
  * Configuration storage (pma__column_info)
  * ----------------------------------------------------------------------------------------- */
 
-export type StorageServer = Pick<
-	ServerConfig,
-	| 'host'
-	| 'port'
-	| 'socket'
-	| 'ssl'
-	| 'ssl_ca'
-	| 'ssl_cert'
-	| 'ssl_key'
-	| 'ssl_ciphers'
-	| 'ssl_verify'
-	| 'compress'
-	| 'controlhost'
-	| 'controlport'
-	| 'controluser'
-	| 'controlpass'
-	| 'pmadb'
-	| 'column_info'
-	| 'relation'
->;
+export type { StorageServer };
 
 /** `$db_comment` marker phpMyAdmin stores in `pma__column_info.column_name` for a database comment. */
 export const DB_COMMENT_COLUMN = '(db_comment)';
 
-/** Run `fn` on the control connection (or the user connection when no control user is configured). */
-export async function withControlConnection<T>(
-	dbi: DatabaseInterface,
-	server: StorageServer,
-	fn: (conn: Connection) => Promise<T>
-): Promise<T> {
-	if (!server.controluser) return fn(dbi.conn);
-	const target = {
-		...server,
-		host: server.controlhost || server.host,
-		port: server.controlport || server.port
-	};
-	const conn = await createConnection(target, server.controluser, server.controlpass);
-	try {
-		return await fn(conn);
-	} finally {
-		await conn.end().catch(() => {});
-	}
+/** The column information repository of the server (user connection without a control user). */
+export function columnInfoOf(dbi: DatabaseInterface, server: StorageServer) {
+	return storageRepos(server, async () => dbi.conn).columnInfo;
 }
 
-/** Is `pma__column_info` configured and reachable? */
+/** Is the column information storage configured and reachable? */
 export async function hasColumnInfo(
 	dbi: DatabaseInterface,
 	server: StorageServer
 ): Promise<boolean> {
-	if (!server.pmadb || !server.column_info) return false;
-	try {
-		await withControlConnection(dbi, server, (c) =>
-			c.query(`SELECT 1 FROM ${escapeQualified(server.pmadb, server.column_info)} LIMIT 1`)
-		);
-		return true;
-	} catch {
-		return false;
-	}
+	const repo = columnInfoOf(dbi, server);
+	return repo ? repo.ping() : false;
 }
 
 export async function getDbComment(
@@ -725,15 +683,8 @@ export async function getDbComment(
 	server: StorageServer,
 	db: string
 ): Promise<string> {
-	const res = await withControlConnection(dbi, server, (c) =>
-		rows(
-			c,
-			`SELECT \`comment\` FROM ${escapeQualified(server.pmadb, server.column_info)} ` +
-				"WHERE db_name = ? AND table_name = '' AND column_name = ?",
-			[db, DB_COMMENT_COLUMN]
-		)
-	);
-	return str(res[0]?.comment);
+	const repo = columnInfoOf(dbi, server);
+	return repo ? repo.getDbComment(db) : '';
 }
 
 export async function setDbComment(
@@ -742,19 +693,14 @@ export async function setDbComment(
 	db: string,
 	comment: string
 ): Promise<RunResult> {
-	const table = escapeQualified(server.pmadb, server.column_info);
-	const sql =
-		comment.length > 0
-			? `INSERT INTO ${table} (\`db_name\`, \`table_name\`, \`column_name\`, \`comment\`) VALUES ` +
-				`(${quoteValue(db)}, '', ${quoteValue(DB_COMMENT_COLUMN)}, ${quoteValue(comment)}) ` +
-				`ON DUPLICATE KEY UPDATE \`comment\` = ${quoteValue(comment)}`
-			: `DELETE FROM ${table} WHERE \`db_name\` = ${quoteValue(db)} AND \`table_name\` = '' ` +
-				`AND \`column_name\` = ${quoteValue(DB_COMMENT_COLUMN)}`;
+	const repo = columnInfoOf(dbi, server);
+	if (!repo) return { sql: [], error: 'The configuration storage is not available.' };
+	let sql: string[] = [];
 	try {
-		await withControlConnection(dbi, server, (c) => c.query(sql));
-		return { sql: [sql] };
+		sql = await repo.setDbComment(db, comment);
+		return { sql };
 	} catch (e) {
-		return { sql: [sql], error: messageOf(e) };
+		return { sql, error: messageOf(e) };
 	}
 }
 
@@ -767,16 +713,7 @@ export async function transferColumnInfo(
 	move: boolean
 ): Promise<string[]> {
 	if (!(await hasColumnInfo(dbi, server))) return [];
-	const table = escapeQualified(server.pmadb, server.column_info);
-	const sql = move
-		? `UPDATE ${table} SET \`db_name\` = ${quoteValue(newDb)} WHERE \`db_name\` = ${quoteValue(oldDb)}`
-		: `INSERT INTO ${table} (\`db_name\`, \`table_name\`, \`column_name\`, \`comment\`, \`mimetype\`, ` +
-			'`transformation`, `transformation_options`, `input_transformation`, `input_transformation_options`) ' +
-			`SELECT ${quoteValue(newDb)}, \`table_name\`, \`column_name\`, \`comment\`, \`mimetype\`, ` +
-			'`transformation`, `transformation_options`, `input_transformation`, `input_transformation_options` ' +
-			`FROM ${table} WHERE \`db_name\` = ${quoteValue(oldDb)}`;
-	await withControlConnection(dbi, server, (c) => c.query(sql));
-	return [sql];
+	return columnInfoOf(dbi, server)!.transferDb(oldDb, newDb, move);
 }
 
 /* -------------------------------------------------------------------------------------------

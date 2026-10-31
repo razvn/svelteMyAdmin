@@ -3,8 +3,7 @@
  * `pma__relation`, indexes) and the saved searches (`pma__savedsearches`, feature-detected).
  */
 import type { DatabaseInterface } from '#lib/server/db/dbi.ts';
-import { escapeQualified } from '#lib/server/db/escape.ts';
-import { withControl } from '#lib/server/table/control.ts';
+import { withRepo, hasRepo } from '#lib/server/storage/index.ts';
 import type { QuerySchemaData } from '#lib/sql/query-schema.ts';
 import { SOURCE_TRANSLATOR } from '#lib/i18n/translator.ts';
 
@@ -52,20 +51,11 @@ export async function loadQuerySchema(
 		[db]
 	);
 
-	const server = locals.server;
-	let internal: Row[] = [];
-	if (server.pmadb && server.relation) {
-		internal =
-			(await withControl(locals, async (conn) => {
-				const [rows] = await conn.query(
-					'SELECT master_table, master_field, foreign_table, foreign_field FROM ' +
-						escapeQualified(server.pmadb, server.relation) +
-						' WHERE master_db = ? AND foreign_db = ?',
-					[db, db]
-				);
-				return rows as Row[];
-			})) ?? [];
-	}
+	// internal relations inside this database (both ends in `db`)
+	const internal =
+		(await withRepo(locals, 'relation', (repo) => repo.listForDb(db)))?.filter(
+			(r) => r.refDb === db
+		) ?? [];
 
 	return {
 		tables: tableRows.map((t) => ({
@@ -81,10 +71,10 @@ export async function loadQuerySchema(
 			refColumn: s(r.rc)
 		})),
 		internalRelations: internal.map((r) => ({
-			table: s(r.master_table),
-			field: s(r.master_field),
-			refTable: s(r.foreign_table),
-			refField: s(r.foreign_field)
+			table: r.masterTable,
+			field: r.column,
+			refTable: r.refTable,
+			refField: r.refColumn
 		})),
 		indexes: idxRows.map((r) => ({
 			table: s(r.t),
@@ -104,7 +94,7 @@ export interface SavedSearch {
 
 /** True when the configuration storage is set up for saved searches. */
 export function savedSearchesConfigured(locals: App.Locals): boolean {
-	return Boolean(locals.server.pmadb && locals.server.savedsearches);
+	return hasRepo(locals.server, 'savedSearches');
 }
 
 /** Saved searches of the current user and database; null when the feature is unavailable. */
@@ -113,23 +103,14 @@ export async function listSavedSearches(
 	db: string
 ): Promise<SavedSearch[] | null> {
 	if (!savedSearchesConfigured(locals) || !locals.session) return null;
-	const server = locals.server;
 	const user = locals.session.user;
-	const rows = await withControl(locals, async (conn) => {
-		const [r] = await conn.query(
-			'SELECT id, search_name, search_data FROM ' +
-				escapeQualified(server.pmadb, server.savedsearches) +
-				' WHERE username = ? AND db_name = ? ORDER BY search_name',
-			[user, db]
-		);
-		return r as Row[];
-	});
+	const rows = await withRepo(locals, 'savedSearches', (repo) => repo.list(user, db));
 	if (!rows) return null;
 	return rows.flatMap((r) => {
 		try {
-			const data = JSON.parse(s(r.search_data));
+			const data = JSON.parse(r.data);
 			if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
-			return [{ id: Number(r.id), name: s(r.search_name), data }];
+			return [{ id: r.id, name: r.name, data }];
 		} catch {
 			return [];
 		}
@@ -144,48 +125,29 @@ export async function saveSearch(
 	db: string,
 	input: { id?: number; name: string; data: Record<string, unknown> }
 ): Promise<SaveResult> {
+	const tr = locals.i18n ?? SOURCE_TRANSLATOR;
 	if (!savedSearchesConfigured(locals) || !locals.session) {
-		return {
-			ok: false,
-			error: (locals.i18n ?? SOURCE_TRANSLATOR).t('Saved searches are not available.')
-		};
+		return { ok: false, error: tr.t('Saved searches are not available.') };
 	}
-	const server = locals.server;
-	const table = escapeQualified(server.pmadb, server.savedsearches);
 	const user = locals.session.user;
 	const json = JSON.stringify(input.data);
 	try {
-		const res = await withControl(locals, async (conn) => {
+		const res = await withRepo(locals, 'savedSearches', async (repo) => {
 			if (input.id !== undefined) {
-				const [r] = await conn.query(
-					`UPDATE ${table} SET search_name = ?, search_data = ? WHERE id = ? AND username = ? AND db_name = ?`,
-					[input.name, json, input.id, user, db]
-				);
-				return { id: input.id, affected: (r as { affectedRows: number }).affectedRows };
+				return {
+					id: input.id,
+					affected: await repo.update(input.id, user, db, input.name, json)
+				};
 			}
-			const [r] = await conn.query(
-				`INSERT INTO ${table} (username, db_name, search_name, search_data) VALUES (?, ?, ?, ?)`,
-				[user, db, input.name, json]
-			);
-			return { id: Number((r as { insertId: number }).insertId), affected: 1 };
+			return { id: await repo.insert(user, db, input.name, json), affected: 1 };
 		});
-		if (!res)
-			return {
-				ok: false,
-				error: (locals.i18n ?? SOURCE_TRANSLATOR).t('The configuration storage is not reachable.')
-			};
-		if (res.affected === 0)
-			return {
-				ok: false,
-				error: (locals.i18n ?? SOURCE_TRANSLATOR).t('The saved search no longer exists.')
-			};
+		if (!res) return { ok: false, error: tr.t('The configuration storage is not reachable.') };
+		if (res.affected === 0) return { ok: false, error: tr.t('The saved search no longer exists.') };
 		return { ok: true, id: res.id };
 	} catch {
 		return {
 			ok: false,
-			error: (locals.i18n ?? SOURCE_TRANSLATOR).t(
-				'Could not save the search (is the name already used?).'
-			)
+			error: tr.t('Could not save the search (is the name already used?).')
 		};
 	}
 }
@@ -196,13 +158,7 @@ export async function deleteSearch(
 	id: number
 ): Promise<{ ok: boolean }> {
 	if (!savedSearchesConfigured(locals) || !locals.session) return { ok: false };
-	const server = locals.server;
-	const res = await withControl(locals, async (conn) => {
-		const [r] = await conn.query(
-			`DELETE FROM ${escapeQualified(server.pmadb, server.savedsearches)} WHERE id = ? AND username = ? AND db_name = ?`,
-			[id, locals.session!.user, db]
-		);
-		return (r as { affectedRows: number }).affectedRows;
-	});
+	const user = locals.session.user;
+	const res = await withRepo(locals, 'savedSearches', (repo) => repo.delete(id, user, db));
 	return { ok: (res ?? 0) > 0 };
 }

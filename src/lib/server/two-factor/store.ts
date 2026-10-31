@@ -5,8 +5,8 @@
  */
 import type { Connection } from 'mysql2/promise';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
-import { createConnection } from '#lib/server/db/connection.ts';
-import { loadUserConfig, saveUserConfig, userConfigTable } from '#lib/server/pmadb/userconfig.ts';
+import { storageRepos } from '#lib/server/storage/index.ts';
+import type { UserConfigRepo } from '#lib/server/storage/types.ts';
 import type { PrefData } from '#lib/preferences/logic.ts';
 import { readTwoFactorConfig, withTwoFactorConfig, type TwoFactorConfig } from './config.ts';
 
@@ -25,37 +25,19 @@ const NO_SUCH_TABLE = new Set(['ER_NO_SUCH_TABLE', 'ER_BAD_DB_ERROR', 'ER_DBACCE
 export async function withStorage<T>(
 	server: ServerConfig,
 	own: OwnConnection,
-	fn: (conn: Connection, table: string) => Promise<T>
+	fn: (repo: UserConfigRepo) => Promise<T>
 ): Promise<T | null> {
-	const table = userConfigTable(server);
-	if (!table) return null;
-	let control: Connection | undefined;
-	let ownConn: Connection | undefined;
+	let ownConn: Promise<Connection> | undefined;
+	const repo = storageRepos(server, () => (ownConn ??= own.get())).userConfig;
+	if (!repo) return null;
 	try {
-		let conn: Connection;
-		if (server.controluser) {
-			control = await createConnection(
-				{
-					...server,
-					host: server.controlhost || server.host,
-					port: server.controlport || server.port
-				},
-				server.controluser,
-				server.controlpass
-			);
-			conn = control;
-		} else {
-			ownConn = await own.get();
-			conn = ownConn;
-		}
-		return await fn(conn, table);
+		return await fn(repo);
 	} catch (e) {
 		const code = (e as { code?: string }).code;
 		if (code && NO_SUCH_TABLE.has(code)) return null;
 		throw e;
 	} finally {
-		await control?.end().catch(() => {});
-		if (own.closeOwn) await ownConn?.end().catch(() => {});
+		if (own.closeOwn) await (await ownConn?.catch(() => undefined))?.end().catch(() => {});
 	}
 }
 
@@ -70,8 +52,8 @@ export function loadTwoFactor(
 	own: OwnConnection,
 	user: string
 ): Promise<LoadedTwoFactor | null> {
-	return withStorage(server, own, async (conn, table) => {
-		const row = await loadUserConfig(conn, table, user);
+	return withStorage(server, own, async (repo) => {
+		const row = await repo.load(user);
 		const prefs = row?.data ?? {};
 		return { config: readTwoFactorConfig(prefs), prefs };
 	});
@@ -84,9 +66,9 @@ export function saveTwoFactor(
 	user: string,
 	config: TwoFactorConfig
 ): Promise<boolean | null> {
-	return withStorage(server, own, async (conn, table) => {
-		const row = await loadUserConfig(conn, table, user);
-		await saveUserConfig(conn, table, user, withTwoFactorConfig(row?.data ?? {}, config));
+	return withStorage(server, own, async (repo) => {
+		const row = await repo.load(user);
+		await repo.save(user, withTwoFactorConfig(row?.data ?? {}, config));
 		return true;
 	});
 }

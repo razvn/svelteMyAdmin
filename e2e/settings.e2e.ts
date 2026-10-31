@@ -216,11 +216,11 @@ test('invalid values are rejected and a disallowed key is not offered', async ({
 });
 
 test('without a configuration storage the settings are kept in a cookie', async ({ browser }) => {
-	// server 2 (MariaDB) has no pmadb in config.sample.json
+	// server 3 (MariaDB, `ConfigStorage: false`) has neither pmadb nor the SQLite storage
 	const ctx = await browser.newContext();
 	const page = await ctx.newPage();
 	try {
-		await gotoReady(page, '/login?server=2');
+		await gotoReady(page, '/login?server=3');
 		await page.getByLabel('Username').fill('root');
 		await page.getByLabel('Password').fill('root');
 		await page.getByRole('button', { name: 'Log in' }).click();

@@ -28,9 +28,17 @@ function describe(e: unknown, t: Translator['t']): string {
 	return e instanceof Error ? e.message : t('The statement failed.');
 }
 
+/** The SQLite storage creates its schema when it is opened: there is nothing to create by hand. */
+function sqliteCreated(locals: App.Locals) {
+	return fail(400, {
+		error: locals.i18n.t('The SQLite configuration storage is created automatically.')
+	});
+}
+
 export const actions: Actions = {
 	/** Relation::createPmaDatabase + fixPmaTables on the configured (or default) pmadb. */
 	createPmadb: async ({ locals }) => {
+		if (!locals.server.pmadb && locals.server.sqlite_storage) return sqliteCreated(locals);
 		const status = await getStorageStatus(locals);
 		const conn = await locals.db;
 		try {
@@ -44,6 +52,7 @@ export const actions: Actions = {
 	/** Relation::fixPmaTables on the configured pmadb: only the missing tables. */
 	fixTables: async ({ locals }) => {
 		const { server } = locals;
+		if (!server.pmadb && server.sqlite_storage) return sqliteCreated(locals);
 		if (!server.pmadb)
 			return fail(400, { error: locals.i18n.t('No configuration storage database is set.') });
 		try {
@@ -55,6 +64,7 @@ export const actions: Actions = {
 	},
 	/** Relation::fixPmaTables on another database (the tables only, like fixall_pmadb). */
 	fixCurrent: async ({ locals, request }) => {
+		if (!locals.server.pmadb && locals.server.sqlite_storage) return sqliteCreated(locals);
 		const parsed = dbName.safeParse((await request.formData()).get('db'));
 		if (!parsed.success) return fail(400, { error: locals.i18n.t('Choose a database.') });
 		const dbi = await locals.dbi;

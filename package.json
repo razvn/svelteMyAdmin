@@ -21,6 +21,7 @@
 		"i18n:extract": "node scripts/i18n/extract.ts",
 		"i18n:import-mo": "node scripts/i18n/import-mo.ts",
 		"i18n:check": "node scripts/i18n/check.ts",
+		"storage:import-pmadb": "node scripts/storage/import-pmadb.ts",
 		"db:up": "docker compose up -d --wait",
 		"db:down": "docker compose down -v",
 		"site:screenshots": "node scripts/site/capture-screenshots.ts"
@@ -94,6 +95,6 @@
 		"zod": "^4.6.7"
 	},
 	"engines": {
-		"node": ">=22"
+		"node": ">=22.13"
 	}
 }

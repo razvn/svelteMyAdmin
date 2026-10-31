@@ -23,6 +23,8 @@ import {
 	type TrackingCtx
 } from './tracking.ts';
 import { installTracking } from './tracking-hook.ts';
+import { connectionRunner } from '../storage/mysql/runner.ts';
+import { trackingRepo } from '../storage/mysql/tracking.ts';
 import { entriesToSql } from '../../tracking/analyse.ts';
 import { reportEntries } from '../../tracking/report.ts';
 import type { CentralColumn } from '../../sql/central-columns.ts';
@@ -84,8 +86,7 @@ for (const { name, port } of servers) {
 		});
 
 		const ctx = (c: Connection): TrackingCtx => ({
-			conn: c,
-			q: tracking,
+			repo: trackingRepo(connectionRunner(c), tracking),
 			user: 'tester',
 			server
 		});

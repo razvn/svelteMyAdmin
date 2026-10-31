@@ -5,12 +5,8 @@
  */
 import type { Cookies } from '@sveltejs/kit';
 import { parseConfigData, type PrefData } from '#lib/preferences/logic.ts';
-import {
-	loadUserConfig,
-	saveUserConfig,
-	userConfigTable,
-	withUserConfig
-} from '#lib/server/pmadb/userconfig.ts';
+import { withUserConfig } from '#lib/server/pmadb/userconfig.ts';
+import { hasRepo } from '#lib/server/storage/index.ts';
 
 export type PrefsType = 'db' | 'session';
 
@@ -51,8 +47,8 @@ function readCookie(locals: App.Locals, cookies: Cookies): { data: PrefData; mti
 
 export async function loadPrefs(locals: App.Locals, cookies: Cookies): Promise<LoadedPrefs> {
 	const user = username(locals);
-	if (user && userConfigTable(locals.server)) {
-		const row = await withUserConfig(locals, (conn, table) => loadUserConfig(conn, table, user));
+	if (user && hasRepo(locals.server, 'userConfig')) {
+		const row = await withUserConfig(locals, (repo) => repo.load(user));
 		if (row !== undefined) {
 			return { data: row?.data ?? {}, type: 'db', mtime: row?.mtime ?? 0, unavailable: false };
 		}
@@ -70,9 +66,9 @@ export async function savePrefs(
 ): Promise<string | null> {
 	const user = username(locals);
 	if (!user) return locals.i18n.t('Could not save configuration');
-	if (userConfigTable(locals.server)) {
-		const ok = await withUserConfig(locals, async (conn, table) => {
-			await saveUserConfig(conn, table, user, data);
+	if (hasRepo(locals.server, 'userConfig')) {
+		const ok = await withUserConfig(locals, async (repo) => {
+			await repo.save(user, data);
 			return true;
 		});
 		if (ok) {

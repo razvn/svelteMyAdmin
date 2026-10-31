@@ -3,7 +3,9 @@
  * clause, form-data parsing and execution. Mirrors Controllers/Table/ChangeController.php and
  * ReplaceController.php. SQL is built by the pure module `#lib/sql/insert-edit.ts`.
  */
-import { createConnection, type Connection } from '../db/connection';
+import type { Connection } from '../db/connection';
+import { storageKind, storageRepos } from '#lib/server/storage/index.ts';
+import type { Repos } from '#lib/server/storage/types.ts';
 import { escapeId, escapeQualified, quoteValue } from '../db/escape';
 import type { AppConfig, ServerConfig } from '../config/schema';
 import {
@@ -79,7 +81,7 @@ async function loadForeigners(
 	server: ServerConfig,
 	db: string,
 	table: string
-): Promise<{ refs: Map<string, ForeignRef>; ctrl: Connection | null }> {
+): Promise<{ refs: Map<string, ForeignRef>; ctrl: Repos | null }> {
 	const refs = new Map<string, ForeignRef>();
 	const fk = await query(
 		conn,
@@ -95,27 +97,18 @@ async function loadForeigners(
 	for (const r of fk) {
 		refs.set(s(r.col), { db: s(r.fdb), table: s(r.ftable), column: s(r.fcol) });
 	}
-	let ctrl: Connection | null = null;
-	if (server.controluser && server.pmadb) {
+	let ctrl: Repos | null = null;
+	// MySQL pmadb: only with a control user (like before); SQLite: always.
+	if (storageKind(server) === 'sqlite' || (server.controluser && server.pmadb)) {
 		try {
-			ctrl = await createConnection(server, server.controluser, server.controlpass);
-			const rel = await query(
-				ctrl,
-				`SELECT master_field, foreign_db, foreign_table, foreign_field FROM ${escapeQualified(server.pmadb, server.relation)}
-				 WHERE master_db = ? AND master_table = ?`,
-				[db, table]
-			);
-			for (const r of rel) {
-				if (!refs.has(s(r.master_field))) {
-					refs.set(s(r.master_field), {
-						db: s(r.foreign_db),
-						table: s(r.foreign_table),
-						column: s(r.foreign_field)
-					});
+			const repos = storageRepos(server, async () => conn);
+			for (const r of (await repos.relation?.listForTable(db, table)) ?? []) {
+				if (!refs.has(r.column)) {
+					refs.set(r.column, { db: r.refDb, table: r.refTable, column: r.refColumn });
 				}
 			}
+			ctrl = repos;
 		} catch {
-			if (ctrl) await ctrl.end().catch(() => {});
 			ctrl = null;
 		}
 	}
@@ -124,18 +117,14 @@ async function loadForeigners(
 
 async function displayColumn(
 	conn: Connection,
-	ctrl: Connection | null,
+	ctrl: Repos | null,
 	server: ServerConfig,
 	ref: ForeignRef
 ): Promise<string | null> {
-	if (ctrl) {
+	if (ctrl?.tableInfo) {
 		try {
-			const r = await query(
-				ctrl,
-				`SELECT display_field FROM ${escapeQualified(server.pmadb, server.table_info)} WHERE db_name = ? AND table_name = ?`,
-				[ref.db, ref.table]
-			);
-			if (r[0] && s(r[0].display_field) !== '') return s(r[0].display_field);
+			const display = await ctrl.tableInfo.get(ref.db, ref.table);
+			if (display !== '') return display;
 		} catch {
 			// storage table missing: fall through
 		}
@@ -155,7 +144,7 @@ const keyText = (v: unknown): string => (Buffer.isBuffer(v) ? `0x${v.toString('h
 
 async function loadForeignInfo(
 	conn: Connection,
-	ctrl: Connection | null,
+	ctrl: Repos | null,
 	server: ServerConfig,
 	ref: ForeignRef,
 	config: Pick<AppConfig, 'ForeignKeyMaxLimit' | 'ForeignKeyDropdownOrder'>
@@ -209,30 +198,26 @@ export async function buildFormColumns(
 	insertMode: boolean
 ): Promise<FormColumn[]> {
 	const { refs, ctrl } = await loadForeigners(conn, server, db, table);
-	try {
-		let timestampSeen = false;
-		const out: FormColumn[] = [];
-		for (const c of columns) {
-			const first = c.trueType === 'timestamp' && !timestampSeen;
-			if (c.trueType === 'timestamp') timestampSeen = true;
-			const ref = refs.get(c.name);
-			const foreign = ref ? await loadForeignInfo(conn, ctrl, server, ref, cfg) : null;
-			out.push({
-				...c,
-				protected: isProtected(c, cfg.ProtectBinary),
-				defaultFunction: defaultFunction(c, {
-					insertMode,
-					firstTimestamp: first,
-					config: cfg.DefaultFunctions,
-					hasForeign: foreign?.options != null
-				}),
-				foreign
-			});
-		}
-		return out;
-	} finally {
-		await ctrl?.end().catch(() => {});
+	let timestampSeen = false;
+	const out: FormColumn[] = [];
+	for (const c of columns) {
+		const first = c.trueType === 'timestamp' && !timestampSeen;
+		if (c.trueType === 'timestamp') timestampSeen = true;
+		const ref = refs.get(c.name);
+		const foreign = ref ? await loadForeignInfo(conn, ctrl, server, ref, cfg) : null;
+		out.push({
+			...c,
+			protected: isProtected(c, cfg.ProtectBinary),
+			defaultFunction: defaultFunction(c, {
+				insertMode,
+				firstTimestamp: first,
+				config: cfg.DefaultFunctions,
+				hasForeign: foreign?.options != null
+			}),
+			foreign
+		});
 	}
+	return out;
 }
 
 // --- rows ------------------------------------------------------------------------------------

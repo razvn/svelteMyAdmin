@@ -5,8 +5,7 @@
  * `$_SESSION['sql_history']`). With `QueryHistoryDB` and the `history` table it is also written to
  * `pma__history`, which is then the source of the list.
  */
-import type { Connection } from 'mysql2/promise';
-import { withStorageTable } from './index.ts';
+import { withRepo } from '#lib/server/storage/index.ts';
 import { pushHistory, shouldRecord, type HistoryEntry } from '#lib/sql/history.ts';
 
 export type { HistoryEntry };
@@ -21,69 +20,12 @@ function nowText(): string {
 	return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// ---- storage (pma__history) --------------------------------------------------------------------
-
-export async function insertHistoryRow(
-	conn: Connection,
-	qualified: string,
-	row: { username: string; db: string; table: string; sqlquery: string }
-): Promise<void> {
-	await conn.query(
-		`INSERT INTO ${qualified} (\`username\`, \`db\`, \`table\`, \`timevalue\`, \`sqlquery\`) VALUES (?, ?, ?, NOW(), ?)`,
-		[row.username, row.db.slice(0, 64), row.table.slice(0, 64), row.sqlquery]
-	);
-}
-
-/**
- * Keep the newest `max` rows of `username` (by id). phpMyAdmin cuts by `timevalue`, which is only
- * second-precise and would delete every row of the same second; the id is strictly monotonic.
- */
-export async function purgeHistoryRows(
-	conn: Connection,
-	qualified: string,
-	username: string,
-	max: number
-): Promise<number> {
-	const limit = Math.max(1, Math.floor(max));
-	const [found] = await conn.query(
-		`SELECT \`id\` FROM ${qualified} WHERE \`username\` = ? ORDER BY \`id\` DESC LIMIT 1 OFFSET ${limit}`,
-		[username]
-	);
-	const cutoff = (found as { id: number | string }[])[0]?.id;
-	if (cutoff === undefined) return 0;
-	const [res] = await conn.query(
-		`DELETE FROM ${qualified} WHERE \`username\` = ? AND \`id\` <= ?`,
-		[username, cutoff]
-	);
-	return (res as { affectedRows: number }).affectedRows;
-}
-
-export async function selectHistoryRows(
-	conn: Connection,
-	qualified: string,
-	username: string,
-	limit: number
-): Promise<HistoryEntry[]> {
-	const [rows] = await conn.query(
-		`SELECT \`db\`, \`table\`, \`sqlquery\`, DATE_FORMAT(\`timevalue\`, '%Y-%m-%d %H:%i:%s') AS timevalue ` +
-			`FROM ${qualified} WHERE \`username\` = ? ORDER BY \`id\` DESC LIMIT ${Math.max(1, Math.floor(limit))}`,
-		[username]
-	);
-	return (rows as Record<string, unknown>[]).map((r) => ({
-		db: String(r.db ?? ''),
-		table: String(r.table ?? ''),
-		sqlquery: String(r.sqlquery ?? ''),
-		timevalue: String(r.timevalue ?? '')
-	}));
-}
-
-export async function clearHistoryRows(
-	conn: Connection,
-	qualified: string,
-	username: string
-): Promise<void> {
-	await conn.query(`DELETE FROM ${qualified} WHERE \`username\` = ?`, [username]);
-}
+export {
+	clearHistoryRows,
+	insertHistoryRow,
+	purgeHistoryRows,
+	selectHistoryRows
+} from '#lib/server/storage/mysql/history.ts';
 
 // ---- entry points ------------------------------------------------------------------------------
 
@@ -111,11 +53,11 @@ export async function recordHistory(
 
 		if (!config.QueryHistoryDB) return;
 		const user = locals.session?.user ?? '';
-		await withStorageTable(locals, 'history', async (conn, qualified) => {
+		await withRepo(locals, 'history', async (repo) => {
 			for (const e of keep) {
-				await insertHistoryRow(conn, qualified, { username: user, ...e });
+				await repo.insert({ username: user, ...e });
 			}
-			await purgeHistoryRows(conn, qualified, user, max);
+			await repo.purge(user, max);
 		});
 	} catch {
 		// history must never break running a query
@@ -127,8 +69,8 @@ export async function getHistory(locals: App.Locals): Promise<HistoryEntry[]> {
 	const config = locals.config;
 	if (config.QueryHistoryDB) {
 		const user = locals.session?.user ?? '';
-		const stored = await withStorageTable(locals, 'history', (conn, qualified) =>
-			selectHistoryRows(conn, qualified, user, config.QueryHistoryMax)
+		const stored = await withRepo(locals, 'history', (repo) =>
+			repo.select(user, config.QueryHistoryMax)
 		);
 		if (stored) return stored;
 	}
@@ -139,7 +81,5 @@ export async function clearHistory(locals: App.Locals): Promise<void> {
 	memory.delete(memoryKey(locals));
 	if (!locals.config.QueryHistoryDB) return;
 	const user = locals.session?.user ?? '';
-	await withStorageTable(locals, 'history', (conn, qualified) =>
-		clearHistoryRows(conn, qualified, user)
-	);
+	await withRepo(locals, 'history', (repo) => repo.clear(user));
 }
