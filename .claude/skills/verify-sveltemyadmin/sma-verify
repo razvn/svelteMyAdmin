@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# Control script for verifying svelteMyAdmin. See SKILL.md next to this file.
+#   SMA_RUN_ID=<id> sma-verify up [--no-build]   start the Docker DBs (shared) + one app instance (ours)
+#   SMA_RUN_ID=<id> sma-verify doctor            read-only: is this instance worth driving?
+#   SMA_RUN_ID=<id> sma-verify run <journey.ts>  run a Playwright journey against our instance
+#   SMA_RUN_ID=<id> sma-verify down              stop our instance, drop our tmp_verify_<id>_* dbs, keep evidence
+set -euo pipefail
+
+SKILL_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO=$(cd "$SKILL_DIR/../../.." && pwd)
+RUN_ID=${SMA_RUN_ID:-}
+if [[ ! $RUN_ID =~ ^[a-z0-9]{1,24}$ ]]; then
+	echo "SMA_RUN_ID must be 1-24 chars of [a-z0-9] (it becomes part of database names), got '$RUN_ID'" >&2
+	exit 2
+fi
+RUN_DIR=$REPO/var/verify/$RUN_ID
+STATE=$RUN_DIR/state
+EVIDENCE=$RUN_DIR/evidence
+
+die() { echo "sma-verify: $*" >&2; exit 1; }
+pid_alive() { [[ -f $STATE/pid ]] && kill -0 "$(cat "$STATE/pid")" 2>/dev/null; }
+
+# Node one-liners need the repo's node_modules (mysql2), so they run from $REPO.
+db_ready() {
+	(cd "$REPO" && node --input-type=module -e '
+		import { createConnection } from "mysql2/promise";
+		const checks = [
+			[33306, "SELECT COUNT(*) n FROM sma_test.books"],
+			[33306, "SELECT COUNT(*) n FROM phpmyadmin.pma__bookmark"],
+			[33307, "SELECT COUNT(*) n FROM sma_test.books"]
+		];
+		for (const [port, sql] of checks) {
+			const c = await createConnection({ host: "127.0.0.1", port, user: "root", password: "root", connectTimeout: 2000 });
+			try { await c.query(sql); } finally { await c.end(); }
+		}
+		// the control user is created by the last init script
+		const pma = await createConnection({ host: "127.0.0.1", port: 33306, user: "pma", password: "pmapass", connectTimeout: 2000 });
+		await pma.end();
+	' >/dev/null 2>&1)
+}
+
+cmd_up() {
+	local build=1
+	[[ ${1:-} == --no-build ]] && build=0
+	pid_alive && die "run $RUN_ID is already up at $(cat "$STATE/url"); use doctor, or down first"
+	mkdir -p "$STATE" "$EVIDENCE"
+
+	echo "== databases (shared docker compose stack: sma-mysql :33306, sma-mariadb :33307)"
+	(cd "$REPO" && pnpm db:up) >"$STATE/db-up.log" 2>&1 || { cat "$STATE/db-up.log" >&2; die "pnpm db:up failed"; }
+	# The container health check passes while init scripts may still run: wait for the fixtures.
+	local i
+	for i in $(seq 1 60); do
+		db_ready && break
+		[[ $i == 60 ]] && die "fixtures (sma_test, phpmyadmin, user pma) not ready after 120s"
+		sleep 2
+	done
+	echo "   fixtures ready"
+
+	if [[ $build == 1 ]]; then
+		echo "== build (pnpm build -> build/)"
+		(cd "$REPO" && pnpm build) >"$STATE/build.log" 2>&1 || { tail -40 "$STATE/build.log" >&2; die "build failed"; }
+	fi
+	[[ -f $REPO/build/index.js ]] || die "no build/index.js; run up without --no-build"
+	{
+		echo "commit $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo none)"
+		echo "dirty_files $(git -C "$REPO" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+		echo "built_at $(date -r "$REPO/build/index.js" '+%Y-%m-%dT%H:%M:%S')"
+	} >"$STATE/build.txt"
+
+	# Per-run config: the sample config with SQLite storage inside our state dir (relative to the config file).
+	(cd "$REPO" && node --input-type=module -e '
+		import { readFileSync, writeFileSync } from "node:fs";
+		const cfg = JSON.parse(readFileSync("config.sample.json", "utf8"));
+		cfg.ConfigStorage = { type: "sqlite", path: "./storage.sqlite" };
+		writeFileSync(process.argv[1], JSON.stringify(cfg, null, "\t"));
+	' "$STATE/config.json")
+
+	local port=4300
+	while lsof -nP -iTCP:$port -sTCP:LISTEN >/dev/null 2>&1; do port=$((port + 1)); done
+	local url=http://127.0.0.1:$port
+
+	echo "== app on $url"
+	# Serve the build with `vite preview`, like playwright.config.ts. Not `node build`: adapter-node 6 has no
+	# ORIGIN variable and assumes https without a proxy header, so every form POST over plain http is a 403.
+	# `exec` makes the background subshell become vite, so $! is its pid; the redirects keep it off our stdout.
+	(cd "$REPO" && exec env SMA_CONFIG="$STATE/config.json" nohup node_modules/.bin/vite preview \
+		--host 127.0.0.1 --port "$port" --strictPort) >"$EVIDENCE/server.log" 2>&1 </dev/null &
+	echo $! >"$STATE/pid"
+	echo "$url" >"$STATE/url"
+	echo "$port" >"$STATE/port"
+
+	for i in $(seq 1 60); do
+		pid_alive || { tail -20 "$EVIDENCE/server.log" >&2; die "server exited during startup"; }
+		# Ready = the health endpoint answers AND the login page renders the form.
+		if curl -fsS "$url/api/health" 2>/dev/null | grep -q '"ok":true' &&
+			curl -fsS "$url/login" 2>/dev/null | grep -q 'name="password"'; then
+			echo "READY $url (run $RUN_ID, pid $(cat "$STATE/pid"))"
+			return 0
+		fi
+		sleep 0.5
+	done
+	die "app not ready after 30s, see $EVIDENCE/server.log"
+}
+
+cmd_doctor() {
+	local ok=1
+	[[ -f $STATE/url ]] || die "run $RUN_ID has no state (never started, or already down)"
+	local url port pid
+	url=$(cat "$STATE/url"); port=$(cat "$STATE/port"); pid=$(cat "$STATE/pid")
+	echo "run       $RUN_ID"
+	echo "url       $url"
+	echo "config    $STATE/config.json"
+	echo "evidence  $EVIDENCE"
+	sed 's/^/build     /' "$STATE/build.txt"
+	if kill -0 "$pid" 2>/dev/null; then echo "process   ok (pid $pid)"; else echo "process   DEAD (pid $pid)"; ok=0; fi
+	local owner
+	owner=$(lsof -nP -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | head -1 || true)
+	if [[ $owner == "$pid" ]]; then echo "port      ok ($port owned by our pid)"; else echo "port      NOT OURS ($port owned by '${owner:-nobody}')"; ok=0; fi
+	if curl -fsS "$url/api/health" 2>/dev/null | grep -q '"ok":true'; then echo "health    ok"; else echo "health    FAIL"; ok=0; fi
+	if db_ready; then echo "databases ok (sma_test on :33306 and :33307, pmadb, user pma)"; else echo "databases FAIL (run up again, or pnpm db:up)"; ok=0; fi
+	local newer
+	newer=$(cd "$REPO" && find src -type f -newer build/index.js 2>/dev/null | head -3)
+	if [[ -n $newer ]]; then echo "freshness STALE: src changed after the build, e.g. ${newer//$'\n'/, } (down, then up)"; ok=0; else echo "freshness ok (no src file newer than build/)"; fi
+	[[ $ok == 1 ]] && echo "DOCTOR OK" || { echo "DOCTOR FAIL"; exit 1; }
+}
+
+cmd_run() {
+	local script=${1:-}
+	[[ -n $script && -f $script ]] || die "usage: sma-verify run <journey.ts>"
+	pid_alive || die "run $RUN_ID is not up"
+	script=$(cd "$(dirname "$script")" && pwd)/$(basename "$script")
+	(cd "$REPO" && SMA_URL=$(cat "$STATE/url") SMA_EVIDENCE=$EVIDENCE SMA_RUN_ID=$RUN_ID node "$script")
+}
+
+cmd_down() {
+	if [[ -f $STATE/pid ]]; then
+		local pid
+		pid=$(cat "$STATE/pid")
+		# Kill only the process this run started, and only if it is still our preview on our port
+		# (the pnpm shim execs `node .../vite/bin/vite.js preview ... --port <port>`).
+		if kill -0 "$pid" 2>/dev/null &&
+			ps -o command= -p "$pid" | grep -Eq "vite\.js preview .*--port $(cat "$STATE/port")( |$)"; then
+			kill "$pid"
+			for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.25; done
+			kill -0 "$pid" 2>/dev/null && kill -9 "$pid"
+			echo "stopped pid $pid"
+		fi
+	fi
+	# Databases created by journeys of this run (leftovers of a failed journey).
+	(cd "$REPO" && node --input-type=module -e '
+		import { createConnection } from "mysql2/promise";
+		const prefix = `tmp_verify_${process.argv[1]}_`;
+		for (const port of [33306, 33307]) {
+			let c;
+			try { c = await createConnection({ host: "127.0.0.1", port, user: "root", password: "root", connectTimeout: 2000 }); }
+			catch { continue; }
+			const [rows] = await c.query("SELECT SCHEMA_NAME s FROM information_schema.SCHEMATA");
+			for (const { s } of rows) if (s.startsWith(prefix)) { await c.query(`DROP DATABASE \`${s}\``); console.log(`dropped ${s} on :${port}`); }
+			// rows the app wrote into the shared pmadb about our databases
+			await c.query("DELETE FROM phpmyadmin.pma__table_uiprefs WHERE db_name LIKE ?", [prefix + "%"]).catch(() => {});
+			await c.query("DELETE FROM phpmyadmin.pma__history WHERE db LIKE ?", [prefix + "%"]).catch(() => {});
+			await c.end();
+		}
+	' "$RUN_ID") || true
+	/bin/rm -rf "$STATE"
+	# The docker stack is shared with dev work and other runs: it stays up (pnpm db:down deletes its data).
+	echo "down. evidence kept in $EVIDENCE"
+}
+
+case ${1:-} in
+up) shift; cmd_up "$@" ;;
+doctor) cmd_doctor ;;
+run) shift; cmd_run "$@" ;;
+down) cmd_down ;;
+*) sed -n 2,6p "$0"; exit 2 ;;
+esac
