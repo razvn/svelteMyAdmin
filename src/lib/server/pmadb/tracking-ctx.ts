@@ -17,7 +17,7 @@ export async function withTracking<T>(
 		try {
 			return {
 				ok: true,
-				value: await fn({ repo, user: locals.session?.user ?? '', server: locals.server })
+				value: await fn({ repo, user: locals.session?.storageUser ?? '', server: locals.server })
 			};
 		} catch (e) {
 			return { ok: false, error: (e as { sqlMessage?: string }).sqlMessage ?? String(e) };

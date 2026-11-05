@@ -7,7 +7,7 @@ function locals(user: string, recent = 2, favorite = 2): App.Locals {
 		server: { pmadb: '' },
 		config: { NumRecentTables: recent, NumFavoriteTables: favorite },
 		serverIndex: 1,
-		session: { user, host: 'h', port: 0 }
+		session: { user, storageUser: user, host: 'h', port: 0 }
 	} as unknown as App.Locals;
 }
 

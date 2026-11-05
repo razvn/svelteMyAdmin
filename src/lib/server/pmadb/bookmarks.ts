@@ -12,7 +12,7 @@ export {
 	listBookmarkRows
 } from '#lib/server/storage/mysql/bookmarks.ts';
 
-const userOf = (locals: App.Locals) => locals.session?.user ?? '';
+const userOf = (locals: App.Locals) => locals.session?.storageUser ?? '';
 
 /** undefined = bookmark storage not available. */
 export const listBookmarks = (locals: App.Locals, db: string) =>

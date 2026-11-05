@@ -4,9 +4,12 @@ const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 const INFO = 'svelteMyAdmin session v1';
 
-/** Derive the 256-bit AES key from the configured secret (HKDF-SHA256). */
-export function deriveKey(secret: string): Buffer {
-	return Buffer.from(hkdfSync('sha256', secret, 'sma-salt', INFO, 32));
+/**
+ * Derive the 256-bit AES key from the configured secret (HKDF-SHA256). Each cookie kind passes its
+ * own `info`, so a token of one kind never opens as another.
+ */
+export function deriveKey(secret: string, info: string = INFO): Buffer {
+	return Buffer.from(hkdfSync('sha256', secret, 'sma-salt', info, 32));
 }
 
 /** AES-256-GCM encrypt. Output: base64url(iv | tag | ciphertext). */

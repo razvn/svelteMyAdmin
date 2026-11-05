@@ -3,6 +3,7 @@
  * (libraries/config.default.php). `Servers` is a 0-indexed array here
  * (1-indexed in PHP); `ServerDefault` stays 1-based like in phpMyAdmin.
  */
+import { isIP } from 'node:net';
 import { z } from 'zod';
 
 /** PHP allows ports as strings ('' = default). Normalise to a number (0 = default). */
@@ -22,6 +23,123 @@ export const allowDenySchema = z
 		rules: z.array(z.string()).default([])
 	})
 	.default({ order: '', rules: [] });
+
+/** A single IPv4/IPv6 address or a CIDR range (`10.0.0.0/8`, `fd00::/8`). */
+const ipOrCidr = z.string().refine((v) => {
+	const [addr, bits, ...rest] = v.split('/');
+	const family = isIP(addr);
+	if (!family || rest.length > 0) return false;
+	if (bits === undefined) return true;
+	return /^\d+$/.test(bits) && Number(bits) <= (family === 4 ? 32 : 128);
+}, 'must be an IP address or a CIDR range');
+
+/**
+ * App-specific, not a phpMyAdmin key: how `auth_type: "signon"` identifies the user. `trusted-header`
+ * reads the identity headers of an SSO proxy (oauth2-proxy), only on requests whose TCP peer is one of
+ * `trustedProxies`.
+ */
+/**
+ * App-specific: Kubernetes RBAC decides whether the signed-on person may use the server. A
+ * SubjectAccessReview asks the API server whether the person may `verb` `resource` in `namespace`.
+ */
+export const kubernetesSarSchema = z.object({
+	type: z.literal('kubernetes-sar'),
+	namespace: z
+		.string()
+		.regex(
+			/^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$/,
+			'must be a Kubernetes namespace name (DNS-1123 label)'
+		),
+	resource: z
+		.object({
+			group: z.string().default(''),
+			resource: z.string().min(1).default('pods'),
+			verb: z.string().min(1).default('get'),
+			subresource: z.string().min(1).optional()
+		})
+		.default({ group: '', resource: 'pods', verb: 'get' }),
+	/** Prepended to the identity user, like the API server's `--oidc-username-prefix`. */
+	userPrefix: z.string().default(''),
+	/** Prepended to every group, like the API server's `--oidc-groups-prefix`. */
+	groupsPrefix: z.string().default(''),
+	/** How long an answer (allowed or denied) is reused; 0 asks the API server on every request. */
+	cacheSeconds: z.number().int().min(0).default(60),
+	/** Default: in-cluster, `https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT`. */
+	apiServer: z.url({ protocol: /^https?$/ }).optional(),
+	tokenFile: z.string().min(1).default('/var/run/secrets/kubernetes.io/serviceaccount/token'),
+	caFile: z.string().min(1).default('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt')
+});
+
+export type KubernetesSarConfig = z.infer<typeof kubernetesSarSchema>;
+
+/** The RBAC question without the namespace and API access: discovery fills those in per server. */
+const sarRulesSchema = kubernetesSarSchema
+	.omit({ namespace: true, apiServer: true, tokenFile: true, caFile: true })
+	.extend({ type: z.literal('kubernetes-sar').default('kubernetes-sar') });
+
+const PLACEHOLDER = /\{(?:namespace|service|label:[^{}]+|annotation:[^{}]+)\}/g;
+/** A text with `{namespace}`, `{service}`, `{label:key}`, `{annotation:key}` placeholders only. */
+const template = z
+	.string()
+	.refine(
+		(v) => !/[{}]/.test(v.replace(PLACEHOLDER, '')),
+		'allowed placeholders: {namespace}, {service}, {label:key}, {annotation:key}'
+	);
+
+/**
+ * App-specific (not a phpMyAdmin key): servers found through the Kubernetes API, appended to
+ * `Servers`. See docs/SIGNON.md, "Server discovery".
+ */
+export const serverDiscoverySchema = z.object({
+	type: z.literal('kubernetes'),
+	/** Label selector on namespaces (`env=review`). */
+	namespaceSelector: z.string().min(1),
+	/** Label selector on the MySQL Services of those namespaces. */
+	serviceSelector: z.string().min(1),
+	/** Service port: name or number. A name that is missing falls back to the only port. */
+	port: z.union([z.string().min(1), z.number().int().min(1).max(65535)]).default('mysql'),
+	host: template.default('{service}.{namespace}.svc'),
+	verbose: template.default('{namespace}'),
+	/** Secret of the namespace holding the MySQL account the app connects with. */
+	secret: z.object({
+		name: template.pipe(z.string().min(1)),
+		/** Fixed user name, unless `userKey` names a key of the Secret holding it. */
+		user: z.string().min(1).default('root'),
+		userKey: z.string().min(1).optional(),
+		passwordKey: z.string().min(1)
+	}),
+	/** RBAC check in the server's namespace (on by default); `false` lets every signed-on person in. */
+	authorize: z.union([z.literal(false), sarRulesSchema]).default(() => sarRulesSchema.parse({})),
+	/** How long the server list and Secrets are reused before asking the API server again. */
+	refreshSeconds: z.number().int().min(5).default(30),
+	/** Settings of every discovered server (pmadb, Signon.identity, ...), like an entry of `Servers`. */
+	server: z.record(z.string(), z.unknown()).default({}),
+	apiServer: z.url({ protocol: /^https?$/ }).optional(),
+	tokenFile: z.string().min(1).default('/var/run/secrets/kubernetes.io/serviceaccount/token'),
+	caFile: z.string().min(1).default('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt')
+});
+export type ServerDiscoveryConfig = z.infer<typeof serverDiscoverySchema>;
+
+export const signonSchema = z.object({
+	identity: z.object({
+		type: z.literal('trusted-header').default('trusted-header'),
+		userHeader: z.string().min(1).default('x-auth-request-user'),
+		emailHeader: z.string().min(1).default('x-auth-request-email'),
+		groupsHeader: z.string().min(1).default('x-auth-request-groups'),
+		trustedProxies: z.array(ipOrCidr).default([])
+	}),
+	authorize: kubernetesSarSchema.optional()
+});
+
+export type SignonIdentityConfig = z.infer<typeof signonSchema>['identity'];
+
+/** Where a server found by `ServerDiscovery` comes from. */
+export interface DiscoveredServer {
+	/** Stable id, used in `?server=` and cookies: `k8s:<namespace>/<service>`. */
+	id: string;
+	namespace: string;
+	service: string;
+}
 
 export const serverSchema = z
 	.object({
@@ -50,6 +168,8 @@ export const serverSchema = z
 		SignonScript: z.string().default(''),
 		SignonURL: z.string().default(''),
 		LogoutURL: z.string().default(''),
+		/** App-specific, not a phpMyAdmin key: identity source of `auth_type: "signon"`. */
+		Signon: signonSchema.optional(),
 		only_db: z.union([z.string(), z.array(z.string())]).default(''),
 		hide_db: z.string().default(''),
 
@@ -100,10 +220,30 @@ export const serverSchema = z
 		tracking_add_drop_view: z.boolean().default(true),
 		tracking_add_drop_table: z.boolean().default(true),
 		tracking_add_drop_database: z.boolean().default(true),
-		hide_connection_errors: z.boolean().default(false)
+		hide_connection_errors: z.boolean().default(false),
+		/** Set by `ServerDiscovery` on the servers it finds; the loader rejects it in `Servers`. */
+		discovered: z.custom<DiscoveredServer>().optional()
 	})
 	// Keep unknown phpMyAdmin keys instead of rejecting them.
-	.loose();
+	.loose()
+	// Trusting identity headers from any peer would let anyone log in by forging them: fail closed.
+	.superRefine((server, ctx) => {
+		if (server.auth_type === 'signon' && !server.Signon?.identity.trustedProxies.length) {
+			ctx.addIssue({
+				code: 'custom',
+				path: ['Signon', 'identity', 'trustedProxies'],
+				message:
+					'auth_type "signon" requires the addresses of the SSO proxy (identity headers from anyone else are ignored)'
+			});
+		}
+		if (server.Signon?.authorize && server.auth_type !== 'signon') {
+			ctx.addIssue({
+				code: 'custom',
+				path: ['Signon', 'authorize'],
+				message: 'Signon.authorize only applies to auth_type "signon"'
+			});
+		}
+	});
 
 export type ServerConfig = z.infer<typeof serverSchema>;
 export type ServerConfigInput = z.input<typeof serverSchema>;
@@ -114,6 +254,25 @@ export const configStorageSchema = z.object({
 	/** Relative paths resolve from the directory of the config file. */
 	path: z.string().min(1)
 });
+
+const auditLogCommon = {
+	/** Inline the values passed apart from the SQL text (`query(sql, values)`); off by default (PII). */
+	includeValues: z.boolean().default(false),
+	/** A person's next request after this much inactivity starts a new `session` event. */
+	sessionIdleMinutes: z.number().int().positive().default(30),
+	/** Longer SQL text is cut (and marked `truncated`). */
+	maxSqlLength: z.number().int().positive().default(4096)
+};
+
+/**
+ * App-specific (not a phpMyAdmin key): per-person audit log as JSON Lines, see docs/AUDIT.md.
+ * Absent = disabled. `file` paths resolve from the directory of the config file.
+ */
+export const auditLogSchema = z.discriminatedUnion('target', [
+	z.object({ target: z.literal('stdout'), ...auditLogCommon }),
+	z.object({ target: z.literal('file'), path: z.string().min(1), ...auditLogCommon })
+]);
+export type AuditLogConfig = z.infer<typeof auditLogSchema>;
 
 export const configSchema = z
 	.object({
@@ -126,6 +285,8 @@ export const configSchema = z
 		AllowThirdPartyFraming: z.union([z.boolean(), z.literal('sameorigin')]).default(false),
 		Servers: z.array(serverSchema).default([]),
 		ConfigStorage: configStorageSchema.optional(),
+		AuditLog: auditLogSchema.optional(),
+		ServerDiscovery: serverDiscoverySchema.optional(),
 		ServerDefault: z.number().int().min(0).default(1),
 
 		MaxDbList: z.number().int().default(100),

@@ -30,11 +30,20 @@ export function parseConfig(
 			.join('; ');
 		throw new ConfigError(`Invalid configuration: ${details}`);
 	}
-	const config = result.data;
-	if (config.Servers.length === 0) {
+	const config: AppConfig = result.data;
+	const faked = config.Servers.findIndex((s) => s.discovered !== undefined);
+	if (faked >= 0) {
+		throw new ConfigError(
+			`Invalid configuration: Servers.${faked}.discovered: set by ServerDiscovery, not a configuration key`
+		);
+	}
+	// With discovery the list may be empty until the first servers are found.
+	if (config.Servers.length === 0 && !config.ServerDiscovery) {
 		config.Servers = [serverSchema.parse({})];
 	}
-	if (config.ServerDefault > config.Servers.length) {
+	// Positions past the configured servers belong to discovered ones, which shift: only the default 1
+	// ("the first server there is") may point there.
+	if (config.ServerDefault > Math.max(config.Servers.length, 1)) {
 		throw new ConfigError(
 			`Invalid configuration: ServerDefault (${config.ServerDefault}) refers to a missing server`
 		);
@@ -42,11 +51,42 @@ export function parseConfig(
 	// Servers without a pmadb use the SQLite configuration storage when one is configured.
 	if (config.ConfigStorage) {
 		const path = resolve(baseDir, config.ConfigStorage.path);
+		config.ConfigStorage.path = path;
 		for (const server of config.Servers) {
 			if (!server.pmadb && server.ConfigStorage !== false) server.sqlite_storage = path;
 		}
 	}
+	if (config.ServerDiscovery) checkDiscoveredServer(config.ServerDiscovery.server);
+	if (config.AuditLog?.target === 'file') {
+		config.AuditLog.path = resolve(baseDir, config.AuditLog.path);
+	}
 	return config;
+}
+
+/** `ServerDiscovery.server` must make a valid signon server once host and account are filled in. */
+function checkDiscoveredServer(settings: Record<string, unknown>): void {
+	const fail = (path: string, message: string) => {
+		throw new ConfigError(`Invalid configuration: ServerDiscovery.server.${path}: ${message}`);
+	};
+	for (const key of [
+		'auth_type',
+		'host',
+		'port',
+		'socket',
+		'user',
+		'password',
+		'verbose',
+		'discovered'
+	]) {
+		if (key in settings) fail(key, 'set by discovery (see the ServerDiscovery keys)');
+	}
+	const signon = settings.Signon as { authorize?: unknown } | undefined;
+	if (signon?.authorize !== undefined) fail('Signon.authorize', 'use ServerDiscovery.authorize');
+	const result = serverSchema.safeParse({ ...settings, auth_type: 'signon' });
+	if (!result.success) {
+		const issue = result.error.issues[0];
+		fail(issue.path.join('.') || '(root)', issue.message);
+	}
 }
 
 /**

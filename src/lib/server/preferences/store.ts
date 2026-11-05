@@ -23,11 +23,12 @@ export const PREFS_COOKIE = 'sma_userprefs';
 /** Browsers cap a cookie at 4096 bytes including name and attributes. */
 const MAX_COOKIE_VALUE = 3600;
 
-const username = (locals: App.Locals) => locals.session?.user ?? '';
+const username = (locals: App.Locals) => locals.session?.storageUser ?? '';
 
 interface CookiePayload {
 	u: string;
-	s: number;
+	/** `locals.serverId` (older cookies: the 1-based position, the same text for configured servers). */
+	s: string | number;
 	t: number;
 	d: PrefData;
 }
@@ -37,7 +38,7 @@ function readCookie(locals: App.Locals, cookies: Cookies): { data: PrefData; mti
 	if (!raw) return { data: {}, mtime: 0 };
 	try {
 		const p = JSON.parse(raw) as Partial<CookiePayload>;
-		if (p.u !== username(locals) || p.s !== locals.serverIndex) return { data: {}, mtime: 0 };
+		if (p.u !== username(locals) || String(p.s) !== locals.serverId) return { data: {}, mtime: 0 };
 		const data = parseConfigData(JSON.stringify(p.d ?? {}));
 		return { data, mtime: typeof p.t === 'number' ? p.t : 0 };
 	} catch {
@@ -85,7 +86,7 @@ export async function savePrefs(
 	}
 	const payload: CookiePayload = {
 		u: user,
-		s: locals.serverIndex,
+		s: locals.serverId,
 		t: Math.floor(Date.now() / 1000),
 		d: data
 	};

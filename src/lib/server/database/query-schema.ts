@@ -103,7 +103,7 @@ export async function listSavedSearches(
 	db: string
 ): Promise<SavedSearch[] | null> {
 	if (!savedSearchesConfigured(locals) || !locals.session) return null;
-	const user = locals.session.user;
+	const user = locals.session.storageUser;
 	const rows = await withRepo(locals, 'savedSearches', (repo) => repo.list(user, db));
 	if (!rows) return null;
 	return rows.flatMap((r) => {
@@ -129,7 +129,7 @@ export async function saveSearch(
 	if (!savedSearchesConfigured(locals) || !locals.session) {
 		return { ok: false, error: tr.t('Saved searches are not available.') };
 	}
-	const user = locals.session.user;
+	const user = locals.session.storageUser;
 	const json = JSON.stringify(input.data);
 	try {
 		const res = await withRepo(locals, 'savedSearches', async (repo) => {
@@ -158,7 +158,7 @@ export async function deleteSearch(
 	id: number
 ): Promise<{ ok: boolean }> {
 	if (!savedSearchesConfigured(locals) || !locals.session) return { ok: false };
-	const user = locals.session.user;
+	const user = locals.session.storageUser;
 	const res = await withRepo(locals, 'savedSearches', (repo) => repo.delete(id, user, db));
 	return { ok: (res ?? 0) > 0 };
 }

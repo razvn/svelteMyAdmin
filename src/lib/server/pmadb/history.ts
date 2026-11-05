@@ -14,7 +14,7 @@ const MAX_LOGINS = 500;
 const memory = new Map<string, HistoryEntry[]>();
 
 const memoryKey = (locals: App.Locals) =>
-	`${locals.serverIndex}\n${locals.session?.user ?? ''}\n${locals.session?.host ?? ''}:${locals.session?.port ?? 0}`;
+	`${locals.serverId}\n${locals.session?.storageUser ?? ''}\n${locals.session?.host ?? ''}:${locals.session?.port ?? 0}`;
 
 function nowText(): string {
 	return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -52,7 +52,7 @@ export async function recordHistory(
 		if (memory.size > MAX_LOGINS) memory.delete(memory.keys().next().value as string);
 
 		if (!config.QueryHistoryDB) return;
-		const user = locals.session?.user ?? '';
+		const user = locals.session?.storageUser ?? '';
 		await withRepo(locals, 'history', async (repo) => {
 			for (const e of keep) {
 				await repo.insert({ username: user, ...e });
@@ -68,7 +68,7 @@ export async function recordHistory(
 export async function getHistory(locals: App.Locals): Promise<HistoryEntry[]> {
 	const config = locals.config;
 	if (config.QueryHistoryDB) {
-		const user = locals.session?.user ?? '';
+		const user = locals.session?.storageUser ?? '';
 		const stored = await withRepo(locals, 'history', (repo) =>
 			repo.select(user, config.QueryHistoryMax)
 		);
@@ -80,6 +80,6 @@ export async function getHistory(locals: App.Locals): Promise<HistoryEntry[]> {
 export async function clearHistory(locals: App.Locals): Promise<void> {
 	memory.delete(memoryKey(locals));
 	if (!locals.config.QueryHistoryDB) return;
-	const user = locals.session?.user ?? '';
+	const user = locals.session?.storageUser ?? '';
 	await withRepo(locals, 'history', (repo) => repo.clear(user));
 }

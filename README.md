@@ -50,6 +50,57 @@ Bookmarks, history, favourites, user preferences, relations, designer pages, tra
 
 The storage page (`/server/check-relations`) shows which backend the server uses.
 
+## Authentication
+
+`auth_type` per server works like phpMyAdmin: `cookie` (login form, default), `config` and `http`.
+
+Full guide: [docs/SIGNON.md](docs/SIGNON.md). Per-person audit log (who did what, when, from where):
+[docs/AUDIT.md](docs/AUDIT.md).
+
+`signon` delegates the login to an SSO proxy in front of the app (oauth2-proxy, an ingress `auth-url`).
+The proxy authenticates the person and forwards identity headers. The app then connects to MySQL with
+the server's `user`/`password` and shows the person as "alice (as root@host)". The identity source is the
+app-specific key `Signon` (not a phpMyAdmin `$cfg` key):
+
+```json
+{
+	"Servers": [
+		{
+			"host": "mysql",
+			"auth_type": "signon",
+			"user": "root",
+			"password": "secret",
+			"SignonURL": "/oauth2/start?rd=/",
+			"LogoutURL": "/oauth2/sign_out?rd=/",
+			"Signon": {
+				"identity": {
+					"type": "trusted-header",
+					"userHeader": "x-auth-request-user",
+					"emailHeader": "x-auth-request-email",
+					"groupsHeader": "x-auth-request-groups",
+					"trustedProxies": ["10.0.0.0/8"]
+				}
+			}
+		}
+	]
+}
+```
+
+The header names shown are the defaults. Without the user header the browser is sent to `SignonURL`
+(401 when unset), and "Log out" goes to `LogoutURL`.
+
+Security: the headers are only read when the direct TCP peer is in `trustedProxies` (IPs or CIDR ranges,
+required). The app must be reachable **only through the proxy**. Keep `trustedProxies` as tight as
+possible and block direct access (ClusterIP Service plus a NetworkPolicy allowing only the proxy pods).
+Otherwise anyone can forge the identity header. Every user shares the configured MySQL account. See
+`docs/DELEGATED_AUTH.md` for the full design.
+
+On Kubernetes, `Signon.authorize` lets the RBAC of a namespace decide who may use a server, and
+`ServerDiscovery` finds the MySQL Services of labelled namespaces (one per merge request, say) with
+their account from a Secret. See [Kubernetes RBAC](docs/SIGNON.md#kubernetes-rbac) and
+[Server discovery](docs/SIGNON.md#server-discovery). A `Dockerfile` builds the image, and
+[deploy/kubernetes](deploy/kubernetes/README.md) has manifests to try both on a local cluster.
+
 ## Scripts
 
 | Script                           | Purpose                                                                                        |

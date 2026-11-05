@@ -46,7 +46,7 @@ function parsePrefs(text: unknown): TablePrefs {
 
 /** Stored preferences: configuration storage when available, else the cookie. */
 export async function loadPrefs(ctx: PrefsContext): Promise<TablePrefs> {
-	const user = ctx.locals.session?.user ?? '';
+	const user = ctx.locals.session?.storageUser ?? '';
 	const stored = await withRepo(ctx.locals, 'tableUiPrefs', async (repo) => {
 		const json = await repo.get(user, ctx.db, ctx.table);
 		return json === null ? {} : parsePrefs(json);
@@ -64,7 +64,7 @@ export async function savePrefs(ctx: PrefsContext, patch: TablePrefs): Promise<v
 		else next[k] = v;
 	}
 	const json = JSON.stringify(next);
-	const user = ctx.locals.session?.user ?? '';
+	const user = ctx.locals.session?.storageUser ?? '';
 	const saved = await withRepo(ctx.locals, 'tableUiPrefs', async (repo) => {
 		await repo.set(user, ctx.db, ctx.table, json);
 		return true;

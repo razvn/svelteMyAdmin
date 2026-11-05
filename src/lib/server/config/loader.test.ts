@@ -76,6 +76,200 @@ describe('parseConfig', () => {
 		expect(() => parseConfig({ ServerDefault: 3, Servers: [{}] })).toThrow(/ServerDefault/);
 	});
 
+	it('refuses signon auth without trusted proxies (headers from anyone would be trusted)', () => {
+		expect(() => parseConfig({ Servers: [{ auth_type: 'signon' }] })).toThrow(
+			/Servers\.0\.Signon\.identity\.trustedProxies/
+		);
+		expect(() =>
+			parseConfig({
+				Servers: [{ auth_type: 'signon', Signon: { identity: { trustedProxies: [] } } }]
+			})
+		).toThrow(ConfigError);
+		expect(() =>
+			parseConfig({
+				Servers: [
+					{ auth_type: 'signon', Signon: { identity: { trustedProxies: ['10.0.0.0/33'] } } }
+				]
+			})
+		).toThrow(/IP address or a CIDR range/);
+	});
+
+	it('accepts signon auth with trusted proxies and fills the header defaults', () => {
+		const [s] = parseConfig({
+			Servers: [
+				{ auth_type: 'signon', Signon: { identity: { trustedProxies: ['10.0.0.0/8', 'fd00::1'] } } }
+			]
+		}).Servers;
+		expect(s.Signon?.identity).toEqual({
+			type: 'trusted-header',
+			userHeader: 'x-auth-request-user',
+			emailHeader: 'x-auth-request-email',
+			groupsHeader: 'x-auth-request-groups',
+			trustedProxies: ['10.0.0.0/8', 'fd00::1']
+		});
+	});
+
+	it('fills the Kubernetes authorisation defaults', () => {
+		const [s] = parseConfig({
+			Servers: [
+				{
+					auth_type: 'signon',
+					Signon: {
+						identity: { trustedProxies: ['10.0.0.0/8'] },
+						authorize: { type: 'kubernetes-sar', namespace: 'review-123' }
+					}
+				}
+			]
+		}).Servers;
+		expect(s.Signon?.authorize).toEqual({
+			type: 'kubernetes-sar',
+			namespace: 'review-123',
+			resource: { group: '', resource: 'pods', verb: 'get' },
+			userPrefix: '',
+			groupsPrefix: '',
+			cacheSeconds: 60,
+			tokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+			caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+		});
+	});
+
+	it('rejects a Kubernetes authorisation without a valid namespace', () => {
+		const withAuthorize = (authorize: unknown) =>
+			parseConfig({
+				Servers: [
+					{ auth_type: 'signon', Signon: { identity: { trustedProxies: ['10.0.0.1'] }, authorize } }
+				]
+			});
+		expect(() => withAuthorize({ type: 'kubernetes-sar' })).toThrow(
+			/Servers\.0\.Signon\.authorize\.namespace/
+		);
+		expect(() => withAuthorize({ type: 'kubernetes-sar', namespace: 'Review_123' })).toThrow(
+			/DNS-1123/
+		);
+		expect(() =>
+			withAuthorize({ type: 'kubernetes-sar', namespace: 'r', apiServer: 'ftp://x' })
+		).toThrow(/apiServer/);
+	});
+
+	it('rejects Signon.authorize on a server that does not use signon', () => {
+		expect(() =>
+			parseConfig({
+				Servers: [
+					{
+						auth_type: 'cookie',
+						Signon: {
+							identity: { trustedProxies: ['10.0.0.1'] },
+							authorize: { type: 'kubernetes-sar', namespace: 'review-123' }
+						}
+					}
+				]
+			})
+		).toThrow(/only applies to auth_type "signon"/);
+	});
+
+	it('leaves the audit log off unless AuditLog is set', () => {
+		expect(parseConfig({}).AuditLog).toBeUndefined();
+	});
+
+	it('fills the AuditLog defaults', () => {
+		expect(parseConfig({ AuditLog: { target: 'stdout' } }).AuditLog).toEqual({
+			target: 'stdout',
+			includeValues: false,
+			sessionIdleMinutes: 30,
+			maxSqlLength: 4096
+		});
+	});
+
+	it('refuses a file audit log without a path', () => {
+		expect(() => parseConfig({ AuditLog: { target: 'file' } })).toThrow(ConfigError);
+		expect(() => parseConfig({ AuditLog: { target: 'syslog' } })).toThrow(ConfigError);
+	});
+
+	it('resolves the audit log path from the config file directory', () => {
+		const c = parseConfig({ AuditLog: { target: 'file', path: 'logs/audit.jsonl' } }, '/etc/sma');
+		expect(c.AuditLog).toMatchObject({ target: 'file', path: '/etc/sma/logs/audit.jsonl' });
+	});
+
+	describe('ServerDiscovery', () => {
+		const discovery = (extra: Record<string, unknown> = {}) => ({
+			type: 'kubernetes',
+			namespaceSelector: 'env=review',
+			serviceSelector: 'app.kubernetes.io/name=mysql',
+			secret: { name: 'mysql-auth', passwordKey: 'mysql-root-password' },
+			server: { Signon: { identity: { trustedProxies: ['10.0.0.0/8'] } } },
+			...extra
+		});
+
+		it('fills the defaults and starts without a default server', () => {
+			const c = parseConfig({ ServerDiscovery: discovery() });
+			expect(c.Servers).toEqual([]);
+			expect(c.ServerDiscovery).toMatchObject({
+				port: 'mysql',
+				host: '{service}.{namespace}.svc',
+				verbose: '{namespace}',
+				refreshSeconds: 30,
+				secret: { user: 'root' },
+				authorize: { type: 'kubernetes-sar', resource: { resource: 'pods', verb: 'get' } }
+			});
+		});
+
+		it('keeps the configured servers', () => {
+			const c = parseConfig({ Servers: [{ host: 'db' }], ServerDiscovery: discovery() });
+			expect(c.Servers.map((s) => s.host)).toEqual(['db']);
+		});
+
+		it('resolves the SQLite storage path for discovered servers too', () => {
+			const c = parseConfig(
+				{
+					ConfigStorage: { type: 'sqlite', path: 'var/storage.sqlite' },
+					ServerDiscovery: discovery()
+				},
+				'/etc/sma'
+			);
+			expect(c.ConfigStorage?.path).toBe('/etc/sma/var/storage.sqlite');
+		});
+
+		it('refuses discovered servers without the SSO proxy addresses', () => {
+			expect(() => parseConfig({ ServerDiscovery: discovery({ server: {} }) })).toThrow(
+				/ServerDiscovery\.server\.Signon\.identity\.trustedProxies/
+			);
+		});
+
+		it.each(['auth_type', 'host', 'password', 'discovered'])(
+			'refuses %s in the discovered server settings',
+			(key) => {
+				const server = { ...discovery().server, [key]: 'x' };
+				expect(() => parseConfig({ ServerDiscovery: discovery({ server }) })).toThrow(
+					`ServerDiscovery.server.${key}: set by discovery`
+				);
+			}
+		);
+
+		it('refuses Signon.authorize in the server settings (it is ServerDiscovery.authorize)', () => {
+			const server = {
+				Signon: {
+					identity: { trustedProxies: ['10.0.0.1'] },
+					authorize: { type: 'kubernetes-sar' }
+				}
+			};
+			expect(() => parseConfig({ ServerDiscovery: discovery({ server }) })).toThrow(
+				/use ServerDiscovery\.authorize/
+			);
+		});
+
+		it('refuses unknown placeholders', () => {
+			expect(() => parseConfig({ ServerDiscovery: discovery({ verbose: '{pod}' }) })).toThrow(
+				/allowed placeholders/
+			);
+		});
+
+		it('refuses a discovery marker on a configured server', () => {
+			expect(() =>
+				parseConfig({ Servers: [{ discovered: { id: 'k8s:a/b', namespace: 'a', service: 'b' } }] })
+			).toThrow(/Servers\.0\.discovered/);
+		});
+	});
+
 	it('does not share default objects between calls', () => {
 		const a = parseConfig({});
 		a.ForeignKeyDropdownOrder.push('x');
