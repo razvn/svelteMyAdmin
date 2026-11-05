@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Single sign-on - svelteMyAdmin docs</title>
+		<meta
+			name="description"
+			content="Log people in to svelteMyAdmin through oauth2-proxy or another SSO proxy with auth_type signon."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#6366f1" />
+		<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+		<link rel="canonical" href="https://razvn.github.io/svelteMyAdmin/docs/signon.html" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+		/>
+		<link rel="stylesheet" href="../styles.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="../"
+					><img src="../assets/logo.svg" alt="" width="32" height="32" /><span
+						>svelteMyAdmin</span
+					></a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="../#features">Features</a>
+					<a href="../#quick-start">Quick start</a>
+					<a class="nav-docs" href="./" aria-current="page">Docs</a>
+					<a class="btn btn-sm" href="https://github.com/razvn/svelteMyAdmin">GitHub</a>
+				</nav>
+			</div>
+		</header>
+
+		<div class="wrap docs">
+			<nav class="docs-nav" aria-label="Documentation">
+				<h2>Getting started</h2>
+				<ul>
+					<li><a href="./">Overview</a></li>
+				</ul>
+				<h2>Authentication</h2>
+				<ul>
+					<li><a href="signon.html" aria-current="page">Single sign-on (signon)</a></li>
+				</ul>
+				<h2>Operations</h2>
+				<ul>
+					<li><a href="audit.html">Audit log</a></li>
+				</ul>
+				<div class="docs-toc">
+					<h2>On this page</h2>
+					<ul>
+						<li><a href="#flow">How a request is handled</a></li>
+						<li><a href="#config">Configuration</a></li>
+						<li><a href="#proxies">Proxy setups</a></li>
+						<li><a href="#kubernetes">Kubernetes RBAC</a></li>
+						<li><a href="#discovery">Server discovery</a></li>
+						<li><a href="#security">Security checklist</a></li>
+						<li><a href="#ui">What people see</a></li>
+						<li><a href="#troubleshooting">Troubleshooting</a></li>
+						<li><a href="#limits">Current limits</a></li>
+					</ul>
+				</div>
+			</nav>
+
+			<main id="main" class="doc">
+				<h1>Single sign-on</h1>
+				<p>
+					With <code class="inline">auth_type: "signon"</code>, an SSO proxy in front of
+					svelteMyAdmin logs people in. The proxy (oauth2-proxy, an ingress
+					<code class="inline">auth-url</code>, Pomerium…) authenticates the person against your
+					identity provider and forwards who they are in HTTP headers. svelteMyAdmin trusts those
+					headers only when the request comes from the proxy, then connects to MySQL with the
+					account configured for the server.
+				</p>
+				<p>Nobody types a MySQL password, and the password never reaches the browser.</p>
+
+				<h2 id="flow">How a request is handled</h2>
+				<ol>
+					<li>
+						The TCP peer of the request (the proxy) must be in
+						<code class="inline">Signon.identity.trustedProxies</code>. From any other address the
+						identity headers are ignored, because anyone can send them.
+					</li>
+					<li>
+						The user header must hold a non-empty name with no control characters and no comma. A
+						comma means the header arrived twice, which happens when a proxy appends instead of
+						replacing.
+					</li>
+					<li>
+						With <code class="inline">Signon.authorize</code> set, Kubernetes RBAC must allow the
+						person on the server (<a href="#kubernetes">Kubernetes RBAC</a>). Denied:
+						<code class="inline">403</code>. RBAC cannot be checked:
+						<code class="inline">503</code>.
+					</li>
+					<li>
+						The app connects with the server's <code class="inline">user</code> /
+						<code class="inline">password</code>. <code class="inline">AllowDeny</code>,
+						<code class="inline">AllowRoot</code> and
+						<code class="inline">AllowNoPassword</code> apply to that MySQL account and to the
+						client IP.
+					</li>
+					<li>
+						No identity: redirect to <code class="inline">SignonURL</code>, or
+						<code class="inline">401 Authentication required.</code> when it is empty. MySQL refuses
+						the configured account: <code class="inline">503</code>.
+					</li>
+				</ol>
+				<p>
+					The headers are read again on every request. svelteMyAdmin keeps no session of its own for
+					<code class="inline">signon</code>, so the proxy stays the only source of truth: when its
+					session ends, access ends.
+				</p>
+
+				<h2 id="config">Configuration</h2>
+				<pre><code>{
+	"Servers": [
+		{
+			"verbose": "Production",
+			"host": "mysql",
+			"auth_type": "signon",
+			"user": "admin",
+			"password": "secret",
+			"SignonURL": "/oauth2/start?rd=/",
+			"LogoutURL": "/oauth2/sign_out?rd=/",
+			"Signon": {
+				"identity": {
+					"type": "trusted-header",
+					"userHeader": "x-auth-request-user",
+					"emailHeader": "x-auth-request-email",
+					"groupsHeader": "x-auth-request-groups",
+					"trustedProxies": ["10.42.0.0/16"]
+				}
+			}
+		}
+	]
+}</code></pre>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Key</th>
+								<th>Default</th>
+								<th>Meaning</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">user</code>, <code class="inline">password</code></td>
+								<td><code class="inline">root</code>, empty</td>
+								<td>MySQL account the app connects with for every signed-in person.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">SignonURL</code></td>
+								<td>empty</td>
+								<td>
+									phpMyAdmin key. Where people without an identity are sent. Empty gives a plain
+									401.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">LogoutURL</code></td>
+								<td>empty (<code class="inline">/</code>)</td>
+								<td>
+									phpMyAdmin key. Where "Log out" sends the browser, normally the proxy's sign-out.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Signon.identity.type</code></td>
+								<td><code class="inline">trusted-header</code></td>
+								<td>The only identity source so far.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Signon.identity.userHeader</code></td>
+								<td><code class="inline">x-auth-request-user</code></td>
+								<td>Header with the person's stable id (username). Required.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Signon.identity.emailHeader</code></td>
+								<td><code class="inline">x-auth-request-email</code></td>
+								<td>Optional.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Signon.identity.groupsHeader</code></td>
+								<td><code class="inline">x-auth-request-groups</code></td>
+								<td>Optional, comma separated.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Signon.identity.trustedProxies</code></td>
+								<td>none</td>
+								<td>
+									IPs or CIDRs (IPv4 or IPv6) of the proxy. Required and non-empty, otherwise the
+									config fails to load.
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p>
+					<code class="inline">Signon</code> is specific to svelteMyAdmin; phpMyAdmin ignores it.
+					<code class="inline">SignonURL</code> and <code class="inline">LogoutURL</code> keep their
+					phpMyAdmin meaning. phpMyAdmin's <code class="inline">SignonSession</code>,
+					<code class="inline">SignonScript</code> and
+					<code class="inline">SignonCookieParams</code>
+					are not used.
+				</p>
+				<div class="callout">
+					<p>
+						<code class="inline">trustedProxies</code> is matched against the direct TCP peer, not
+						against the top-level <code class="inline">TrustedProxies</code>, which only decides
+						which header carries the real client IP. Behind a load balancer, list the address the
+						app actually sees.
+					</p>
+				</div>
+
+				<h2 id="proxies">Proxy setups</h2>
+				<h3>oauth2-proxy behind ingress-nginx</h3>
+				<p>
+					oauth2-proxy runs with <code class="inline">--set-xauthrequest</code>, and the ingress
+					copies its response headers onto the request sent to svelteMyAdmin:
+				</p>
+				<pre><code>metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: 'https://$host/oauth2/auth'
+    nginx.ingress.kubernetes.io/auth-signin: 'https://$host/oauth2/start?rd=$escaped_request_uri'
+    nginx.ingress.kubernetes.io/auth-response-headers: 'X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Groups'</code></pre>
+				<p>
+					The peer svelteMyAdmin sees is the ingress controller pod, so
+					<code class="inline">trustedProxies</code> is the pod network range of the ingress
+					controller. The default header names already match.
+				</p>
+				<h3>oauth2-proxy as the reverse proxy</h3>
+				<p>
+					With oauth2-proxy forwarding straight to svelteMyAdmin (<code class="inline"
+						>--upstream=http://sma:3000</code
+					>, <code class="inline">--pass-user-headers</code>), the identity arrives as
+					<code class="inline">X-Forwarded-User</code> / <code class="inline">-Email</code> /
+					<code class="inline">-Groups</code>. Set the header names accordingly:
+				</p>
+				<pre><code>"Signon": {
+	"identity": {
+		"userHeader": "x-forwarded-user",
+		"emailHeader": "x-forwarded-email",
+		"groupsHeader": "x-forwarded-groups",
+		"trustedProxies": ["10.42.3.17"]
+	}
+}</code></pre>
+
+				<h2 id="kubernetes">Kubernetes RBAC</h2>
+				<p>
+					On a review environment where every merge request gets its own namespace and its own
+					MySQL, the question "may this person use this server?" already has an answer: the RBAC of
+					the namespace. <code class="inline">Signon.authorize</code> asks the Kubernetes API
+					server, with a
+					<a
+						href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#checking-api-access"
+						>SubjectAccessReview</a
+					>, whether the signed-in person may <code class="inline">get pods</code> (by default) in
+					the server's namespace. People without that right get a
+					<code class="inline">403</code> instead of the server.
+				</p>
+				<pre><code>{
+	"Servers": [
+		{
+			"verbose": "review-123",
+			"host": "mysql.review-123.svc",
+			"auth_type": "signon",
+			"user": "root",
+			"password": "secret",
+			"Signon": {
+				"identity": { "trustedProxies": ["10.42.0.0/16"] },
+				"authorize": {
+					"type": "kubernetes-sar",
+					"namespace": "review-123",
+					"resource": { "group": "", "resource": "pods", "verb": "get" },
+					"userPrefix": "oidc:",
+					"groupsPrefix": "oidc:",
+					"cacheSeconds": 60
+				}
+			}
+		}
+	]
+}</code></pre>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Key</th>
+								<th>Default</th>
+								<th>Meaning</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">authorize.type</code></td>
+								<td>none</td>
+								<td><code class="inline">kubernetes-sar</code>, the only authoriser so far.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.namespace</code></td>
+								<td>none</td>
+								<td>Namespace whose RBAC decides. Required, a DNS-1123 label.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.resource.group</code></td>
+								<td>empty (core API)</td>
+								<td>API group of the resource.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.resource.resource</code></td>
+								<td><code class="inline">pods</code></td>
+								<td>Resource the person must have the right on.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.resource.verb</code></td>
+								<td><code class="inline">get</code></td>
+								<td>Verb they must be allowed.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.resource.subresource</code></td>
+								<td>none</td>
+								<td>
+									Optional, e.g. <code class="inline">exec</code> with
+									<code class="inline">pods</code> and verb <code class="inline">create</code>, or
+									<code class="inline">proxy</code> with <code class="inline">services</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.userPrefix</code></td>
+								<td>empty</td>
+								<td>
+									Prepended to the identity user. Must equal the API server's
+									<code class="inline">--oidc-username-prefix</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.groupsPrefix</code></td>
+								<td>empty</td>
+								<td>
+									Prepended to each group. Must equal the API server's
+									<code class="inline">--oidc-groups-prefix</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.cacheSeconds</code></td>
+								<td><code class="inline">60</code></td>
+								<td>
+									How long an answer, allowed or denied, is reused.
+									<code class="inline">0</code> asks on every request.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.apiServer</code></td>
+								<td>in cluster</td>
+								<td>
+									<code class="inline"
+										>https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT</code
+									>. <code class="inline">http://</code> works too, e.g.
+									<code class="inline">kubectl proxy</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.tokenFile</code></td>
+								<td>
+									<code class="inline">/var/run/secrets/kubernetes.io/serviceaccount/token</code>
+								</td>
+								<td>
+									Bearer token of the app's ServiceAccount. Read again on every lookup, so projected
+									tokens can rotate.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize.caFile</code></td>
+								<td>
+									<code class="inline">/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</code>
+								</td>
+								<td>
+									CA that signs the API server certificate (<code class="inline">https://</code>
+									only).
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p>
+					<code class="inline">Signon.authorize</code> is only accepted on
+					<code class="inline">auth_type: "signon"</code> servers; elsewhere the config fails to
+					load.
+				</p>
+
+				<h3>Naming must match the cluster</h3>
+				<p>
+					The review asks about <code class="inline">userPrefix + &lt;user header&gt;</code> in the
+					groups <code class="inline">groupsPrefix + &lt;each group&gt;</code> plus
+					<code class="inline">system:authenticated</code>. Those must be the names your
+					RoleBindings use, which are the names the API server gives OIDC users. If the cluster runs
+					with
+					<code class="inline"
+						>--oidc-username-claim=preferred_username --oidc-username-prefix=oidc:
+						--oidc-groups-prefix=oidc:</code
+					>
+					and the proxy forwards the GitLab username and groups, use
+					<code class="inline">"userPrefix": "oidc:"</code> and
+					<code class="inline">"groupsPrefix": "oidc:"</code>. Check with
+					<code class="inline"
+						>kubectl auth can-i get pods -n review-123 --as oidc:alice --as-group oidc:my-team</code
+					>.
+				</p>
+				<p>The e-mail header is not sent to Kubernetes.</p>
+
+				<h3>RBAC for the app</h3>
+				<p>
+					The app's ServiceAccount needs <code class="inline">create</code> on
+					<code class="inline">subjectaccessreviews</code>, which the built-in ClusterRole
+					<code class="inline">system:auth-delegator</code> grants:
+				</p>
+				<pre><code>apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sveltemyadmin
+  namespace: tools
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sveltemyadmin-auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: sveltemyadmin
+    namespace: tools</code></pre>
+				<p>
+					Run the Deployment with <code class="inline">serviceAccountName: sveltemyadmin</code> and
+					keep <code class="inline">automountServiceAccountToken</code> on (the default), so the
+					token and CA appear at the default paths.
+				</p>
+
+				<h3>Who may use a namespace</h3>
+				<p>
+					Grant people the right the review checks. Here the GitLab group
+					<code class="inline">my-team</code> may get pods in
+					<code class="inline">review-123</code>, and therefore use the MySQL server of that
+					namespace:
+				</p>
+				<pre><code>apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+  namespace: review-123
+rules:
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-team-pod-reader
+  namespace: review-123
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-reader
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: oidc:my-team</code></pre>
+				<p>
+					The built-in ClusterRole <code class="inline">view</code>, bound with a RoleBinding in the
+					namespace, works as well.
+				</p>
+
+				<h3>Caching and failures</h3>
+				<ul>
+					<li>
+						Answers are cached in memory per API server, namespace, resource, user and set of
+						groups, for <code class="inline">cacheSeconds</code>. A RoleBinding you remove takes
+						effect after at most that delay. Identical lookups that arrive together share one
+						request.
+					</li>
+					<li>
+						Errors are never cached. If the API server is unreachable, answers with an error status,
+						an unreadable body, or does not answer within 5 seconds, the request fails closed with
+						<code class="inline">503 Cannot verify your access right now.</code> The cause goes to
+						the server log, never the token.
+					</li>
+					<li>
+						The check runs before any MySQL connection is opened. Public pages (<code class="inline"
+							>/login</code
+						>, <code class="inline">/api/health</code>) still render for a refused person, as if
+						they were signed out.
+					</li>
+					<li>
+						With the <a href="audit.html">audit log</a> on, refusals are logged as
+						<code class="inline">denied</code> events with reason
+						<code class="inline">not-authorized</code> or
+						<code class="inline">authorization-error</code>.
+					</li>
+				</ul>
+
+				<h2 id="discovery">Server discovery</h2>
+				<p>
+					With one MySQL per merge request, listing every review environment in
+					<code class="inline">Servers</code> does not scale.
+					<code class="inline">ServerDiscovery</code>
+					asks the Kubernetes API which namespaces and MySQL Services exist, and offers each one as
+					a
+					<code class="inline">signon</code> server. The connecting account is read from a Secret of
+					the namespace, and RBAC of the same namespace decides who may use it. The check is on by
+					default.
+				</p>
+				<pre><code>{
+	"Servers": [],
+	"ServerDiscovery": {
+		"type": "kubernetes",
+		"namespaceSelector": "env=review",
+		"serviceSelector": "app.kubernetes.io/name=mysql",
+		"port": "mysql",
+		"verbose": "{namespace}: {annotation:gitlab.com/mr-title}",
+		"secret": { "name": "mysql-auth", "user": "root", "passwordKey": "mysql-root-password" },
+		"authorize": { "userPrefix": "oidc:", "groupsPrefix": "oidc:" },
+		"server": {
+			"Signon": { "identity": { "trustedProxies": ["10.42.0.0/16"] } },
+			"pmadb": "phpmyadmin",
+			"SignonURL": "/oauth2/start"
+		}
+	}
+}</code></pre>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Key</th>
+								<th>Default</th>
+								<th>Meaning</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">type</code></td>
+								<td>none</td>
+								<td><code class="inline">kubernetes</code>, the only provider so far.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">namespaceSelector</code></td>
+								<td>none</td>
+								<td>
+									Label selector of the namespaces to look in, e.g.
+									<code class="inline">env=review</code>. Required.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">serviceSelector</code></td>
+								<td>none</td>
+								<td>Label selector of the MySQL Services in them. Required.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">port</code></td>
+								<td><code class="inline">mysql</code></td>
+								<td>
+									Service port, by name or number. A name the Service lacks falls back to its only
+									port; Services with several ports and none matching are skipped.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">host</code></td>
+								<td><code class="inline">{service}.{namespace}.svc</code></td>
+								<td>Host the app connects to.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">verbose</code></td>
+								<td><code class="inline">{namespace}</code></td>
+								<td>
+									Name shown in the server switcher. Blank after filling:
+									<code class="inline">&lt;namespace&gt;/&lt;service&gt;</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">secret.name</code></td>
+								<td>none</td>
+								<td>Secret in the namespace that holds the MySQL account. Required.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">secret.user</code></td>
+								<td><code class="inline">root</code></td>
+								<td>
+									User name, unless <code class="inline">secret.userKey</code> names a key of the
+									Secret holding it.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">secret.userKey</code></td>
+								<td>none</td>
+								<td>Key of the Secret with the user name.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">secret.passwordKey</code></td>
+								<td>none</td>
+								<td>Key of the Secret with the password. Required.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorize</code></td>
+								<td><code class="inline">get pods</code></td>
+								<td>
+									The RBAC question of Kubernetes RBAC above, without
+									<code class="inline">namespace</code> and the API access keys, asked in each
+									server's own namespace. <code class="inline">false</code> lets in everyone the
+									proxy lets through.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">refreshSeconds</code></td>
+								<td><code class="inline">30</code></td>
+								<td>How long the server list and each Secret are reused. At least 5.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">server</code></td>
+								<td><code class="inline">{}</code></td>
+								<td>
+									Settings of every discovered server, like an entry of
+									<code class="inline">Servers</code>:
+									<code class="inline">Signon.identity</code> (required),
+									<code class="inline">pmadb</code>, <code class="inline">controluser</code>,
+									<code class="inline">SignonURL</code>, <code class="inline">LogoutURL</code>,
+									<code class="inline">hide_db</code>... Not <code class="inline">auth_type</code>,
+									<code class="inline">host</code>, <code class="inline">port</code>,
+									<code class="inline">socket</code>, <code class="inline">user</code>,
+									<code class="inline">password</code> or <code class="inline">verbose</code>.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">apiServer</code>, <code class="inline">tokenFile</code>,
+									<code class="inline">caFile</code>
+								</td>
+								<td>in cluster</td>
+								<td>As for <code class="inline">Signon.authorize</code>.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p>
+					<code class="inline">host</code>, <code class="inline">verbose</code> and
+					<code class="inline">secret.name</code> accept <code class="inline">{namespace}</code>,
+					<code class="inline">{service}</code>, <code class="inline">{label:&lt;key&gt;}</code> and
+					<code class="inline">{annotation:&lt;key&gt;}</code>. Labels and annotations are the
+					namespace's own. A missing one fills in as empty.
+				</p>
+
+				<p>
+					Ready-made manifests (the app with this config and RBAC, two example review environments)
+					and a local walkthrough are in the <code class="inline">deploy/kubernetes</code> folder of
+					the repository; the <code class="inline">Dockerfile</code> at its root builds the image.
+				</p>
+
+				<h3>How discovered servers behave</h3>
+				<ul>
+					<li>
+						They come after the servers of <code class="inline">Servers</code>, sorted by namespace
+						and Service. Configured servers keep their position, so
+						<code class="inline">?server=2</code> and cookie sessions keep working. A discovered
+						server is named by its id,
+						<code class="inline">k8s:&lt;namespace&gt;/&lt;service&gt;</code>:
+						<code class="inline">/?server=k8s:review-123/mysql</code> opens it.
+					</li>
+					<li>
+						The chosen server is remembered in the <code class="inline">sma_server</code> cookie, so
+						the next pages stay on it. A server that disappeared (merged MR, deleted namespace) is
+						no longer offered.
+					</li>
+					<li>
+						When nobody chose a server (no <code class="inline">?server=</code>, nothing remembered,
+						or the remembered one is gone), the request goes to
+						<code class="inline">ServerDefault</code>, the first server there is. If RBAC refuses
+						the person there, a <code class="inline">GET</code> is redirected to the first server
+						RBAC allows them on, so nobody lands on a dead end. If it allows them nowhere:
+						<code class="inline">403 You do not have access to any database server.</code> A server
+						asked for explicitly keeps its <code class="inline">403</code>.
+					</li>
+					<li>
+						The server switcher only lists the servers whose RBAC lets the person in, plus the
+						current one. Each check is the same cached review as the request itself makes. A server
+						whose check fails is hidden.
+					</li>
+					<li>
+						Two API calls list the namespaces and the Services, at most once per
+						<code class="inline">refreshSeconds</code>. The first request waits for the list; later
+						ones get the current list while a newer one loads in the background. If a refresh fails,
+						the previous list stays in use and the error goes to the server log.
+					</li>
+					<li>
+						A Secret is read when a request needs that server, and kept in memory for
+						<code class="inline">refreshSeconds</code>. It never goes into a cookie, a page or a
+						log.
+					</li>
+					<li>
+						With no server configured and none discovered, pages answer
+						<code class="inline">503 No database server is available right now.</code> If the first
+						listing fails:
+						<code class="inline">503 Cannot list the database servers right now.</code> If the
+						Secret cannot be read:
+						<code class="inline">503 Cannot read the account of this server right now.</code>
+						<code class="inline">/api/health</code> answers in all cases, so liveness probes do not
+						depend on the API server.
+					</li>
+				</ul>
+
+				<h3>RBAC for discovery</h3>
+				<p>
+					On top of <code class="inline">system:auth-delegator</code> (see RBAC for the app above),
+					the ServiceAccount needs to list namespaces and Services cluster-wide, and to read the
+					MySQL Secret in the review namespaces. Restrict the Secret right to its name:
+				</p>
+				<pre><code>apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sveltemyadmin-discovery
+rules:
+  - apiGroups: ['']
+    resources: ['namespaces', 'services']
+    verbs: ['list']
+  - apiGroups: ['']
+    resources: ['secrets']
+    resourceNames: ['mysql-auth']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sveltemyadmin-discovery
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sveltemyadmin-discovery
+subjects:
+  - kind: ServiceAccount
+    name: sveltemyadmin
+    namespace: tools</code></pre>
+				<p>
+					A ClusterRoleBinding lets the app read <code class="inline">mysql-auth</code> in every
+					namespace. To limit it to the review namespaces, bind the ClusterRole with a RoleBinding
+					in each of them instead, from the pipeline that creates the namespace. The list rights
+					still need the ClusterRoleBinding.
+				</p>
+
+				<h2 id="security">Security checklist</h2>
+				<p>Trusted headers are only as safe as the network path in front of the app.</p>
+				<ul>
+					<li>
+						<strong>The app must be unreachable except through the proxy.</strong> Bind the Service
+						to <code class="inline">ClusterIP</code> (or <code class="inline">127.0.0.1</code>), and
+						add a NetworkPolicy or firewall rule that only lets the proxy in. If a person can reach
+						the app from an address listed in <code class="inline">trustedProxies</code>, they can
+						be anyone.
+					</li>
+					<li>
+						<strong>Keep <code class="inline">trustedProxies</code> tight.</strong> Prefer the
+						proxy's own addresses over a whole private range.
+					</li>
+					<li>
+						<strong>Make the proxy overwrite the identity headers</strong>, never pass
+						client-supplied ones through. Test it: send
+						<code class="inline">X-Auth-Request-User: someone-else</code> through the proxy and
+						check the user menu.
+					</li>
+					<li>
+						<strong>The MySQL account is shared.</strong> Everyone signed in acts as
+						<code class="inline">user</code>. Give it only the privileges the team needs.
+					</li>
+					<li>
+						Two-factor authentication is skipped for <code class="inline">signon</code> servers.
+						Enforce MFA in the identity provider.
+					</li>
+				</ul>
+
+				<h2 id="ui">What people see</h2>
+				<ul>
+					<li>
+						The user menu shows the identity and the account, e.g.
+						<code class="inline">alice (as admin@mysql)</code>.
+					</li>
+					<li>
+						"Change password" is hidden: changing the shared account's password would lock everyone
+						out.
+					</li>
+					<li>"Log out" sends the browser to <code class="inline">LogoutURL</code>.</li>
+					<li>
+						Each person has their own preferences, query history, recent and favourite tables,
+						bookmarks, saved searches, table UI settings (sorting, column order), export templates,
+						designer settings and hidden navigation items. They are stored under the identity, not
+						under the shared MySQL account.
+					</li>
+					<li>Change tracking records the identity as the author of each change.</li>
+					<li>
+						User groups (menu restrictions) still apply per MySQL account, so everyone on the server
+						gets the shared account's group.
+					</li>
+				</ul>
+
+				<h2 id="troubleshooting">Troubleshooting</h2>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Symptom</th>
+								<th>Cause</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									Config fails to load,
+									<code class="inline">Servers.N.Signon.identity.trustedProxies</code>
+								</td>
+								<td>Missing, empty, or an entry that is not an IP or CIDR.</td>
+							</tr>
+							<tr>
+								<td>
+									Always <code class="inline">401</code> or sent to
+									<code class="inline">SignonURL</code>
+								</td>
+								<td>
+									The peer is not in <code class="inline">trustedProxies</code> (check the address
+									the app sees, IPv6 included), the user header name does not match, or the header
+									is empty or duplicated.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">503</code> Cannot log in to the MySQL server</td>
+								<td>
+									MySQL rejected the server's <code class="inline">user</code> /
+									<code class="inline">password</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">403</code> with an AllowDeny message</td>
+								<td>A rule matched the shared MySQL account or the client IP.</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">403</code> You do not have access to this server (Kubernetes
+									namespace …)
+								</td>
+								<td>
+									RBAC denies the person. Check the RoleBinding and the prefixes with
+									<code class="inline">kubectl auth can-i … --as … --as-group …</code>. A fix shows
+									after <code class="inline">cacheSeconds</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">503</code> Cannot verify your access right now</td>
+								<td>
+									The SubjectAccessReview failed; the server log says why. Common causes: no
+									<code class="inline">system:auth-delegator</code> binding (HTTP 403 from the API),
+									<code class="inline">apiServer</code> unset outside a cluster, unreadable
+									<code class="inline">tokenFile</code> / <code class="inline">caFile</code>.
+								</td>
+							</tr>
+							<tr>
+								<td>Config fails to load, <code class="inline">ServerDiscovery…</code></td>
+								<td>
+									A required key is missing (<code class="inline">namespaceSelector</code>,
+									<code class="inline">serviceSelector</code>,
+									<code class="inline">secret.name</code>,
+									<code class="inline">secret.passwordKey</code>,
+									<code class="inline">server.Signon.identity.trustedProxies</code>), a template
+									uses another placeholder, or <code class="inline">server</code> sets a key
+									discovery fills in.
+								</td>
+							</tr>
+							<tr>
+								<td>A review environment is missing from the switcher</td>
+								<td>
+									Its namespace or Service lacks the selector labels, the Service has several ports
+									and none named <code class="inline">port</code>, RBAC denies the person, or the
+									list is younger than <code class="inline">refreshSeconds</code>.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">403</code> You do not have access to any database server
+								</td>
+								<td>
+									RBAC allows the person on none of the servers. Check their RoleBindings, and the
+									prefixes, with
+									<code class="inline">kubectl auth can-i … --as … --as-group …</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">503</code> Cannot list the database servers right now</td>
+								<td>
+									The first listing failed: no <code class="inline">list</code> right on namespaces
+									or Services (HTTP 403 in the server log), or the API server is unreachable.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">503</code> Cannot read the account of this server right now
+								</td>
+								<td>
+									No <code class="inline">get</code> right on the Secret, the Secret does not exist,
+									or it lacks <code class="inline">secret.passwordKey</code> /
+									<code class="inline">secret.userKey</code>.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Config fails to load, <code class="inline">Servers.N.Signon.authorize…</code>
+								</td>
+								<td>
+									<code class="inline">namespace</code> missing or not a DNS-1123 label,
+									<code class="inline">apiServer</code> not an http(s) URL, or
+									<code class="inline">authorize</code> on a non-<code class="inline">signon</code>
+									server.
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<h2 id="limits">Current limits</h2>
+				<ul>
+					<li>
+						Per-person storage is keyed by the bare identity name, as phpMyAdmin keys it by the bare
+						username. When several servers share one configuration storage (the same
+						<code class="inline">pmadb</code>, or the SQLite storage of one
+						<code class="inline">host:port</code>), an identity named like a MySQL user who logs in
+						to another of those servers sees that user's rows, and the other way round.
+					</li>
+					<li>
+						MySQL's own logs only see the shared account. Turn on the
+						<a href="audit.html">audit log</a> to record who did what, when and from where, per
+						person.
+					</li>
+					<li>
+						Without <code class="inline">Signon.authorize</code> (or with
+						<code class="inline">ServerDiscovery.authorize: false</code>), authorisation is
+						all-or-nothing: whoever the proxy lets through gets the server.
+					</li>
+					<li>
+						Caches (server list, Secrets, RBAC answers) are per process. With several replicas, each
+						one asks the API server on its own, and a change can show on one replica before another.
+					</li>
+					<li>
+						Discovery polls; it does not watch. A new review environment appears within
+						<code class="inline">refreshSeconds</code>.
+					</li>
+				</ul>
+			</main>
+		</div>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<p>
+					svelteMyAdmin is an independent project and is not affiliated with phpMyAdmin, Oracle or
+					MariaDB.
+				</p>
+				<ul>
+					<li><a href="https://github.com/razvn/svelteMyAdmin">Source on GitHub</a></li>
+					<li><a href="https://github.com/razvn/svelteMyAdmin/issues">Issues</a></li>
+				</ul>
+			</div>
+		</footer>
+	</body>
+</html>

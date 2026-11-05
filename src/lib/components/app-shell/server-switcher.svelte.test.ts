@@ -8,6 +8,7 @@ function makeServers(count: number) {
 		const n = i + 1;
 		const pad = String(n).padStart(2, '0');
 		return {
+			key: String(n),
 			index: n,
 			label: `staging-${pad}`,
 			host: `db${pad}.staging.test`,
@@ -24,14 +25,14 @@ const menuLabels = () =>
 
 describe('server-switcher.svelte', () => {
 	it('shows no search box for five servers or fewer', async () => {
-		const screen = await render(ServerSwitcher, { servers: makeServers(5), current: 1 });
+		const screen = await render(ServerSwitcher, { servers: makeServers(5), current: '1' });
 		await screen.getByRole('button', { name: 'Switch server' }).click();
 		await expect.element(screen.getByRole('menuitemradio', { name: 'staging-01' })).toBeVisible();
 		expect(document.querySelector('input[type="search"]')).toBeNull();
 	});
 
 	it('shows a search box for more than five servers and focuses it on open', async () => {
-		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: 1 });
+		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: '1' });
 		await screen.getByRole('button', { name: 'Switch server' }).click();
 		await expect.element(screen.getByPlaceholder('Filter servers…')).toBeVisible();
 		await expect
@@ -40,7 +41,7 @@ describe('server-switcher.svelte', () => {
 	});
 
 	it('filters the menu by label, host and port, case-insensitively', async () => {
-		const screen = await render(ServerSwitcher, { servers: makeServers(12), current: 1 });
+		const screen = await render(ServerSwitcher, { servers: makeServers(12), current: '1' });
 		await screen.getByRole('button', { name: 'Switch server' }).click();
 		const input = screen.getByPlaceholder('Filter servers…');
 
@@ -55,7 +56,7 @@ describe('server-switcher.svelte', () => {
 	});
 
 	it('shows a hint when nothing matches', async () => {
-		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: 1 });
+		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: '1' });
 		await screen.getByRole('button', { name: 'Switch server' }).click();
 		await screen.getByPlaceholder('Filter servers…').fill('nope');
 		await expect.element(screen.getByRole('status')).toHaveTextContent('No server matches');
@@ -63,9 +64,38 @@ describe('server-switcher.svelte', () => {
 	});
 
 	it('keeps typed characters in the search box instead of menu typeahead', async () => {
-		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: 1 });
+		const screen = await render(ServerSwitcher, { servers: makeServers(6), current: '1' });
 		await screen.getByRole('button', { name: 'Switch server' }).click();
 		await userEvent.keyboard('db03');
 		await expect.element(screen.getByPlaceholder('Filter servers…')).toHaveValue('db03');
+	});
+
+	it('switches to a discovered server by its stable id', async () => {
+		const servers = [
+			...makeServers(5),
+			{
+				key: 'k8s:review-123/mysql',
+				index: 6,
+				label: 'review-123',
+				host: 'h',
+				port: 3306,
+				auth: 'signon'
+			}
+		];
+		let submitted: string | null = null;
+		const onSubmit = (event: SubmitEvent) => {
+			event.preventDefault();
+			submitted = new FormData(event.target as HTMLFormElement).get('server') as string;
+		};
+		document.addEventListener('submit', onSubmit);
+		try {
+			const screen = await render(ServerSwitcher, { servers, current: '1' });
+			await screen.getByRole('button', { name: 'Switch server' }).click();
+			await screen.getByPlaceholder('Filter servers…').fill('review');
+			await userEvent.keyboard('{Enter}');
+			await expect.poll(() => submitted).toBe('k8s:review-123/mysql');
+		} finally {
+			document.removeEventListener('submit', onSubmit);
+		}
 	});
 });

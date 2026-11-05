@@ -11,18 +11,8 @@ import { mysqlRepos, storageKind, storageRepos } from '#lib/server/storage/index
 import type { Run } from '#lib/server/storage/mysql/runner.ts';
 import type { TrackingRepo } from '#lib/server/storage/types.ts';
 import { handleQuery, type TrackingCtx } from '#lib/server/pmadb/tracking.ts';
-import { analyseStatement, parseUse } from '#lib/tracking/analyse.ts';
-
-/** Quick pre-filter: only statements mentioning one of these keywords up front can be tracked. */
-const CANDIDATE = /\b(?:create|alter|drop|rename|insert|replace|update|delete|truncate|use)\b/i;
-
-function textOf(arg: unknown): string | null {
-	if (typeof arg === 'string') return arg;
-	if (arg && typeof arg === 'object' && typeof (arg as { sql?: unknown }).sql === 'string') {
-		return (arg as { sql: string }).sql;
-	}
-	return null;
-}
+import { isWriteStatement, parseUse } from '#lib/tracking/analyse.ts';
+import { bareConnection, inlineValues, intercept, statementOf } from '#lib/server/db/intercept.ts';
 
 export interface TrackingHook {
 	/** Release the lazily opened storage connection. */
@@ -43,6 +33,8 @@ export function installTracking(
 	let currentDb: string | null = null;
 	let own: Connection | undefined;
 	let broken = false;
+	// Tracking's own queries run on the bare connection: neither tracked again nor audited.
+	const bare = bareConnection(conn);
 
 	// MySQL: the storage connection is the control user's (opened once, lazily) or the bare user
 	// connection; SQLite needs no connection.
@@ -75,14 +67,13 @@ export function installTracking(
 	if (!repo) return null;
 	const ctx = (): TrackingCtx | null => (broken ? null : { repo, user, server });
 
-	const record = (sql: string | null): Promise<void> => {
-		if (!sql || !CANDIDATE.test(sql.slice(0, 300))) return Promise.resolve();
+	const record = (sql: string): Promise<void> => {
 		const use = parseUse(sql);
 		if (use) {
 			currentDb = use;
 			return Promise.resolve();
 		}
-		if (!analyseStatement(sql)) return Promise.resolve();
+		if (!isWriteStatement(sql)) return Promise.resolve();
 		const db = currentDb;
 		const run = chain.then(async () => {
 			try {
@@ -97,54 +88,17 @@ export function installTracking(
 		return run;
 	};
 
-	const format = (sql: string, values: unknown): string => {
-		if (values === undefined) return sql;
-		try {
-			return (conn as unknown as { format(s: string, v: unknown): string }).format(sql, values);
-		} catch {
-			return sql;
-		}
-	};
-
-	const originals = {
-		query: conn.query.bind(conn) as (...a: unknown[]) => Promise<unknown>,
-		execute: conn.execute.bind(conn) as (...a: unknown[]) => Promise<unknown>
-	};
-	// The user connection without the wrapper: tracking's own queries must not be tracked again.
-	const bare = new Proxy(conn, {
-		get(target, prop) {
-			if (prop === 'query' || prop === 'execute') return originals[prop];
-			const v = Reflect.get(target, prop, target);
-			return typeof v === 'function' ? v.bind(target) : v;
-		}
+	const restore = intercept(conn, async (next, args) => {
+		const result = await next(...args);
+		const statement = statementOf(args);
+		if (statement) await record(inlineValues(conn, statement));
+		return result;
 	});
-
-	const restore: (() => void)[] = [];
-	for (const method of ['query', 'execute'] as const) {
-		const previous = Object.getOwnPropertyDescriptor(conn, method);
-		const original = originals[method];
-		restore.push(() => {
-			if (previous) Object.defineProperty(conn, method, previous);
-			else delete (conn as unknown as Record<string, unknown>)[method];
-		});
-		(conn as unknown as Record<string, unknown>)[method] = async (...args: unknown[]) => {
-			const result = await original(...args);
-			const sql = textOf(args[0]);
-			if (sql !== null) {
-				const values =
-					args[0] && typeof args[0] === 'object'
-						? (args[0] as { values?: unknown }).values
-						: args[1];
-				await record(format(sql, Array.isArray(values) ? values : undefined));
-			}
-			return result;
-		};
-	}
 
 	return {
 		async close() {
 			await chain;
-			for (const r of restore) r();
+			restore();
 			const c = own;
 			own = undefined;
 			await c?.end().catch(() => {});

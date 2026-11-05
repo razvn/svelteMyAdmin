@@ -66,7 +66,7 @@ export const actions: Actions = {
 		}
 
 		const result = await attemptLogin(
-			{ cookies, url, config: locals.config, clientIp: locals.clientIp },
+			{ cookies, url, config: locals.config, clientIp: locals.clientIp, audit: locals.audit },
 			{
 				serverIndex: data.server,
 				user: data.username,

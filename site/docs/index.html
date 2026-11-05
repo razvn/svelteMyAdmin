@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Documentation - svelteMyAdmin</title>
+		<meta
+			name="description"
+			content="How to install, configure and run svelteMyAdmin, and how to set up authentication including single sign-on."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#6366f1" />
+		<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+		<link rel="canonical" href="https://razvn.github.io/svelteMyAdmin/docs/" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+		/>
+		<link rel="stylesheet" href="../styles.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="../"
+					><img src="../assets/logo.svg" alt="" width="32" height="32" /><span
+						>svelteMyAdmin</span
+					></a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="../#features">Features</a>
+					<a href="../#quick-start">Quick start</a>
+					<a class="nav-docs" href="./" aria-current="page">Docs</a>
+					<a class="btn btn-sm" href="https://github.com/razvn/svelteMyAdmin">GitHub</a>
+				</nav>
+			</div>
+		</header>
+
+		<div class="wrap docs">
+			<nav class="docs-nav" aria-label="Documentation">
+				<h2>Getting started</h2>
+				<ul>
+					<li><a href="./" aria-current="page">Overview</a></li>
+				</ul>
+				<h2>Authentication</h2>
+				<ul>
+					<li><a href="signon.html">Single sign-on (signon)</a></li>
+				</ul>
+				<h2>Operations</h2>
+				<ul>
+					<li><a href="audit.html">Audit log</a></li>
+				</ul>
+			</nav>
+
+			<main id="main" class="doc">
+				<h1>Documentation</h1>
+				<p>
+					svelteMyAdmin is configured like phpMyAdmin: the same
+					<code class="inline">$cfg</code> keys, written as JSON. This overview covers installing
+					and running it. The guides cover features that need setup.
+				</p>
+
+				<div class="doc-cards">
+					<a href="signon.html"
+						><strong>Single sign-on</strong
+						><span
+							>Log people in through oauth2-proxy or another SSO proxy, no MySQL passwords. On
+							Kubernetes: RBAC per namespace and discovered review databases.</span
+						></a
+					>
+					<a href="audit.html"
+						><strong>Audit log</strong
+						><span>Record who did what, when and from where, per person, as JSON lines.</span></a
+					>
+				</div>
+
+				<h2 id="install">Install and run</h2>
+				<p>Requires Node.js 22 or newer and pnpm.</p>
+				<pre><code>pnpm install
+cp config.sample.json config.json
+pnpm build
+SMA_CONFIG=/path/to/config.json node build</code></pre>
+				<p>
+					For development, <code class="inline">pnpm db:up</code> starts demo MySQL 8.4 and MariaDB
+					11.4 servers with Docker (<code class="inline">root</code> /
+					<code class="inline">root</code>), then <code class="inline">pnpm dev</code> runs the app.
+				</p>
+
+				<h2 id="config">Configuration file</h2>
+				<p>
+					The app reads <code class="inline">config.json</code> from its working directory, or the
+					path in <code class="inline">SMA_CONFIG</code>. Key names and defaults mirror phpMyAdmin's
+					<code class="inline">config.default.php</code>, so an existing
+					<code class="inline">config.inc.php</code> translates almost line by line. One difference:
+					<code class="inline">Servers</code> is a JSON array, while
+					<code class="inline">ServerDefault</code> stays 1-based.
+				</p>
+				<pre><code>{
+	"blowfish_secret": "32 random characters or more",
+	"Servers": [
+		{ "verbose": "Local MySQL", "host": "127.0.0.1", "port": 3306, "auth_type": "cookie" }
+	]
+}</code></pre>
+
+				<h2 id="auth">Authentication types</h2>
+				<p>Each server picks how people log in with <code class="inline">auth_type</code>.</p>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>auth_type</th>
+								<th>Who logs in</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">cookie</code></td>
+								<td>
+									Login form with a MySQL user and password. The default. Supports two-factor
+									authentication.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">config</code></td>
+								<td>
+									No login. The app uses the server's <code class="inline">user</code> /
+									<code class="inline">password</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">http</code></td>
+								<td>HTTP Basic authentication with a MySQL user and password.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">signon</code></td>
+								<td>
+									An SSO proxy identifies the person. See <a href="signon.html">Single sign-on</a>.
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</main>
+		</div>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<p>
+					svelteMyAdmin is an independent project and is not affiliated with phpMyAdmin, Oracle or
+					MariaDB.
+				</p>
+				<ul>
+					<li><a href="https://github.com/razvn/svelteMyAdmin">Source on GitHub</a></li>
+					<li><a href="https://github.com/razvn/svelteMyAdmin/issues">Issues</a></li>
+				</ul>
+			</div>
+		</footer>
+	</body>
+</html>

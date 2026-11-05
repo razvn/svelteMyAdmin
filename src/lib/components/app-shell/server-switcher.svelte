@@ -10,12 +10,15 @@
 	const { t } = useI18n();
 
 	interface ServerEntry extends PickableServer {
+		/** Stable server name (position or discovery id), the form value. */
+		key: string;
 		auth: string;
 	}
 
 	interface Props {
 		servers: ServerEntry[];
-		current: number;
+		/** `key` of the active server. */
+		current: string;
 	}
 
 	let { servers, current }: Props = $props();
@@ -24,7 +27,7 @@
 	const SEARCH_MIN_SERVERS = 5;
 
 	let form: HTMLFormElement | undefined = $state();
-	let target = $state(0);
+	let target = $state('');
 	let query = $state('');
 	let filterEl: HTMLInputElement | null = $state(null);
 
@@ -32,9 +35,9 @@
 	const matches = $derived(filterServers(servers, query));
 	const noMatch = $derived(query.trim() !== '' && matches.length === 0);
 
-	async function choose(index: number) {
-		if (index === current) return;
-		target = index;
+	async function choose(key: string) {
+		if (key === current) return;
+		target = key;
 		await tick();
 		// The logout endpoint clears the session, then continues with the chosen server.
 		form?.requestSubmit();
@@ -54,7 +57,7 @@
 			event.preventDefault();
 			event.stopPropagation();
 			const first = matches[0];
-			if (first) void choose(first.index);
+			if (first) void choose(first.key);
 			return;
 		}
 		// Arrows, Tab and Escape keep their menu behaviour; other keys stay in the search box
@@ -64,7 +67,7 @@
 	}
 </script>
 
-<!-- Logging out first keeps one session per browser: /logout redirects to /login?server=N. -->
+<!-- Logging out first keeps one session per browser: /logout redirects to /login?server=<key>. -->
 <form bind:this={form} method="POST" action="/logout" class="hidden">
 	<input type="hidden" name="server" value={target} />
 </form>
@@ -99,9 +102,9 @@
 			</div>
 		{/if}
 		<DropdownMenu.Label>{t('Server')}</DropdownMenu.Label>
-		<DropdownMenu.RadioGroup value={String(current)} onValueChange={(v) => choose(Number(v))}>
-			{#each matches as s (s.index)}
-				<DropdownMenu.RadioItem value={String(s.index)}>{s.label}</DropdownMenu.RadioItem>
+		<DropdownMenu.RadioGroup value={current} onValueChange={(v) => choose(v)}>
+			{#each matches as s (s.key)}
+				<DropdownMenu.RadioItem value={s.key}>{s.label}</DropdownMenu.RadioItem>
 			{/each}
 		</DropdownMenu.RadioGroup>
 		{#if noMatch}

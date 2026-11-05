@@ -5,6 +5,7 @@
 import type { Connection } from 'mysql2/promise';
 import type { ServerConfig } from '#lib/server/config/schema.ts';
 import { createConnection } from '#lib/server/db/connection.ts';
+import { bareConnection } from '#lib/server/db/intercept.ts';
 
 export type Run = <T>(fn: (conn: Connection) => Promise<T>) => Promise<T>;
 
@@ -29,10 +30,12 @@ export type ControlServer = Pick<
 /**
  * Runner on the control connection (opened and closed per call) or, without a control user, on the
  * connection returned by `own` (never closed here). Rejects when the connection or `fn` fails.
+ * Storage queries on the user's connection bypass its wrappers: the app's own bookkeeping
+ * (recent tables, history, ...) is neither tracked nor audited as a statement of the user.
  */
 export function controlRunner(server: ControlServer, own: () => Promise<Connection>): Run {
 	return async (fn) => {
-		if (!server.controluser) return fn(await own());
+		if (!server.controluser) return fn(bareConnection(await own()));
 		const conn = await createConnection(
 			{
 				...server,

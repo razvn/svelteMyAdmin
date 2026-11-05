@@ -1,0 +1,171 @@
+# Two example review environments (one per merge request) for trying discovery out, plus a namespace
+# without the review label whose MySQL must not be offered. Not for production: fixed passwords.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: review-1
+  labels:
+    env: review
+  annotations:
+    gitlab.com/mr-title: Fix login
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: review-2
+  labels:
+    env: review
+  annotations:
+    gitlab.com/mr-title: New export
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scratch
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-auth
+  namespace: review-1
+stringData:
+  mysql-root-password: review-1-password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-auth
+  namespace: review-2
+stringData:
+  mysql-root-password: review-2-password
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: review-1
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: mysql-auth, key: mysql-root-password }
+            - name: MYSQL_DATABASE
+              value: shop
+          ports:
+            - containerPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: review-2
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:11.4
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: mysql-auth, key: mysql-root-password }
+            - name: MARIADB_DATABASE
+              value: reports
+          ports:
+            - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: review-1
+  labels:
+    app.kubernetes.io/name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: review-2
+  labels:
+    app.kubernetes.io/name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+---
+# Matches the Service selector but its namespace lacks env=review: never offered.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: scratch
+  labels:
+    app.kubernetes.io/name: mysql
+spec:
+  ports:
+    - name: mysql
+      port: 3306
+---
+# Who may use which environment: the group team-a on review-1, the user carol on review-2.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: review-pod-reader
+rules:
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-a
+  namespace: review-1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: review-pod-reader
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: oidc:team-a
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: carol
+  namespace: review-2
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: review-pod-reader
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: oidc:carol

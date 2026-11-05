@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	let settings = DEFAULT_VIEW;
 	const settingsAvailable = hasRepo(locals.server, 'designerSettings');
 	if (settingsAvailable && locals.session) {
-		const user = locals.session.user;
+		const user = locals.session.storageUser;
 		const stored = await withRepo(locals, 'designerSettings', (r) => loadDesignerSettings(r, user));
 		if (stored) settings = toView(stored);
 	}
@@ -154,7 +154,7 @@ export const actions: Actions = {
 		const value = String(fd.get('value') ?? '').slice(0, 32);
 		if (!isDesignerKey(key) || !locals.session)
 			return fail(400, { error: locals.i18n.t('Invalid setting.') });
-		const user = locals.session.user;
+		const user = locals.session.storageUser;
 		const done = await withRepo(locals, 'designerSettings', async (r) => {
 			await saveDesignerSetting(r, user, key, value);
 			return true;

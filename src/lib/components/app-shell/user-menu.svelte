@@ -14,19 +14,34 @@
 
 	interface Props {
 		user: string;
+		/** `signon`: the person behind the shared MySQL account `user`. */
+		identity?: string | null;
 		host: string;
 		serverLabel: string;
 		canLogout: boolean;
 		canChangePassword?: boolean;
 	}
 
-	let { user, host, serverLabel, canLogout, canChangePassword = false }: Props = $props();
+	let {
+		user,
+		identity = null,
+		host,
+		serverLabel,
+		canLogout,
+		canChangePassword = false
+	}: Props = $props();
 
 	async function changeLanguage(code: string) {
 		if (code !== i18n.locale) await setLanguage(code);
 	}
 
-	const initials = $derived(user.slice(0, 2).toUpperCase() || '?');
+	const displayName = $derived(identity ?? user);
+	const initials = $derived(displayName.slice(0, 2).toUpperCase() || '?');
+	const connection = $derived(
+		identity
+			? t('{identity} (as {account})', { identity, account: `${user}@${host}` })
+			: `${user}@${host}`
+	);
 </script>
 
 <DropdownMenu.Root>
@@ -48,7 +63,7 @@
 					class="hidden max-w-48 truncate text-sm font-medium xl:block"
 					data-testid="connection-info"
 				>
-					{user}@{host}
+					{connection}
 				</span>
 				<ChevronDown class="hidden size-4 text-muted-foreground xl:block" aria-hidden="true" />
 			</button>
@@ -56,8 +71,8 @@
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content align="end" class="w-64">
 		<DropdownMenu.Label class="flex flex-col gap-0.5 font-normal">
-			<span class="truncate text-sm font-semibold">{user}</span>
-			<span class="truncate text-xs text-muted-foreground">{user}@{host}</span>
+			<span class="truncate text-sm font-semibold">{displayName}</span>
+			<span class="truncate text-xs text-muted-foreground">{connection}</span>
 			<span class="truncate text-xs text-muted-foreground">{serverLabel}</span>
 		</DropdownMenu.Label>
 		{#if canChangePassword}

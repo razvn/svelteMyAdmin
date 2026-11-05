@@ -14,7 +14,7 @@ export interface ExportTemplate {
 /** The `export_type` column value (`server`, `database`, `table`, `raw`). */
 export type TemplateType = ExportScope;
 
-const username = (locals: App.Locals) => locals.session?.user ?? '';
+const username = (locals: App.Locals) => locals.session?.storageUser ?? '';
 
 /** null = configuration storage unavailable (the templates bar is hidden). */
 export async function listTemplates(

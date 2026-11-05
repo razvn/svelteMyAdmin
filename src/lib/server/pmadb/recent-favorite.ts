@@ -12,9 +12,9 @@ const MAX_LOGINS = 500;
 const memory = new Map<string, TableRef[]>();
 
 const memoryKey = (locals: App.Locals, kind: ListKind) =>
-	`${kind}\n${locals.serverIndex}\n${locals.session?.user ?? ''}\n${locals.session?.host ?? ''}:${locals.session?.port ?? 0}`;
+	`${kind}\n${locals.serverId}\n${locals.session?.storageUser ?? ''}\n${locals.session?.host ?? ''}:${locals.session?.port ?? 0}`;
 
-const username = (locals: App.Locals) => locals.session?.user ?? '';
+const username = (locals: App.Locals) => locals.session?.storageUser ?? '';
 
 const maxFor = (locals: App.Locals, kind: ListKind) =>
 	Math.max(0, kind === 'recent' ? locals.config.NumRecentTables : locals.config.NumFavoriteTables);

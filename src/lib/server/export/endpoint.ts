@@ -11,7 +11,8 @@ import { buildDefaults } from './defaults.ts';
 import { exportFilename } from './filename.ts';
 import { exportPlugins, IGNORES_STRUCTURE_OR_DATA, pluginsForScope } from './registry.ts';
 import { ExportInputError, checkExportQuery, parseExportForm } from './request.ts';
-import { exportToStream, exportToText, type ExportEnv } from './run.ts';
+import { exportToStream, exportToText, type ExportEnv, type ExportRequest } from './run.ts';
+import type { AuditBody } from '#lib/server/audit/index.ts';
 import {
 	createTemplate,
 	deleteTemplate,
@@ -105,6 +106,27 @@ export async function loadExportPage(event: RequestEvent, level: ExportLevel) {
 	};
 }
 
+/** What an export hands out, for the audit log. */
+export function exportAuditBody(req: ExportRequest): AuditBody {
+	const format = req.plugin.id;
+	const [db] = req.databases;
+	switch (req.scope) {
+		case 'server':
+			return { event: 'export', scope: 'server', format, databases: req.databases };
+		case 'database':
+			return { event: 'export', scope: 'db', format, db, tables: req.tables?.map((t) => t.name) };
+		case 'table': {
+			const tables = req.table === undefined ? undefined : [req.table];
+			if (req.where || req.sqlQuery) {
+				return { event: 'export', scope: 'rows', format, db, tables, sql: req.sqlQuery };
+			}
+			return { event: 'export', scope: 'table', format, db, tables };
+		}
+		case 'raw':
+			return { event: 'export', scope: 'rows', format, db, sql: req.sqlQuery };
+	}
+}
+
 export async function handleExportPost(event: RequestEvent, level: ExportLevel): Promise<Response> {
 	const { locals, params, request } = event;
 	const form = await request.formData();
@@ -126,6 +148,8 @@ export async function handleExportPost(event: RequestEvent, level: ExportLevel):
 	} else if (!(await dbi.databaseExists(req.databases[0]))) {
 		error(404, locals.i18n.t('Database not found'));
 	}
+
+	locals.audit.write(exportAuditBody(req));
 
 	const info = await dbi.getServerInfo();
 	const server = locals.server;

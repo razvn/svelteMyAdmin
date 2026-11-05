@@ -1,0 +1,135 @@
+# svelteMyAdmin in its own namespace, with Kubernetes server discovery and RBAC checks.
+# See deploy/kubernetes/README.md and docs/SIGNON.md ("Kubernetes RBAC", "Server discovery").
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tools
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sveltemyadmin
+  namespace: tools
+---
+# SubjectAccessReviews: "may this person use the server of that namespace?"
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sveltemyadmin-auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: sveltemyadmin
+    namespace: tools
+---
+# Discovery: list namespaces and Services, read only the Secret named mysql-auth.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sveltemyadmin-discovery
+rules:
+  - apiGroups: ['']
+    resources: ['namespaces', 'services']
+    verbs: ['list']
+  - apiGroups: ['']
+    resources: ['secrets']
+    resourceNames: ['mysql-auth']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sveltemyadmin-discovery
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sveltemyadmin-discovery
+subjects:
+  - kind: ServiceAccount
+    name: sveltemyadmin
+    namespace: tools
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sveltemyadmin
+  namespace: tools
+data:
+  # trustedProxies: 127.0.0.1 and ::1 only trust `kubectl port-forward` (local try-out). Behind a real
+  # SSO proxy, put the proxy pods' addresses here instead, and change blowfish_secret (better: mount
+  # the config from a Secret).
+  config.json: |
+    {
+      "blowfish_secret": "change-me-change-me-change-me-change-me",
+      "AuditLog": { "target": "stdout" },
+      "Servers": [],
+      "ServerDiscovery": {
+        "type": "kubernetes",
+        "namespaceSelector": "env=review",
+        "serviceSelector": "app.kubernetes.io/name=mysql",
+        "verbose": "{namespace}: {annotation:gitlab.com/mr-title}",
+        "secret": { "name": "mysql-auth", "passwordKey": "mysql-root-password" },
+        "authorize": { "userPrefix": "oidc:", "groupsPrefix": "oidc:" },
+        "server": {
+          "Signon": { "identity": { "trustedProxies": ["127.0.0.1", "::1"] } }
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sveltemyadmin
+  namespace: tools
+spec:
+  selector:
+    matchLabels:
+      app: sveltemyadmin
+  template:
+    metadata:
+      labels:
+        app: sveltemyadmin
+    spec:
+      serviceAccountName: sveltemyadmin
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: sveltemyadmin:dev
+          # The image built locally (`docker build -t sveltemyadmin:dev .`); use your registry's otherwise.
+          imagePullPolicy: Never
+          env:
+            # The SSO proxy terminates TLS and says so in this header (adapter-node checks the origin).
+            - name: PROTOCOL_HEADER
+              value: x-forwarded-proto
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: sveltemyadmin
+---
+# ClusterIP only: the app must be reachable through the SSO proxy alone.
+apiVersion: v1
+kind: Service
+metadata:
+  name: sveltemyadmin
+  namespace: tools
+spec:
+  selector:
+    app: sveltemyadmin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

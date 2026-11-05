@@ -13,7 +13,9 @@ import { authPluginsFor } from '#lib/sql/privileges/index.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const allowed = (locals: App.Locals) =>
-	locals.config.ShowChgPassword && locals.session?.authType !== 'config';
+	locals.config.ShowChgPassword &&
+	locals.session?.authType !== 'config' &&
+	locals.session?.authType !== 'signon';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!allowed(locals)) return { denied: true as const };

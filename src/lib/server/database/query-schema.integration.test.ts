@@ -36,7 +36,7 @@ for (const { name, port } of servers) {
 		const locals = (extra: Record<string, unknown> = {}) =>
 			({
 				server: { pmadb: '', relation: '', savedsearches: '', controluser: '', ...extra },
-				session: { user: 'root' },
+				session: { user: 'root', storageUser: 'root' },
 				get db() {
 					return Promise.resolve(conn);
 				}

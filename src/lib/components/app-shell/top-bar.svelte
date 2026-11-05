@@ -14,14 +14,23 @@
 	interface Props {
 		session: {
 			user: string;
+			/** `signon`: the person behind the shared MySQL account. */
+			identity?: string | null;
 			host: string;
 			serverLabel: string;
-			serverIndex: number;
+			serverId: string;
 			canLogout: boolean;
 			/** Show "Change password" in the user menu. */
 			canChangePassword?: boolean;
 		};
-		servers: { index: number; label: string; host: string; port: number; auth: string }[];
+		servers: {
+			key: string;
+			index: number;
+			label: string;
+			host: string;
+			port: number;
+			auth: string;
+		}[];
 		onsearch: () => void;
 		/** Toggle the SQL console drawer. */
 		onconsole?: () => void;
@@ -60,7 +69,7 @@
 
 		<div class="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
 			{#if servers.length > 1}
-				<ServerSwitcher {servers} current={session.serverIndex} />
+				<ServerSwitcher {servers} current={session.serverId} />
 			{/if}
 			{#if onconsole}
 				<Button
@@ -81,6 +90,7 @@
 			<ThemeToggle />
 			<UserMenu
 				user={session.user}
+				identity={session.identity}
 				host={session.host}
 				serverLabel={session.serverLabel}
 				canLogout={session.canLogout}

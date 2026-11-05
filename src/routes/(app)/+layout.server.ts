@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { serverLabel } from '#lib/server/auth/index.ts';
+import { switchableServers } from '#lib/server/discovery/switchable.ts';
 import { toNavConfig } from '#lib/server/navigation/config.ts';
 import type { LayoutServerLoad } from './$types';
 
@@ -21,21 +22,18 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	return {
 		session: {
 			user: s.user,
+			identity: s.identity ?? null,
 			host: hostLabel,
 			serverLabel: serverLabel(locals.server),
-			serverIndex: locals.serverIndex,
+			serverId: locals.serverId,
 			// phpMyAdmin hides "Log out" for config auth (nothing to log out of)
 			canLogout: s.authType !== 'config',
-			// phpMyAdmin: ShowChgPassword and not config auth (the password is fixed there)
-			canChangePassword: config.ShowChgPassword && s.authType !== 'config'
+			// phpMyAdmin: ShowChgPassword and not config auth (the password is fixed there); signon
+			// shares the configured account too, so a password change would lock everybody out
+			canChangePassword:
+				config.ShowChgPassword && s.authType !== 'config' && s.authType !== 'signon'
 		},
-		servers: config.Servers.map((server, i) => ({
-			index: i + 1,
-			label: serverLabel(server),
-			host: server.host,
-			port: server.port,
-			auth: server.auth_type
-		})),
+		servers: await switchableServers(locals),
 		nav: toNavConfig(config),
 		consoleMode: consoleMode(config),
 		databases,

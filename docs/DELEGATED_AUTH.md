@@ -1,7 +1,25 @@
 # Delegated authentication & dynamic servers — design
 
-Status: **proposal** (not implemented). Target: an instance deployed on the Kubernetes review
-environment of a project, where every merge request gets its own namespace with its own MySQL.
+Status: **phase one and the phase-two attribution implemented**, the rest is still a proposal. `auth_type: "signon"` with the
+`trusted-header` identity source works (`Signon.identity`, see the README): the identity headers are read
+only from `trustedProxies` peers, and the app connects with the server's configured `user`/`password`.
+Unauthenticated users go to phpMyAdmin's `SignonURL` and "Log out" goes to phpMyAdmin's `LogoutURL`.
+That second key replaces the `Signon.logoutUrl` proposed below. The `kubernetes-sar` authorizer is
+implemented on the static `Servers` (`Signon.authorize` with an explicit `namespace` per server, see
+[SIGNON.md](SIGNON.md#kubernetes-rbac)); it runs as an async `authorize` step of the signon plugin, so
+`getCredentials` stayed synchronous, and its cache lives in memory instead of the session cookie. Server
+discovery is implemented as top-level `ServerDiscovery` (see
+[SIGNON.md](SIGNON.md#server-discovery)), not `ServerProvider`: discovered servers are always `signon`,
+are appended to `Servers` (no `replace` mode), get the stable id `k8s:<namespace>/<service>`, read
+their account from a Secret on demand, and run the RBAC check in their own namespace by default. The
+list is polled, not watched. Not implemented yet: credential sources, the `module` loader and the
+signon session cookie. Per-person configuration storage
+(preferences, history, bookmarks, ...) is keyed by the identity user, and change tracking records it
+(`SessionInfo.storageUser`, see [SIGNON.md](SIGNON.md)). The per-person audit log is implemented
+(`AuditLog`, see [AUDIT.md](AUDIT.md)).
+
+Target: an instance deployed on the Kubernetes review environment of a project, where every merge
+request gets its own namespace with its own MySQL.
 
 ## Requirements (as agreed)
 
@@ -182,7 +200,8 @@ cluster's OIDC config** (`--oidc-username-prefix`, `--oidc-groups-prefix`); a `u
   verify a JWT (`"jwtHeader": "authorization", "jwksUrl": …`).
 - The app connects with an admin account: everything a user does is done as that account. The
   tracking feature (`pma__tracking`) and query history should record the **identity user** so
-  actions stay attributable; add an audit log line per login (identity, server, IP).
+  actions stay attributable; add an audit log line per login (identity, server, IP). Done: see
+  [AUDIT.md](AUDIT.md).
 - CSRF protection stays on (same-origin forms); the proxy's cookie and ours are separate.
 
 ## Implementation plan (if accepted)
@@ -194,6 +213,7 @@ cluster's OIDC config** (`--oidc-username-prefix`, `--oidc-groups-prefix`); a `u
    in-cluster ServiceAccount token + CA) with caching; tests against a mocked API server.
 4. Server providers: interface + `static` (current) + `kubernetes`; stable server ids; filtered by
    authorisation in login/switcher.
-5. Attribute history/tracking/userprefs to the identity user; audit log.
+5. Attribute history/tracking/userprefs to the identity user (done); audit log (done,
+   [AUDIT.md](AUDIT.md)).
 6. Helm/Kustomize example: Deployment, ServiceAccount + RBAC, NetworkPolicy, oauth2-proxy ingress
    annotations; e2e with a fake proxy header and a mocked Kubernetes API (kind cluster optional).

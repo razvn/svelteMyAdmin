@@ -150,6 +150,16 @@ export function analyseStatement(sql: string): Analysis | null {
 	return null;
 }
 
+/** Cheap pre-filter: only statements mentioning one of these keywords up front can write. */
+const CANDIDATE = /\b(?:create|alter|drop|rename|insert|replace|update|delete|truncate)\b/i;
+
+/**
+ * Does `sql` change data or structure (the statements change tracking records)? Shared by change
+ * tracking and the audit log; reads (SELECT, SHOW, ...) are not write statements.
+ */
+export const isWriteStatement = (sql: string): boolean =>
+	CANDIDATE.test(sql.slice(0, 300)) && analyseStatement(sql) !== null;
+
 /** `USE db` => the database name. */
 export function parseUse(sql: string): string | null {
 	const m = re(`^USE\\s+(${PART})\\s*;?\\s*$`).exec(stripLeadingComments(sql));

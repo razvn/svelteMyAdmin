@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Audit log - svelteMyAdmin docs</title>
+		<meta
+			name="description"
+			content="Record who did what, when, from where and on which server in svelteMyAdmin, per person, as JSON lines."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#6366f1" />
+		<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+		<link rel="canonical" href="https://razvn.github.io/svelteMyAdmin/docs/audit.html" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+		/>
+		<link rel="stylesheet" href="../styles.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="../"
+					><img src="../assets/logo.svg" alt="" width="32" height="32" /><span
+						>svelteMyAdmin</span
+					></a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="../#features">Features</a>
+					<a href="../#quick-start">Quick start</a>
+					<a class="nav-docs" href="./" aria-current="page">Docs</a>
+					<a class="btn btn-sm" href="https://github.com/razvn/svelteMyAdmin">GitHub</a>
+				</nav>
+			</div>
+		</header>
+
+		<div class="wrap docs">
+			<nav class="docs-nav" aria-label="Documentation">
+				<h2>Getting started</h2>
+				<ul>
+					<li><a href="./">Overview</a></li>
+				</ul>
+				<h2>Authentication</h2>
+				<ul>
+					<li><a href="signon.html">Single sign-on (signon)</a></li>
+				</ul>
+				<h2>Operations</h2>
+				<ul>
+					<li><a href="audit.html" aria-current="page">Audit log</a></li>
+				</ul>
+				<div class="docs-toc">
+					<h2>On this page</h2>
+					<ul>
+						<li><a href="#fields">Common fields</a></li>
+						<li><a href="#events">Events</a></li>
+						<li><a href="#not-logged">What is not logged</a></li>
+						<li><a href="#config">Configuration</a></li>
+						<li><a href="#why-stdout">Why not the database</a></li>
+						<li><a href="#values">Values and personal data</a></li>
+						<li><a href="#failures">When writing fails</a></li>
+						<li><a href="#kubernetes">Shipping it from Kubernetes</a></li>
+					</ul>
+				</div>
+			</nav>
+
+			<main id="main" class="doc">
+				<h1>Audit log</h1>
+				<p>
+					With <code class="inline">auth_type: "signon"</code> everyone shares one MySQL account, so
+					MySQL's own logs only ever see that account. The audit log records, per person, who did
+					what, when, from where and on which server. It works for every auth type: with
+					<code class="inline">cookie</code>, <code class="inline">http</code> and
+					<code class="inline">config</code> the person is the MySQL user.
+				</p>
+				<p>
+					The log is off unless the top-level key <code class="inline">AuditLog</code> is set. When
+					it is off, nothing is wrapped and no cookie is set.
+				</p>
+
+				<h2 id="fields">Common fields</h2>
+				<p>One JSON object per line (JSON Lines). Every line has these fields:</p>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Field</th>
+								<th>Meaning</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">ts</code></td>
+								<td>ISO 8601 time, UTC.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">event</code></td>
+								<td>
+									<code class="inline">session</code>, <code class="inline">statement</code>,
+									<code class="inline">export</code>, <code class="inline">logout</code> or
+									<code class="inline">denied</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">identity</code></td>
+								<td>
+									The verified person: the SSO identity for <code class="inline">signon</code>, else
+									the MySQL user. <code class="inline">null</code> on
+									<code class="inline">denied</code> lines.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">mysqlUser</code></td>
+								<td>
+									The MySQL account used (the shared one for <code class="inline">signon</code>).
+									<code class="inline">null</code> when none was accepted.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">email</code></td>
+								<td><code class="inline">signon</code> only, when the proxy forwards it.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">server</code>, <code class="inline">serverId</code></td>
+								<td>
+									Server label (<code class="inline">verbose</code>, else
+									<code class="inline">host:port</code>) and its id: the 1-based position in
+									<code class="inline">Servers</code> as text, or
+									<code class="inline">k8s:&lt;namespace&gt;/&lt;service&gt;</code> for a
+									<a href="signon.html#discovery">discovered</a> server.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">clientIp</code></td>
+								<td>
+									Client address, resolved through the top-level
+									<code class="inline">TrustedProxies</code> like the rest of the app.
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<h2 id="events">Events</h2>
+				<h3>session</h3>
+				<p>
+					The first request of a person, and the first one after
+					<code class="inline">sessionIdleMinutes</code> without any request. A sealed browser
+					cookie (<code class="inline">sma_audit</code>, AES-GCM with a key derived from
+					<code class="inline">blowfish_secret</code>) holds who was last seen, on which server and
+					when, and slides forward on every request. A missing, tampered or expired marker, or one
+					for another person or server, starts a new session. "Log out" clears it.
+				</p>
+				<pre><code>{"ts":"2026-11-04T09:12:03.120Z","event":"session","identity":"alice","mysqlUser":"admin","email":"alice@example.com","server":"Production","serverId":"1","clientIp":"203.0.113.7"}</code></pre>
+
+				<h3>statement</h3>
+				<p>
+					Every write statement run for the person, whether it succeeded or failed:
+					<code class="inline">INSERT</code>, <code class="inline">UPDATE</code>,
+					<code class="inline">DELETE</code>, <code class="inline">REPLACE</code>,
+					<code class="inline">TRUNCATE</code>, <code class="inline">CREATE</code> /
+					<code class="inline">ALTER</code> / <code class="inline">DROP</code> of tables, views,
+					indexes and databases, and <code class="inline">RENAME TABLE</code>. These are the
+					statements change tracking records. It does not matter where in the app they come from.
+				</p>
+				<ul>
+					<li>
+						<code class="inline">db</code>: the database selected with
+						<code class="inline">USE</code> before the statement, else
+						<code class="inline">null</code> (generated SQL usually names the database itself).
+					</li>
+					<li>
+						<code class="inline">sql</code>: the statement, cut to
+						<code class="inline">maxSqlLength</code> characters (<code class="inline"
+							>truncated: true</code
+						>
+						then).
+					</li>
+					<li>
+						<code class="inline">ok</code>, then <code class="inline">affectedRows</code> on success
+						or the MySQL <code class="inline">errorCode</code> on failure. The error message is
+						never logged.
+					</li>
+				</ul>
+				<pre><code>{"ts":"2026-11-04T09:14:40.002Z","event":"statement","identity":"alice","mysqlUser":"admin","server":"Production","serverId":"1","clientIp":"203.0.113.7","db":"shop","sql":"UPDATE `orders` SET `status` = 'shipped' WHERE `id` = 1042","ok":true,"affectedRows":1}
+{"ts":"2026-11-04T09:15:02.871Z","event":"statement","identity":"alice","mysqlUser":"admin","server":"Production","serverId":"1","clientIp":"203.0.113.7","db":null,"sql":"DROP TABLE `shop`.`orders`","ok":false,"errorCode":"ER_ROW_IS_REFERENCED_2"}</code></pre>
+				<p>
+					Administration that change tracking ignores is logged too: accounts and privileges (<code
+						class="inline"
+						>CREATE</code
+					>/<code class="inline">ALTER</code>/<code class="inline">DROP</code>/<code class="inline"
+						>RENAME USER</code
+					>, roles, <code class="inline">GRANT</code>, <code class="inline">REVOKE</code>,
+					<code class="inline">SET PASSWORD</code>), routines, events and triggers,
+					<code class="inline">CALL</code>, <code class="inline">SET GLOBAL</code>,
+					<code class="inline">KILL</code>, <code class="inline">FLUSH</code>,
+					<code class="inline">LOAD DATA</code>, plugins and replication control. Passwords and
+					password hashes in these statements are always replaced with
+					<code class="inline">'***'</code>, whatever
+					<code class="inline">includeValues</code> says.
+				</p>
+				<pre><code>{"ts":"2026-11-04T09:16:10.420Z","event":"statement","identity":"alice","mysqlUser":"admin","server":"Production","serverId":"1","clientIp":"203.0.113.7","db":null,"sql":"CREATE USER 'bob'@'%' IDENTIFIED BY '***'","ok":true,"affectedRows":0}</code></pre>
+
+				<h3>export</h3>
+				<p>
+					Every export, downloaded or viewed as text. <code class="inline">scope</code> is
+					<code class="inline">server</code>, <code class="inline">db</code>,
+					<code class="inline">table</code> or <code class="inline">rows</code> (selected rows, or
+					the result of a query), <code class="inline">format</code> the export plugin. Depending on
+					the scope the line also names <code class="inline">db</code>,
+					<code class="inline">databases</code>, <code class="inline">tables</code> and the exported
+					query in <code class="inline">sql</code>.
+				</p>
+				<pre><code>{"ts":"2026-11-04T09:20:11.530Z","event":"export","identity":"alice","mysqlUser":"admin","server":"Production","serverId":"1","clientIp":"203.0.113.7","scope":"db","format":"csv","db":"shop","tables":["customers","orders"]}</code></pre>
+
+				<h3>logout</h3>
+				<p>"Log out" by an authenticated person.</p>
+				<pre><code>{"ts":"2026-11-04T10:02:45.017Z","event":"logout","identity":"alice","mysqlUser":"admin","server":"Production","serverId":"1","clientIp":"203.0.113.7"}</code></pre>
+
+				<h3>denied</h3>
+				<p>
+					Refused access. <code class="inline">identity</code> is
+					<code class="inline">null</code> because nobody was verified, and
+					<code class="inline">claimedUser</code> is the name that was presented.
+				</p>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>reason</th>
+								<th>When</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<code class="inline">allow-denied</code>, <code class="inline">root-denied</code>,
+									<code class="inline">empty-denied</code>
+								</td>
+								<td>
+									An <code class="inline">AllowDeny</code>, <code class="inline">AllowRoot</code> or
+									<code class="inline">AllowNoPassword</code> rule refused the account or client IP.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">untrusted-proxy</code></td>
+								<td>
+									<code class="inline">signon</code>: the user header came from a peer outside
+									<code class="inline">trustedProxies</code>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">invalid-identity</code></td>
+								<td>
+									<code class="inline">signon</code>: the trusted proxy sent an unusable user
+									header.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">not-authorized</code></td>
+								<td>
+									<code class="inline">signon</code>: <code class="inline">Signon.authorize</code>
+									(Kubernetes RBAC) refused the person on this server.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">authorization-error</code></td>
+								<td>
+									<code class="inline">signon</code>:
+									<code class="inline">Signon.authorize</code> could not be checked (API server
+									unreachable or erroring).
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">access-denied</code></td>
+								<td>MySQL refused the user name and password of a cookie or http login.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">login-failed</code></td>
+								<td>A cookie login could not reach MySQL or read the two-factor settings.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">invalid-login</code></td>
+								<td>
+									The login form was invalid: unknown server, empty user, oversized password, bad
+									host.
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<pre><code>{"ts":"2026-11-04T09:30:00.441Z","event":"denied","identity":null,"mysqlUser":null,"server":"Production","serverId":"1","clientIp":"198.51.100.9","reason":"untrusted-proxy","claimedUser":"admin"}</code></pre>
+
+				<h2 id="not-logged">What is not logged</h2>
+				<ul>
+					<li>
+						Reads (<code class="inline">SELECT</code>, <code class="inline">SHOW</code>,
+						<code class="inline">EXPLAIN</code>…). The app runs its own reads on the same
+						connection, so they say nothing about the person.
+					</li>
+					<li>
+						The app's own bookkeeping in the configuration storage (recent tables, history,
+						preferences, tracking rows).
+					</li>
+					<li>Anonymous requests that claim no identity.</li>
+				</ul>
+
+				<h2 id="config">Configuration</h2>
+				<pre><code>{
+	"AuditLog": {
+		"target": "file",
+		"path": "./var/audit.jsonl",
+		"includeValues": false,
+		"sessionIdleMinutes": 30,
+		"maxSqlLength": 4096
+	}
+}</code></pre>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>Key</th>
+								<th>Default</th>
+								<th>Meaning</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code class="inline">target</code></td>
+								<td>required</td>
+								<td><code class="inline">stdout</code> or <code class="inline">file</code>.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">path</code></td>
+								<td>none</td>
+								<td>
+									Required with <code class="inline">file</code>. Relative paths resolve from the
+									directory of the config file. The directory must exist.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">includeValues</code></td>
+								<td><code class="inline">false</code></td>
+								<td>
+									Inline the values the app passes apart from the SQL text (<code class="inline"
+										>?</code
+									>
+									placeholders).
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">sessionIdleMinutes</code></td>
+								<td><code class="inline">30</code></td>
+								<td>Inactivity after which a person's next request is a new session.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">maxSqlLength</code></td>
+								<td><code class="inline">4096</code></td>
+								<td>Longer SQL text is cut and flagged <code class="inline">truncated</code>.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p>
+					<code class="inline">AuditLog</code> is specific to svelteMyAdmin; phpMyAdmin ignores it.
+				</p>
+
+				<h2 id="why-stdout">Why not the database</h2>
+				<p>
+					The log never goes into the <code class="inline">pma__*</code> tables or any other table.
+					In a <code class="inline">signon</code> setup the shared MySQL account can usually delete
+					or rewrite rows there, so a person could erase their own trail through the app. Lines
+					written to stdout leave the process at once. The container runtime keeps them, and a log
+					collector ships them where nobody using the app can reach them.
+				</p>
+
+				<h2 id="values">Values and personal data</h2>
+				<p>
+					With <code class="inline">includeValues: false</code>, values the app sends apart from the
+					SQL text stay out of the log and the statement keeps its
+					<code class="inline">?</code> placeholders. That covers only those separately passed
+					values. Many statements carry their values inline: everything typed on the SQL page, and
+					much of the SQL the app generates. Those values are logged as part of
+					<code class="inline">sql</code>.
+				</p>
+				<div class="callout">
+					<p>
+						Treat the audit log as personal data: restrict who can read it and set a retention
+						period in the log store. Lower <code class="inline">maxSqlLength</code> to keep large
+						values (blobs, imports) out.
+					</p>
+				</div>
+
+				<h2 id="failures">When writing fails</h2>
+				<p>
+					The log fails open. If a line cannot be written (missing directory, full disk, closed
+					stdout), the error is reported once with <code class="inline">console.error</code> and the
+					request goes on. Later lines to that file are dropped until the app restarts. Watch for
+					that <code class="inline">[audit]</code> message in the app's own logs.
+				</p>
+
+				<h2 id="kubernetes">Shipping it from Kubernetes</h2>
+				<p>
+					Use <code class="inline">"target": "stdout"</code>. The kubelet writes container output to
+					<code class="inline">/var/log/containers/*.log</code> on the node, and a node-level
+					collector (Fluent Bit, Vector, the OpenTelemetry Collector, Promtail) ships it. Audit
+					lines are the stdout lines whose JSON has an <code class="inline">event</code> field. A
+					Fluent Bit filter that keeps them:
+				</p>
+				<pre><code>[FILTER]
+    Name    grep
+    Match   kube.*svelte-my-admin*
+    Regex   log ^\{"ts":"[^"]+","event":</code></pre>
+				<p>
+					Then parse <code class="inline">log</code> as JSON and index
+					<code class="inline">identity</code>, <code class="inline">event</code> and
+					<code class="inline">server</code>. Keep the log store outside the namespace of the app,
+					so the people the log is about cannot delete it.
+				</p>
+				<p>
+					With <code class="inline">"target": "file"</code>, mount a volume at the directory of
+					<code class="inline">path</code> and run a sidecar that tails the file. The app only
+					appends to it, so rotate it with copy-and-truncate.
+				</p>
+			</main>
+		</div>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<p>
+					svelteMyAdmin is an independent project and is not affiliated with phpMyAdmin, Oracle or
+					MariaDB.
+				</p>
+				<ul>
+					<li><a href="https://github.com/razvn/svelteMyAdmin">Source on GitHub</a></li>
+					<li><a href="https://github.com/razvn/svelteMyAdmin/issues">Issues</a></li>
+				</ul>
+			</div>
+		</footer>
+	</body>
+</html>

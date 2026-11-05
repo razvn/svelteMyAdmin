@@ -4,7 +4,7 @@ import { withRepo } from '#lib/server/storage/index.ts';
 
 export type { HiddenItem, HiddenType };
 
-const username = (locals: App.Locals) => locals.session?.user ?? '';
+const username = (locals: App.Locals) => locals.session?.storageUser ?? '';
 
 export {
 	deleteHiddenRow,
