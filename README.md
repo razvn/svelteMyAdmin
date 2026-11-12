@@ -113,6 +113,11 @@ sign-in. It starts this app with `auth_type: "signon"` (identity in headers it s
 Only `http(s)` URLs are accepted. Without the key nothing changes. The audit log needs no extra setup: the
 portal user is the identity of every event.
 
+With the portal you configure the servers (each needs an explicit `user` and `password`: everyone shares that
+account), discovery and audit, and nothing about authentication: the portal writes the `signon` settings
+itself. What it sets, what stays yours, and how to wire your own gateway the same way:
+[docs/MULTIADMIN.md](docs/MULTIADMIN.md).
+
 ## Scripts
 
 | Script                           | Purpose                                                                                        |

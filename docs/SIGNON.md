@@ -5,6 +5,8 @@ ingress `auth-url`, Pomerium…) authenticates the person against your identity 
 who they are in HTTP headers. svelteMyAdmin trusts those headers only when the request comes from the
 proxy, then connects to MySQL with the account configured for the server.
 
+Running behind [svelteMultiAdmin](MULTIADMIN.md)? It sets `signon` up itself: see [MULTIADMIN.md](MULTIADMIN.md).
+
 Nobody types a MySQL password, and the password never reaches the browser.
 
 ## How a request is handled

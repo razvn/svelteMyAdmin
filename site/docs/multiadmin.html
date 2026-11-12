@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Hosted by svelteMultiAdmin - svelteMyAdmin docs</title>
+		<meta
+			name="description"
+			content="How to run svelteMyAdmin behind svelteMultiAdmin: what the portal sets, what you configure, the back-link and wiring your own gateway."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#6366f1" />
+		<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+		<link rel="canonical" href="https://razvn.github.io/svelteMyAdmin/docs/multiadmin.html" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+		/>
+		<link rel="stylesheet" href="../styles.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="../"
+					><img src="../assets/logo.svg" alt="" width="32" height="32" /><span
+						>svelteMyAdmin</span
+					></a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="../#features">Features</a>
+					<a href="../#quick-start">Quick start</a>
+					<a class="nav-docs" href="./" aria-current="page">Docs</a>
+					<a class="btn btn-sm" href="https://github.com/razvn/svelteMyAdmin">GitHub</a>
+				</nav>
+			</div>
+		</header>
+
+		<div class="wrap docs">
+			<nav class="docs-nav" aria-label="Documentation">
+				<h2>Getting started</h2>
+				<ul>
+					<li><a href="./">Overview</a></li>
+				</ul>
+				<h2>Authentication</h2>
+				<ul>
+					<li><a href="signon.html">Single sign-on (signon)</a></li>
+					<li><a aria-current="page" href="multiadmin.html">Hosted by svelteMultiAdmin</a></li>
+				</ul>
+				<h2>Operations</h2>
+				<ul>
+					<li><a href="audit.html">Audit log</a></li>
+				</ul>
+				<div class="docs-toc">
+					<h2>On this page</h2>
+					<ul>
+						<li><a href="#what-the-portal-sets-for-you">What the portal sets for you</a></li>
+						<li><a href="#what-you-configure">What you configure</a></li>
+						<li><a href="#the-back-link">The back-link</a></li>
+						<li><a href="#logging-out">Logging out</a></li>
+						<li><a href="#uploads">Uploads</a></li>
+						<li><a href="#wiring-your-own-gateway">Wiring your own gateway</a></li>
+						<li><a href="#limits">Limits</a></li>
+					</ul>
+				</div>
+			</nav>
+
+			<main id="main" class="doc">
+				<h1>Hosted by svelteMultiAdmin</h1>
+				<p>
+					<a href="https://github.com/razvn/svelteMultiAdmin">svelteMultiAdmin</a> is a portal that
+					bundles svelteMyAdmin and
+					<a href="https://github.com/razvn/svelteRedisAdmin">svelteRedisAdmin</a>. People sign in
+					once on the portal, then open this app without a second login. The portal runs this app
+					next to itself, proxies every request, and tells it who the person is. This page lists
+					what this app needs for that, what the portal does for you, and what stays your job.
+				</p>
+				<p>
+					You only need this page to understand the setup, or to wire your own gateway the same way.
+					With the portal, you write the app&#x27;s normal config (servers, discovery, audit) and
+					nothing about authentication.
+				</p>
+				<h2 id="what-the-portal-sets-for-you">What the portal sets for you</h2>
+				<p>
+					When the portal starts this app, it reads your <code class="inline">config.json</code>,
+					<strong>overwrites these keys</strong>, writes the result to a private temporary file and
+					points <code class="inline">SMA_CONFIG</code> at it. On every entry of
+					<code class="inline">Servers</code>, and on the
+					<code class="inline">server</code> template of
+					<code class="inline">ServerDiscovery</code>:
+				</p>
+				<pre><code>{
+	&quot;auth_type&quot;: &quot;signon&quot;,
+	&quot;SignonURL&quot;: &quot;https://admin.example.com/go/myadmin&quot;,
+	&quot;LogoutURL&quot;: &quot;https://admin.example.com/logout&quot;,
+	&quot;Signon&quot;: {
+		&quot;identity&quot;: {
+			&quot;type&quot;: &quot;trusted-header&quot;,
+			&quot;userHeader&quot;: &quot;x-multiadmin-user&quot;,
+			&quot;emailHeader&quot;: &quot;x-multiadmin-email&quot;,
+			&quot;groupsHeader&quot;: &quot;x-multiadmin-groups&quot;,
+			&quot;trustedProxies&quot;: [&quot;127.0.0.1/32&quot;, &quot;::1/128&quot;]
+		}
+	}
+}</code></pre>
+				<p>
+					(<code class="inline">auth_type</code> is not set on the discovery template: discovered
+					servers are always <code class="inline">signon</code>.) Your own
+					<code class="inline">Signon.authorize</code> is kept. At the top level it also sets:
+				</p>
+				<pre><code>{
+	&quot;TrustedProxies&quot;: { &quot;127.0.0.1&quot;: &quot;X-Forwarded-For&quot;, &quot;::1&quot;: &quot;X-Forwarded-For&quot; },
+	&quot;Portal&quot;: { &quot;url&quot;: &quot;https://admin.example.com&quot;, &quot;label&quot;: &quot;Admin portal&quot; }
+}</code></pre>
+				<p>
+					<code class="inline">TrustedProxies</code> makes the audit log and
+					<code class="inline">AllowDeny</code> see the real client address, which the portal passes
+					in <code class="inline">X-Forwarded-For</code>. The app is started with
+					<code class="inline">HOST=127.0.0.1</code>, a loopback <code class="inline">PORT</code>,
+					and <code class="inline">ORIGIN</code> set to its public address, and without
+					<code class="inline">ADDRESS_HEADER</code>, <code class="inline">XFF_DEPTH</code>,
+					<code class="inline">PROTOCOL_HEADER</code>, <code class="inline">HOST_HEADER</code>,
+					<code class="inline">SOCKET_PATH</code> and <code class="inline">BODY_SIZE_LIMIT</code> in
+					its environment.
+				</p>
+				<p>
+					This is
+					<a href="signon.html"><code class="inline">auth_type: &quot;signon&quot;</code></a> with
+					the portal as the &quot;proxy&quot;: the app trusts the identity headers only from the
+					loopback address, and re-reads them on every request.
+				</p>
+				<h2 id="what-you-configure">What you configure</h2>
+				<div class="table-scroll">
+					<table>
+						<thead>
+							<tr>
+								<th>In <code class="inline">config.json</code></th>
+								<th>Why it matters with the portal</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<code class="inline">Servers[].user</code> and
+									<code class="inline">password</code>
+								</td>
+								<td>
+									<strong>Required on every server.</strong>
+									<code class="inline">signon</code> connects with the configured account, shared by
+									everyone. A server without an explicit <code class="inline">user</code> makes the
+									portal refuse to start the app, with a message naming the server.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">Servers[].verbose</code></td>
+								<td>The name shown in the server switcher and in the audit log.</td>
+							</tr>
+							<tr>
+								<td><code class="inline">ServerDiscovery</code></td>
+								<td>
+									Works as documented in <a href="signon.html#server-discovery">SIGNON.md</a>. Its
+									<code class="inline">server</code> template needs no
+									<code class="inline">Signon.identity</code>: the portal adds it.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">Signon.authorize</code> /
+									<code class="inline">ServerDiscovery</code>
+								</td>
+								<td>
+									Kubernetes RBAC narrows who may use a server, using the name and groups from the
+									portal. See <a href="signon.html#kubernetes-rbac">SIGNON.md</a>.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">AuditLog</code></td>
+								<td>
+									Recommended. The portal user is the <code class="inline">identity</code> of every
+									event, with the MySQL account (<code class="inline">mysqlUser</code>) and the real
+									client address. See <a href="audit.html">AUDIT.md</a>.
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<code class="inline">ConfigStorage</code> / <code class="inline">pmadb</code>
+								</td>
+								<td>
+									Preferences, history and bookmarks are kept per person, keyed by the portal user
+									name.
+								</td>
+							</tr>
+							<tr>
+								<td><code class="inline">blowfish_secret</code></td>
+								<td>Set one: it is not derived from the portal&#x27;s secret.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p>
+					You do <strong>not</strong> write: <code class="inline">auth_type</code>,
+					<code class="inline">Signon.identity</code>, <code class="inline">SignonURL</code>,
+					<code class="inline">LogoutURL</code>, <code class="inline">TrustedProxies</code>,
+					<code class="inline">Portal</code>.
+				</p>
+				<h3 id="who-may-open-the-app">Who may open the app</h3>
+				<p>
+					Access to svelteMyAdmin is <strong>all or nothing</strong> per person, decided by the
+					portal&#x27;s access rules (<code class="inline">myadmin: true</code>). Once in, a person
+					is the shared MySQL account of the server they pick. Narrow that with the MySQL privileges
+					of that account, and with <code class="inline">Signon.authorize</code> and discovery for
+					per-namespace access. There is no per-person role or server list here.
+				</p>
+				<h3 id="groups">Groups</h3>
+				<p>
+					For OIDC and trusted-header sign-in the portal passes the person&#x27;s groups in
+					<code class="inline">x-multiadmin-groups</code>, which feed
+					<code class="inline">Signon.authorize</code> (SubjectAccessReview). Groups of the
+					portal&#x27;s local accounts are never passed.
+				</p>
+				<h2 id="the-back-link">The back-link</h2>
+				<p>
+					<code class="inline">Portal</code> adds <strong>Back to &lt;label&gt;</strong> to the user
+					menu. It is optional: without it nothing changes, and an
+					<code class="inline">http(s)</code> URL is required because the value ends up in a link.
+				</p>
+				<pre><code>{ &quot;Portal&quot;: { &quot;url&quot;: &quot;https://admin.example.com&quot;, &quot;label&quot;: &quot;Admin portal&quot; } }</code></pre>
+				<h2 id="logging-out">Logging out</h2>
+				<p>
+					&quot;Log out&quot; sends the browser to <code class="inline">LogoutURL</code>, which the
+					portal points at its own <code class="inline">/logout</code>: it ends the portal session
+					on every host.
+				</p>
+				<h2 id="uploads">Uploads</h2>
+				<p>
+					<code class="inline">adapter-node</code> rejects request bodies over
+					<code class="inline">BODY_SIZE_LIMIT</code> (512 KB by default). The portal does not pass
+					its own limit to this app. Set
+					<code class="inline">MULTIADMIN_MYADMIN_BODY_SIZE_LIMIT</code> (for example
+					<code class="inline">512M</code>) in the portal&#x27;s environment to raise the limit for
+					the import page.
+				</p>
+				<h2 id="wiring-your-own-gateway">Wiring your own gateway</h2>
+				<p>Do what the portal does:</p>
+				<ol>
+					<li>
+						Run the app so that <strong>only your gateway can reach it</strong> (loopback, a private
+						network, a NetworkPolicy), with <code class="inline">HOST</code> and
+						<code class="inline">PORT</code> set and <code class="inline">ORIGIN</code> set to the
+						public address people use.
+					</li>
+					<li>
+						Put the keys above in <code class="inline">config.json</code>, with
+						<code class="inline">trustedProxies</code> listing exactly your gateway&#x27;s
+						addresses.
+					</li>
+					<li>
+						In the gateway, <strong>delete</strong> <code class="inline">x-multiadmin-*</code>,
+						<code class="inline">x-auth-request-*</code>, <code class="inline">Forwarded</code> and
+						<code class="inline">X-Forwarded-*</code> from every incoming request, then set the
+						user, email and groups from your own authentication. Send
+						<code class="inline">X-Forwarded-For</code> with the real client address.
+					</li>
+					<li>
+						Do not set <code class="inline">ADDRESS_HEADER</code> or
+						<code class="inline">XFF_DEPTH</code> on the app: the identity check relies on the real
+						TCP peer.
+					</li>
+				</ol>
+				<p>
+					Anything else able to reach the app from a trusted address can impersonate anyone. Do not
+					run a sidecar you do not trust next to it.
+				</p>
+				<h2 id="limits">Limits</h2>
+				<ul>
+					<li>
+						Everyone shares the MySQL account of the server, so MySQL cannot tell people apart. Turn
+						on <code class="inline">AuditLog</code>.
+					</li>
+					<li>No per-person role or server filter, unlike svelteRedisAdmin.</li>
+					<li>The app has no base path: the portal serves it on its own hostname.</li>
+				</ul>
+			</main>
+		</div>
+
+		<footer class="site-footer">
+			<div class="wrap">
+				<p>
+					svelteMyAdmin is an independent project and is not affiliated with phpMyAdmin, Oracle or
+					MariaDB.
+				</p>
+				<ul>
+					<li><a href="https://github.com/razvn/svelteMyAdmin">Source on GitHub</a></li>
+					<li><a href="https://github.com/razvn/svelteMyAdmin/issues">Issues</a></li>
+				</ul>
+			</div>
+		</footer>
+	</body>
+</html>
