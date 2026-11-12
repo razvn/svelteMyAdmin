@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { bare } from '#lib/nav/paths.ts';
 	import KeyRound from '@lucide/svelte/icons/key-round';
+	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 	import Languages from '@lucide/svelte/icons/languages';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -20,6 +21,8 @@
 		serverLabel: string;
 		canLogout: boolean;
 		canChangePassword?: boolean;
+		/** Back-link to the hosting portal (svelteMultiAdmin). */
+		portal?: { url: string; label: string } | null;
 	}
 
 	let {
@@ -28,7 +31,8 @@
 		host,
 		serverLabel,
 		canLogout,
-		canChangePassword = false
+		canChangePassword = false,
+		portal = null
 	}: Props = $props();
 
 	async function changeLanguage(code: string) {
@@ -100,6 +104,17 @@
 				</DropdownMenu.RadioGroup>
 			</DropdownMenu.SubContent>
 		</DropdownMenu.Sub>
+		{#if portal}
+			<DropdownMenu.Separator />
+			<DropdownMenu.Item>
+				{#snippet child({ props })}
+					<a {...props} href={portal.url} rel="external" data-testid="back-to-portal">
+						<LayoutGrid />
+						{t('Back to {label}', { label: portal.label })}
+					</a>
+				{/snippet}
+			</DropdownMenu.Item>
+		{/if}
 		{#if canLogout}
 			<DropdownMenu.Separator />
 			<form method="POST" action="/logout" class="contents">

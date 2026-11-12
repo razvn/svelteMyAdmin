@@ -274,6 +274,13 @@ export const auditLogSchema = z.discriminatedUnion('target', [
 ]);
 export type AuditLogConfig = z.infer<typeof auditLogSchema>;
 
+/** Link back to the portal that hosts this app (svelteMultiAdmin). Only http(s): it ends up in an `href`. */
+export const portalSchema = z.object({
+	url: z.url().refine((value) => /^https?:\/\//i.test(value), 'must be an http(s) URL'),
+	label: z.string().trim().min(1).default('Portal')
+});
+export type PortalConfig = z.infer<typeof portalSchema>;
+
 export const configSchema = z
 	.object({
 		blowfish_secret: z.string().default(''),
@@ -285,6 +292,11 @@ export const configSchema = z
 		AllowThirdPartyFraming: z.union([z.boolean(), z.literal('sameorigin')]).default(false),
 		Servers: z.array(serverSchema).default([]),
 		ConfigStorage: configStorageSchema.optional(),
+		/**
+		 * Set by svelteMultiAdmin when it hosts this app: where the "Back to <label>" link in the user menu
+		 * goes. Absent = no link. Only http(s) URLs: the value ends up in an `href`.
+		 */
+		Portal: portalSchema.optional(),
 		AuditLog: auditLogSchema.optional(),
 		ServerDiscovery: serverDiscoverySchema.optional(),
 		ServerDefault: z.number().int().min(0).default(1),

@@ -22,6 +22,8 @@
 			canLogout: boolean;
 			/** Show "Change password" in the user menu. */
 			canChangePassword?: boolean;
+			/** Back-link to the hosting portal (svelteMultiAdmin), when configured. */
+			portal?: { url: string; label: string } | null;
 		};
 		servers: {
 			key: string;
@@ -95,6 +97,7 @@
 				serverLabel={session.serverLabel}
 				canLogout={session.canLogout}
 				canChangePassword={session.canChangePassword}
+				portal={session.portal}
 			/>
 		</div>
 	</div>
