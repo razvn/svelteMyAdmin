@@ -31,7 +31,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			// phpMyAdmin: ShowChgPassword and not config auth (the password is fixed there); signon
 			// shares the configured account too, so a password change would lock everybody out
 			canChangePassword:
-				config.ShowChgPassword && s.authType !== 'config' && s.authType !== 'signon'
+				config.ShowChgPassword && s.authType !== 'config' && s.authType !== 'signon',
+			// set when svelteMultiAdmin hosts this app
+			portal: config.Portal ?? null
 		},
 		servers: await switchableServers(locals),
 		nav: toNavConfig(config),

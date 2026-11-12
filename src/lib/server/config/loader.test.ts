@@ -317,3 +317,27 @@ describe('getConfigPath', () => {
 		expect(getConfigPath({})).toBe(join(process.cwd(), 'config.json'));
 	});
 });
+
+describe('Portal (svelteMultiAdmin back-link)', () => {
+	it('is absent by default', () => {
+		expect(parseConfig({ Servers: [] }).Portal).toBeUndefined();
+	});
+	it('takes an http(s) url and defaults the label', () => {
+		expect(
+			parseConfig({ Servers: [], Portal: { url: 'https://admin.example.com' } }).Portal
+		).toEqual({
+			url: 'https://admin.example.com',
+			label: 'Portal'
+		});
+		expect(
+			parseConfig({ Servers: [], Portal: { url: 'http://localhost:3000/', label: 'Admin portal' } })
+				.Portal?.label
+		).toBe('Admin portal');
+	});
+	it.each(['javascript:alert(1)', 'data:text/html,x', 'ftp://x.example', 'not a url', ''])(
+		'rejects %j: the value ends up in an href',
+		(url: string) => {
+			expect(() => parseConfig({ Servers: [], Portal: { url } })).toThrow();
+		}
+	);
+});

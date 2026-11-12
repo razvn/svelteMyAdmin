@@ -101,6 +101,18 @@ their account from a Secret. See [Kubernetes RBAC](docs/SIGNON.md#kubernetes-rba
 [Server discovery](docs/SIGNON.md#server-discovery). A `Dockerfile` builds the image, and
 [deploy/kubernetes](deploy/kubernetes/README.md) has manifests to try both on a local cluster.
 
+## Hosted by svelteMultiAdmin
+
+[svelteMultiAdmin](https://github.com/razvn/svelteMultiAdmin) bundles this app with svelteRedisAdmin behind one
+sign-in. It starts this app with `auth_type: "signon"` (identity in headers it sets, from loopback only) and adds the top-level `Portal` key, which puts "Back to <label>" in the user menu:
+
+```json
+{ "Portal": { "url": "https://admin.example.com", "label": "Admin portal" } }
+```
+
+Only `http(s)` URLs are accepted. Without the key nothing changes. The audit log needs no extra setup: the
+portal user is the identity of every event.
+
 ## Scripts
 
 | Script                           | Purpose                                                                                        |
